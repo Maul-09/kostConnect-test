@@ -1,0 +1,20 @@
+{
+  "name": "kostConnect",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "pnpm --parallel --filter ./apps/* run dev",
+    "build": "pnpm --filter ./apps/* run build",
+    "lint": "pnpm --filter ./apps/* run lint",
+    "seed": "pnpm --filter api run seed",
+    "prisma:studio": "pnpm --filter api run prisma:studio",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@12.6.0",
+  "type": "module"
+}
