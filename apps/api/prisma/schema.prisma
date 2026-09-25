@@ -1,0 +1,74 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+}
+
+enum InvoiceStatus {
+  UNPAID
+  PAID
+  CANCELLED
+}
+
+model Property {
+  id        String   @id @default(uuid())
+  name      String
+  address   String
+  city      String
+  rooms     Room[]
+  createdAt DateTime @default(now())
+}
+
+model Room {
+  id           String     @id @default(uuid())
+  propertyId   String
+  property     Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  roomNumber   String
+  monthlyPrice Decimal    @db.Decimal(12, 2)
+  status       RoomStatus @default(AVAILABLE)
+  contracts    Contract[]
+  createdAt    DateTime   @default(now())
+}
+
+model Tenant {
+  id        String     @id @default(uuid())
+  name      String
+  email     String     @unique
+  phone     String
+  contracts Contract[]
+  createdAt DateTime   @default(now())
+}
+
+model Contract {
+  id        String    @id @default(uuid())
+  roomId    String
+  room      Room      @relation(fields: [roomId], references: [id])
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean   @default(true)
+  invoices  Invoice[]
+  createdAt DateTime  @default(now())
+}
+
+model Invoice {
+  id              String        @id @default(uuid())
+  contractId      String
+  contract        Contract      @relation(fields: [contractId], references: [id])
+  invoiceNumber   String        @unique
+  amount          Decimal       @db.Decimal(12, 2)
+  dueDate         DateTime
+  status          InvoiceStatus @default(UNPAID)
+  midtransOrderId String?       @unique
+  paidAt          DateTime?
+  createdAt       DateTime      @default(now())
+}
