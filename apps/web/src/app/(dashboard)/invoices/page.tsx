@@ -4,7 +4,20 @@ import { useState, useEffect } from 'react';
 import Script from 'next/script';
 import { api } from '@/lib/api';
 import { Invoice, Contract, ApiResponse } from '@/types';
-import { Receipt, Plus, CreditCard, CheckCircle2, Clock, XCircle, AlertCircle, Sparkles } from 'lucide-react';
+import { 
+  Receipt, 
+  Plus, 
+  CreditCard, 
+  CheckCircle2, 
+  Clock, 
+  XCircle, 
+  AlertCircle, 
+  Sparkles,
+  Calendar,
+  X,
+  FileCheck2,
+  Filter
+} from 'lucide-react';
 
 declare global {
   interface Window {
@@ -114,8 +127,7 @@ export default function InvoicesPage() {
           },
         });
       } else {
-        // Jika token simulasi atau popup snap belum ready, sediakan opsi redirect/simulasi langsung
-        if (confirm('Token pembayaran berhasil dibuat. Ingin membuka simulasi pembayaran instan (Demo Reviewer)?')) {
+        if (confirm('Token pembayaran dibuat. Ingin menjalankan simulasi pelunasan instan (Demo Reviewer)?')) {
           handleSimulatePayment(invoiceId);
         } else if (redirect_url) {
           window.open(redirect_url, '_blank');
@@ -149,7 +161,7 @@ export default function InvoicesPage() {
   const totalUnpaid = unpaidInvoices.reduce((acc, curr) => acc + Number(curr.amount), 0);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Midtrans Snap Script Loader */}
       <Script
         src="https://app.sandbox.midtrans.com/snap/snap.js"
@@ -157,164 +169,270 @@ export default function InvoicesPage() {
         strategy="lazyOnload"
       />
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-800">
-            Modul 3: Tagihan & Pembayaran (Keuangan)
-          </h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Penerbitan invoice sewa, integrasi Midtrans Snap Sandbox, dan otomasi status pelunasan via webhook.
-          </p>
+      {/* 1. Frosted Hero Header */}
+      <div className="bg-gradient-to-r from-indigo-50/90 via-slate-50/80 to-blue-50/80 backdrop-blur-xl border border-indigo-200/70 rounded-[28px] p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0b0f19] to-indigo-950 text-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-950/20 shrink-0">
+            <Receipt className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-black uppercase tracking-wider text-indigo-950">
+                MODUL 3
+              </span>
+              <span className="inline-flex items-center gap-1.5 bg-indigo-100/90 text-indigo-900 border border-indigo-300/60 rounded-full px-2.5 py-0.5 text-[11px] font-bold">
+                Financial Module
+              </span>
+            </div>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+              Tagihan & Payment Gateway
+            </h1>
+            <p className="text-xs text-slate-600 mt-1 max-w-xl">
+              Penerbitan invoice sewa berkala, integrasi Midtrans Snap Sandbox, dan otomasi status pelunasan melalui webhook.
+            </p>
+          </div>
         </div>
+
         <button
           onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
+          className="bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-2xl px-4 py-2.5 text-xs font-bold shadow-md shadow-indigo-950/20 hover:shadow-lg transition-all flex items-center gap-2 shrink-0 self-start sm:self-center"
         >
-          <Plus className="w-4 h-4" /> Terbitkan Tagihan Baru
+          <Plus className="w-4 h-4 text-indigo-400" /> Terbitkan Tagihan Baru
         </button>
       </div>
 
-      {/* Metrics */}
+      {/* 2. Glass Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white border border-slate-200 rounded-xl p-4">
-          <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">Total Tagihan Terbit</span>
-          <span className="text-2xl font-bold text-slate-800 mt-1 block">
-            Rp {totalInvoiced.toLocaleString('id-ID')}
-          </span>
-          <span className="text-[11px] text-slate-400 mt-0.5 block">{invoices.length} transaksi</span>
+        {/* Card 1: Total Tagihan */}
+        <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              TOTAL TAGIHAN TERBIT
+            </span>
+            <span className="text-[10px] font-bold text-slate-500 bg-slate-100/80 px-2 py-0.5 rounded-full">
+              {invoices.length} transaksi
+            </span>
+          </div>
+          <div className="mt-3">
+            <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight block">
+              Rp {totalInvoiced.toLocaleString('id-ID')}
+            </span>
+            <p className="text-[11px] text-slate-400 mt-1">
+              Akumulasi seluruh tagihan kos
+            </p>
+          </div>
+          <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+            <div className="bg-slate-400 h-full rounded-full" style={{ width: '100%' }} />
+          </div>
         </div>
-        <div className="bg-white border border-emerald-200 bg-emerald-50/30 rounded-xl p-4">
-          <span className="text-[11px] font-medium text-emerald-600 uppercase tracking-wider block">Pembayaran Diterima (PAID)</span>
-          <span className="text-2xl font-bold text-emerald-700 mt-1 block">
-            Rp {totalPaid.toLocaleString('id-ID')}
-          </span>
-          <span className="text-[11px] text-emerald-600 mt-0.5 block">{paidInvoices.length} invoice lunas</span>
+
+        {/* Card 2: Pembayaran Diterima (PAID) */}
+        <div className="bg-white/85 backdrop-blur-xl border border-indigo-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-indigo-50/40 to-white/80 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider">
+              PEMBAYARAN DITERIMA (PAID)
+            </span>
+            <span className="text-[10px] font-bold text-indigo-800 bg-indigo-100/80 px-2 py-0.5 rounded-full">
+              {paidInvoices.length} lunas
+            </span>
+          </div>
+          <div className="mt-3">
+            <span className="text-2xl sm:text-3xl font-black text-indigo-900 tracking-tight block">
+              Rp {totalPaid.toLocaleString('id-ID')}
+            </span>
+            <p className="text-[11px] text-indigo-600 mt-1">
+              Arus kas masuk terverifikasi
+            </p>
+          </div>
+          <div className="mt-4 w-full bg-indigo-100 h-1.5 rounded-full overflow-hidden">
+            <div 
+              className="bg-indigo-600 h-full rounded-full transition-all duration-500" 
+              style={{ width: `${totalInvoiced > 0 ? (totalPaid / totalInvoiced) * 100 : 0}%` }} 
+            />
+          </div>
         </div>
-        <div className="bg-white border border-rose-200 bg-rose-50/30 rounded-xl p-4">
-          <span className="text-[11px] font-medium text-rose-600 uppercase tracking-wider block">Belum Lunas (UNPAID)</span>
-          <span className="text-2xl font-bold text-rose-700 mt-1 block">
-            Rp {totalUnpaid.toLocaleString('id-ID')}
-          </span>
-          <span className="text-[11px] text-rose-600 mt-0.5 block">{unpaidInvoices.length} invoice tertunda</span>
+
+        {/* Card 3: Belum Lunas (UNPAID) */}
+        <div className="bg-white/85 backdrop-blur-xl border border-rose-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-rose-50/40 to-white/80 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wider">
+              BELUM LUNAS (UNPAID)
+            </span>
+            <span className="text-[10px] font-bold text-rose-800 bg-rose-100/80 px-2 py-0.5 rounded-full">
+              {unpaidInvoices.length} tertunda
+            </span>
+          </div>
+          <div className="mt-3">
+            <span className="text-2xl sm:text-3xl font-black text-rose-800 tracking-tight block">
+              Rp {totalUnpaid.toLocaleString('id-ID')}
+            </span>
+            <p className="text-[11px] text-rose-600 mt-1">
+              Piutang sewa menunggu pelunasan
+            </p>
+          </div>
+          <div className="mt-4 w-full bg-rose-100 h-1.5 rounded-full overflow-hidden">
+            <div 
+              className="bg-rose-500 h-full rounded-full transition-all duration-500" 
+              style={{ width: `${totalInvoiced > 0 ? (totalUnpaid / totalInvoiced) * 100 : 0}%` }} 
+            />
+          </div>
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-        {(['ALL', 'UNPAID', 'PAID'] as const).map((status) => (
-          <button
-            key={status}
-            onClick={() => setStatusFilter(status)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-              statusFilter === status
-                ? 'bg-slate-900 text-white'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            {status === 'ALL' ? 'Semua Tagihan' : status === 'UNPAID' ? 'Belum Lunas (UNPAID)' : 'Lunas (PAID)'}
-          </button>
-        ))}
+      {/* 3. Filter Tabs (Sleek Pills) */}
+      <div className="flex items-center gap-2 bg-white/70 backdrop-blur-md p-1.5 rounded-2xl border border-white/80 w-fit shadow-xs">
+        <button
+          onClick={() => setStatusFilter('ALL')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            statusFilter === 'ALL'
+              ? 'bg-[#0b0f19] text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+          }`}
+        >
+          Semua Tagihan
+        </button>
+        <button
+          onClick={() => setStatusFilter('UNPAID')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            statusFilter === 'UNPAID'
+              ? 'bg-rose-600 text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+          }`}
+        >
+          Belum Lunas (UNPAID)
+        </button>
+        <button
+          onClick={() => setStatusFilter('PAID')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            statusFilter === 'PAID'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+          }`}
+        >
+          Lunas (PAID)
+        </button>
       </div>
 
       {error && (
-        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs">
+        <div className="p-4 bg-rose-50/80 backdrop-blur-md border border-rose-200 text-rose-800 rounded-2xl text-xs font-semibold">
           {error}
         </div>
       )}
 
-      {/* Invoices Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Receipt className="w-4 h-4 text-indigo-600" />
-            <h3 className="font-bold text-base text-slate-800">Daftar Tagihan Sewa</h3>
+      {/* 4. Invoices Glass Table Container */}
+      <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] p-6">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+              <Receipt className="w-5 h-5 text-indigo-600" />
+              Daftar Tagihan Sewa
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Rekapitulasi tagihan sewa kos aktif dan riwayat pembayaran.
+            </p>
           </div>
-          <span className="text-xs text-slate-400">{invoices.length} invoice</span>
+          <span className="text-xs font-bold text-slate-500 bg-slate-100/70 border border-slate-200/60 px-3 py-1 rounded-full">
+            {invoices.length} Invoice
+          </span>
         </div>
 
         {loading ? (
-          <div className="p-12 text-center text-xs text-slate-400">Memuat invoice...</div>
+          <div className="p-12 text-center text-xs text-slate-400 font-bold">Memuat data tagihan...</div>
         ) : invoices.length === 0 ? (
-          <div className="p-8 text-center text-xs text-slate-400">Tidak ada tagihan yang sesuai filter.</div>
+          <div className="p-12 text-center text-xs text-slate-400 bg-slate-50/60 rounded-2xl border border-dashed border-slate-200">
+            Tidak ada tagihan yang sesuai filter.
+          </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-600">
-              <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200 text-[11px] uppercase tracking-wider">
-                <tr>
-                  <th className="py-3 px-4">No. Invoice</th>
-                  <th className="py-3 px-4">Penyewa & Kamar</th>
-                  <th className="py-3 px-4">Jatuh Tempo</th>
-                  <th className="py-3 px-4">Nominal Tagihan</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Pembayaran</th>
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                  <th className="pb-3 px-3">No. Invoice</th>
+                  <th className="pb-3 px-3">Penyewa & Kamar</th>
+                  <th className="pb-3 px-3">Jatuh Tempo</th>
+                  <th className="pb-3 px-3">Nominal Tagihan</th>
+                  <th className="pb-3 px-3">Status</th>
+                  <th className="pb-3 px-3 text-right">Opsi Pembayaran</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100/80">
                 {invoices.map((inv) => {
                   const isPaid = inv.status === 'PAID';
-                  const isUnpaid = inv.status === 'UNPAID';
-                  const isCancelled = inv.status === 'CANCELLED';
+                  const isPaying = paymentLoading === inv.id;
 
                   return (
                     <tr key={inv.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3.5 px-4 font-mono font-bold text-slate-800">
+                      <td className="py-4 px-3 font-mono font-bold text-slate-900 text-xs">
                         {inv.invoiceNumber}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-slate-700">{inv.contract?.tenant?.name}</div>
-                        <div className="text-[11px] text-slate-400">
-                          Kamar {inv.contract?.room?.roomNumber} - {inv.contract?.room?.property?.name}
-                        </div>
+
+                      <td className="py-4 px-3">
+                        <p className="font-bold text-slate-800 text-xs">
+                          {inv.contract?.tenant?.name || 'Penyewa'}
+                        </p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          Kamar {inv.contract?.room?.roomNumber} • {inv.contract?.room?.property?.name}
+                        </p>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-600">
+
+                      <td className="py-4 px-3 text-slate-600">
                         {new Date(inv.dueDate).toLocaleDateString('id-ID')}
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-800">
-                        Rp {Number(inv.amount).toLocaleString('id-ID')}
+
+                      <td className="py-4 px-3">
+                        <span className="font-black text-slate-900 text-xs">
+                          Rp {Number(inv.amount).toLocaleString('id-ID')}
+                        </span>
                       </td>
-                      <td className="py-3.5 px-4">
-                        {isPaid && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
-                            <CheckCircle2 className="w-3 h-3" /> LUNAS (PAID)
-                          </span>
-                        )}
-                        {isUnpaid && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 text-rose-800">
-                            <AlertCircle className="w-3 h-3" /> BELUM DIBAYAR
-                          </span>
-                        )}
-                        {isCancelled && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600">
-                            <XCircle className="w-3 h-3" /> BATAL
-                          </span>
-                        )}
+
+                      <td className="py-4 px-3">
+                        <span
+                          className={`text-[10px] font-black px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 ${
+                            isPaid
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              : 'bg-rose-100 text-rose-800 border border-rose-200'
+                          }`}
+                        >
+                          {isPaid ? (
+                            <>
+                              <CheckCircle2 className="w-3 h-3" /> LUNAS (PAID)
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle className="w-3 h-3" /> BELUM DIBAYAR
+                            </>
+                          )}
+                        </span>
                       </td>
-                      <td className="py-3.5 px-4 text-right">
-                        {isUnpaid ? (
-                          <div className="flex items-center justify-end gap-1.5">
+
+                      <td className="py-4 px-3 text-right">
+                        {isPaid ? (
+                          <span className="text-[11px] text-emerald-700 font-bold inline-flex items-center gap-1">
+                            <FileCheck2 className="w-3.5 h-3.5" /> Terbayar Lunas
+                          </span>
+                        ) : (
+                          <div className="flex items-center justify-end gap-2">
+                            {/* Tombol Snap Midtrans Resmi */}
                             <button
+                              disabled={isPaying}
                               onClick={() => handlePay(inv.id)}
-                              disabled={paymentLoading === inv.id}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
                             >
-                              <CreditCard className="w-3.5 h-3.5" />
-                              {paymentLoading === inv.id ? 'Memproses...' : 'Bayar Sekarang'}
+                              <CreditCard className="w-3.5 h-3.5 text-indigo-400" />
+                              {isPaying ? 'Memproses...' : 'Bayar Sekarang'}
                             </button>
+
+                            {/* Tombol Simulasi Cepat (Demo Reviewer) */}
                             <button
+                              disabled={isPaying}
                               onClick={() => handleSimulatePayment(inv.id)}
-                              title="Simulasi pelunasan instan (Khusus Demo Reviewer)"
-                              disabled={paymentLoading === inv.id}
-                              className="p-1.5 text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-lg text-xs transition-colors"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 rounded-xl text-xs font-bold transition-colors"
+                              title="Simulasikan pelunasan instan untuk keperluan presentasi & pengujian reviewer"
                             >
-                              <Sparkles className="w-3.5 h-3.5" />
+                              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
                             </button>
                           </div>
-                        ) : isPaid ? (
-                          <span className="text-[11px] text-slate-400">
-                            {inv.paidAt ? `Dibayar: ${new Date(inv.paidAt).toLocaleDateString('id-ID')}` : 'Lunas'}
-                          </span>
-                        ) : null}
+                        )}
                       </td>
                     </tr>
                   );
@@ -327,34 +445,38 @@ export default function InvoicesPage() {
 
       {/* Modal Terbitkan Tagihan Baru */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl border border-slate-200">
-            <h3 className="text-base font-bold text-slate-800 mb-1">Terbitkan Tagihan Sewa Baru</h3>
-            <p className="text-xs text-slate-500 mb-4">Pilih kontrak sewa aktif yang ingin ditagihkan.</p>
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[28px] max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-extrabold text-base text-slate-900">Terbitkan Tagihan Sewa Baru</h3>
+              <button 
+                onClick={() => setShowCreateModal(false)}
+                className="p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
             <form onSubmit={handleCreateInvoice} className="space-y-3.5">
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Pilih Kontrak Sewa</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Pilih Kontrak Sewa Aktif
+                </label>
                 {contracts.length === 0 ? (
-                  <p className="text-xs text-rose-500 italic">Tidak ada kontrak aktif saat ini.</p>
+                  <p className="text-xs text-rose-600 font-bold bg-rose-50 p-2.5 rounded-xl border border-rose-200">
+                    Tidak ada kontrak aktif saat ini.
+                  </p>
                 ) : (
                   <select
                     required
                     value={selectedContractId}
-                    onChange={(e) => {
-                      const cId = e.target.value;
-                      setSelectedContractId(cId);
-                      const found = contracts.find((c) => c.id === cId);
-                      if (found?.room?.monthlyPrice) {
-                        setAmount(String(found.room.monthlyPrice));
-                      }
-                    }}
-                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                    onChange={(e) => setSelectedContractId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
                   >
-                    <option value="">-- Pilih Kontrak --</option>
+                    <option value="">-- Pilih Kontrak Sewa --</option>
                     {contracts.map((c) => (
                       <option key={c.id} value={c.id}>
-                        {c.tenant?.name} &ndash; Kamar {c.room?.roomNumber} ({c.room?.property?.name})
+                        {c.tenant?.name} (Kamar {c.room?.roomNumber} - {c.room?.property?.name})
                       </option>
                     ))}
                   </select>
@@ -362,41 +484,39 @@ export default function InvoicesPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Nominal Tagihan (Rp)</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Nominal Tagihan (IDR)</label>
                 <input
                   type="number"
                   required
-                  min="0"
-                  step="50000"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Tanggal Jatuh Tempo</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Tanggal Jatuh Tempo</label>
                 <input
                   type="date"
                   required
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3">
+              <div className="flex items-center justify-end gap-2.5 pt-3">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={contracts.length === 0}
-                  className="px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg"
+                  className="px-4 py-2 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
                 >
                   Terbitkan Invoice
                 </button>

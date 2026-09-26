@@ -25,6 +25,12 @@ Bukan sekadar aplikasi CRUD sederhana, KosConnect ERP memetakan proses bisnis ri
    * Integrasi pembayaran digital via Midtrans Snap Sandbox.
    * Webhook callback listener dengan verifikasi `signature_key` (SHA512) untuk otomatisasi pelunasan tagihan menjadi `PAID`.
 
+### 3 Peran Pengguna (Multi-Role Personas & Role Switcher)
+Sistem memfasilitasi 3 aktor bisnis utama yang dapat diuji langsung oleh reviewer melalui **Role Switcher** di bilah navigasi atas:
+1. **Super Admin (Platform Admin):** Pengawasan seluruh properti kos, monitoring integrasi webhook, automasi n8n, dan dokumentasi Swagger API.
+2. **Pengelola / Pemilik Kos (Property Owner - Mode Pengelola):** Mengelola inventaris kamar (Aset), membuat kontrak sewa (CRM), dan menerbitkan tagihan bulanan (Finance).
+3. **Penyewa (Tenant - Mode Portal Penyewa di `/portal`):** Sudut pandang penyewa untuk memeriksa rincian kamar yang sedang disewa, masa berlaku kontrak, dan membayar tagihan sewa secara mandiri via Midtrans Snap.
+
 ---
 
 ## 2. Diagram Arsitektur Sistem
