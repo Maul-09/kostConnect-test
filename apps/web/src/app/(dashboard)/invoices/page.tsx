@@ -325,11 +325,11 @@ export default function InvoicesPage() {
         </div>
       </div>
 
-      {/* 3. Filter Tabs */}
-      <div className="flex items-center gap-2 bg-white/70 backdrop-blur-md p-1.5 rounded-2xl border border-white/80 w-fit shadow-xs">
+      {/* 3. Filter Tabs (Scrollable di Mobile) */}
+      <div className="flex items-center gap-1.5 sm:gap-2 bg-white/70 backdrop-blur-md p-1.5 rounded-2xl border border-white/80 w-full sm:w-fit overflow-x-auto shadow-xs scrollbar-none">
         <button
           onClick={() => setStatusFilter('ALL')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
             statusFilter === 'ALL'
               ? 'bg-[#0b0f19] text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
@@ -339,7 +339,7 @@ export default function InvoicesPage() {
         </button>
         <button
           onClick={() => setStatusFilter('UNPAID')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
             statusFilter === 'UNPAID'
               ? 'bg-rose-600 text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
@@ -349,7 +349,7 @@ export default function InvoicesPage() {
         </button>
         <button
           onClick={() => setStatusFilter('PAID')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
             statusFilter === 'PAID'
               ? 'bg-indigo-600 text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
@@ -536,15 +536,15 @@ export default function InvoicesPage() {
         )}
       </div>
 
-      {/* Modal Terbitkan Tagihan Baru (HANYA UNTUK PEMILIK KOS) */}
+      {/* Modal Terbitkan Tagihan Baru (HANYA UNTUK PEMILIK KOS - Responsif Mobile Bottom Sheet) */}
       {showCreateModal && role === 'OWNER' && (
         <div 
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowCreateModal(false);
           }}
-          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in duration-200"
         >
-          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[32px] max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-t-[32px] sm:rounded-[32px] max-w-lg w-full p-5 sm:p-8 shadow-2xl space-y-4 sm:space-y-5 max-h-[88vh] overflow-y-auto animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
             <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
@@ -559,7 +559,7 @@ export default function InvoicesPage() {
               </div>
               <button 
                 onClick={() => setShowCreateModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>

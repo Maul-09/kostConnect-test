@@ -143,12 +143,12 @@ export default function DashboardLayout({
     : notifications;
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-gradient-to-br from-[#f1f3f9] via-[#f8fafc] to-[#eef2ff] text-slate-800 p-3 md:p-4 gap-4 font-sans select-none relative">
+    <div className="flex h-screen w-full overflow-hidden bg-gradient-to-br from-[#f1f3f9] via-[#f8fafc] to-[#eef2ff] text-slate-800 p-2 sm:p-4 gap-2.5 sm:gap-4 font-sans select-none relative">
       {/* Ambient Gradient Glows (Sapphire & Indigo Atmospheric Glow) */}
       <div className="fixed -top-24 -right-24 w-[600px] h-[600px] bg-indigo-200/25 rounded-full blur-[140px] pointer-events-none -z-10" />
       <div className="fixed bottom-10 left-64 w-[500px] h-[500px] bg-blue-200/20 rounded-full blur-[120px] pointer-events-none -z-10" />
 
-      {/* 100% FIXED & STICKY SIDEBAR (Deep Midnight Obsidian #0b0f19) */}
+      {/* 100% FIXED & STICKY SIDEBAR UNTUK DESKTOP (Deep Midnight Obsidian #0b0f19) */}
       <aside className="w-64 h-full shrink-0 bg-[#0b0f19] text-slate-200 rounded-[26px] p-5 flex flex-col justify-between shadow-2xl border border-slate-800/80 hidden lg:flex select-none z-30">
         <div>
           {/* Logo & Brand Header */}
@@ -238,25 +238,33 @@ export default function DashboardLayout({
 
       {/* MAIN VIEW AREA (Clean, Professional, Synchronized) */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
-        {/* Sleek Professional Topbar (Ringkas & Tidak Ramai) */}
-        <header className="bg-white/85 backdrop-blur-xl border border-white/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] rounded-2xl px-5 py-3 mb-4 flex items-center justify-between shrink-0 z-20 gap-4">
-          {/* Left: Active Section Title */}
-          <div className="flex items-center gap-3 min-w-0">
-            <h1 className="text-sm sm:text-base font-extrabold text-slate-800 tracking-tight truncate">
-              {getPageTitle()}
-            </h1>
-            <span className="hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+        {/* Sleek Professional Topbar (Responsive di Mobile & Desktop) */}
+        <header className="bg-white/85 backdrop-blur-xl border border-white/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] rounded-2xl px-3.5 sm:px-5 py-2.5 sm:py-3 mb-2.5 sm:mb-4 flex items-center justify-between shrink-0 z-20 gap-3">
+          {/* Left: Mobile Brand & Active Section Title */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-blue-700 flex items-center justify-center text-white shrink-0 lg:hidden shadow-xs">
+              <Home className="w-4 h-4 text-white" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-xs sm:text-base font-extrabold text-slate-800 tracking-tight truncate">
+                {getPageTitle()}
+              </h1>
+              <span className="text-[10px] text-indigo-600 font-bold block sm:hidden truncate leading-none mt-0.5">
+                {currentProfile.badge}
+              </span>
+            </div>
+            <span className="hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60 shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Sistem Aktif
             </span>
           </div>
 
           {/* Right: Notification & Interactive Role Switcher Dropdown */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Notification Bell */}
             <button 
               onClick={() => setShowNotificationModal(true)}
-              className="relative p-2.5 rounded-2xl bg-slate-100/80 hover:bg-slate-200/70 border border-slate-200/80 text-slate-600 transition-colors focus:outline-none"
+              className="relative p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-slate-100/80 hover:bg-slate-200/70 border border-slate-200/80 text-slate-600 transition-colors focus:outline-none cursor-pointer"
               title="Buka Notifikasi"
             >
               <Bell className="w-4 h-4 text-slate-600" />
@@ -270,10 +278,10 @@ export default function DashboardLayout({
             {/* Interactive Role Switcher Trigger Button */}
             <button
               onClick={() => setShowRoleDropdown(!showRoleDropdown)}
-              className="flex items-center gap-3 p-1.5 sm:px-3.5 sm:py-2 bg-white/90 hover:bg-white border border-slate-200/80 rounded-2xl transition-all focus:outline-none group shadow-xs hover:shadow-sm"
+              className="flex items-center gap-2 sm:gap-3 p-1 sm:px-3.5 sm:py-2 bg-white/90 hover:bg-white border border-slate-200/80 rounded-xl sm:rounded-2xl transition-all focus:outline-none group shadow-xs hover:shadow-sm cursor-pointer"
               title="Klik untuk memilih perspektif role (Super Admin, Pemilik Kos, Penyewa)"
             >
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-extrabold text-xs shadow-xs ${currentProfile.avatarBg}`}>
+              <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center font-extrabold text-[11px] sm:text-xs shadow-xs ${currentProfile.avatarBg}`}>
                 {currentProfile.avatar}
               </div>
               <div className="text-left hidden sm:block">
@@ -289,45 +297,102 @@ export default function DashboardLayout({
                   </p>
                 </div>
               </div>
-              <ChevronDown className={`w-4 h-4 text-slate-400 group-hover:text-slate-700 transition-transform duration-200 ml-0.5 ${showRoleDropdown ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 group-hover:text-slate-700 transition-transform duration-200 ml-0.5 ${showRoleDropdown ? 'rotate-180' : ''}`} />
             </button>
           </div>
         </header>
 
-        {/* Scrollable Page Body (Only this area scrolls) */}
-        <main className="flex-1 overflow-y-auto pr-1 pb-6 space-y-6">
+        {/* Scrollable Page Body (Dengan padding bawah ekstra di mobile agar tidak tertutup bottom bar) */}
+        <main className="flex-1 overflow-y-auto pr-1 pb-24 lg:pb-6 space-y-4 sm:space-y-6">
           {children}
         </main>
       </div>
 
-      {/* POPUP NOTIFIKASI MODAL (Selaras, Lapang, Tanpa Tombol Arsipkan) */}
+      {/* ========================================================================= */}
+      {/* MOBILE BOTTOM NAVIGATION BAR (Dekat Tombol/Menu Home di Bawah HP)          */}
+      {/* ========================================================================= */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0b0f19]/95 backdrop-blur-2xl border-t border-slate-800/90 px-2 py-1.5 flex items-center justify-around shadow-[0_-8px_30px_rgba(0,0,0,0.45)] lg:hidden select-none">
+        {navConfig.items.map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+          
+          // Singkatkan label untuk layar HP kecil
+          const shortLabel = (() => {
+            if (item.name.includes('Dashboard')) return 'Home';
+            if (item.name.includes('Properti') || item.name.includes('Kamar')) return 'Unit';
+            if (item.name.includes('Mitra') || item.name.includes('Penyewa')) return 'Penyewa';
+            if (item.name.includes('Tagihan') || item.name.includes('Audit')) return 'Tagihan';
+            return item.name;
+          })();
+
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`flex flex-col items-center justify-center gap-1 py-1 px-2 rounded-2xl transition-all min-w-[56px] ${
+                isActive
+                  ? 'text-white'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <div className={`p-1.5 rounded-xl transition-all ${
+                isActive 
+                  ? 'bg-gradient-to-br from-indigo-600 to-blue-700 text-white shadow-md shadow-indigo-950/60 scale-105' 
+                  : 'text-slate-400'
+              }`}>
+                <Icon className="w-4 h-4" />
+              </div>
+              <span className={`text-[10px] tracking-tight leading-none ${
+                isActive ? 'font-black text-indigo-300' : 'font-semibold text-slate-400'
+              }`}>
+                {shortLabel}
+              </span>
+            </Link>
+          );
+        })}
+
+        {/* Tombol Ganti Role Langsung di Bottom Bar HP */}
+        <button
+          onClick={() => setShowRoleDropdown(true)}
+          className="flex flex-col items-center justify-center gap-1 py-1 px-2 rounded-2xl transition-all min-w-[56px] text-slate-400 hover:text-slate-200 focus:outline-none cursor-pointer"
+        >
+          <div className={`w-7 h-7 rounded-xl flex items-center justify-center font-black text-[10px] shadow-xs ${currentProfile.avatarBg}`}>
+            {currentProfile.avatar}
+          </div>
+          <span className="text-[10px] font-semibold text-slate-400 leading-none">
+            Role
+          </span>
+        </button>
+      </nav>
+
+      {/* POPUP NOTIFIKASI MODAL (Responsif Mobile Bottom Sheet / Desktop Centered) */}
       {showNotificationModal && (
         <div 
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowNotificationModal(false);
           }}
-          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in duration-200"
         >
-          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[32px] max-w-2xl md:max-w-3xl w-full p-6 sm:p-8 shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
+          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-t-[32px] sm:rounded-[32px] max-w-2xl md:max-w-3xl w-full p-5 sm:p-8 shadow-2xl space-y-4 sm:space-y-6 max-h-[85vh] flex flex-col animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
             {/* Header */}
             <div className="flex items-start justify-between gap-4">
               <div>
-                <span className="text-[11px] font-black uppercase tracking-widest text-indigo-600 block mb-1.5">
-                  • ADMIN • NOTIFIKASI
+                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
+                  • NOTIFIKASI OPERASIONAL
                 </span>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                  Notifikasi Operasional
+                <h2 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                  Notifikasi Sistem
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-xl">
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5 max-w-xl">
                   Pembaruan jadwal sewa kos, konfirmasi transaksi pembayaran Midtrans, dan pengingat jatuh tempo.
                 </p>
               </div>
               <button
                 onClick={() => setShowNotificationModal(false)}
-                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs cursor-pointer"
                 title="Tutup Modal"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
 
@@ -336,7 +401,7 @@ export default function DashboardLayout({
               <div className="flex items-center gap-1.5 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/60 w-fit">
                 <button
                   onClick={() => setNotifTab('all')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     notifTab === 'all'
                       ? 'bg-white text-slate-900 shadow-xs'
                       : 'text-slate-500 hover:text-slate-900'
@@ -346,7 +411,7 @@ export default function DashboardLayout({
                 </button>
                 <button
                   onClick={() => setNotifTab('unread')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     notifTab === 'unread'
                       ? 'bg-white text-slate-900 shadow-xs'
                       : 'text-slate-500 hover:text-slate-900'
@@ -360,24 +425,24 @@ export default function DashboardLayout({
                 <button
                   onClick={markAllAsRead}
                   disabled={unreadCount === 0}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 disabled:opacity-40 disabled:pointer-events-none text-indigo-700 text-xs font-bold shadow-2xs transition-all"
+                  className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 disabled:opacity-40 disabled:pointer-events-none text-indigo-700 text-xs font-bold shadow-2xs transition-all cursor-pointer"
                 >
-                  <Check className="w-4 h-4 text-indigo-600" /> Tandai semua dibaca
+                  <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600" /> Tandai semua dibaca
                 </button>
               </div>
             </div>
 
             {/* Notification Items List */}
-            <div className="space-y-3 max-h-[380px] overflow-y-auto pr-2">
+            <div className="space-y-2.5 max-h-[50vh] sm:max-h-[380px] overflow-y-auto pr-1 sm:pr-2">
               {filteredNotifications.length === 0 ? (
-                <div className="p-12 text-center bg-slate-50/70 rounded-2xl border border-dashed border-slate-200">
-                  <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-3">
-                    <Check className="w-6 h-6" />
+                <div className="p-8 sm:p-12 text-center bg-slate-50/70 rounded-2xl border border-dashed border-slate-200">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-2 sm:mb-3">
+                    <Check className="w-5 h-5 sm:w-6 sm:h-6" />
                   </div>
-                  <h4 className="text-sm font-bold text-slate-800">
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-800">
                     {notifTab === 'unread' ? 'Semua notifikasi telah dibaca' : 'Tidak ada notifikasi'}
                   </h4>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-[11px] sm:text-xs text-slate-400 mt-1">
                     {notifTab === 'unread' 
                       ? 'Seluruh pesan dan jadwal tagihan sudah Anda konfirmasi.' 
                       : 'Belum ada aktivitas operasional baru saat ini.'}
@@ -392,17 +457,17 @@ export default function DashboardLayout({
                         prev.map((n) => (n.id === notif.id ? { ...n, isRead: true } : n))
                       );
                     }}
-                    className={`rounded-2xl p-4 sm:p-5 border transition-all flex items-start justify-between gap-4 cursor-pointer hover:shadow-xs ${
+                    className={`rounded-2xl p-3.5 sm:p-5 border transition-all flex items-start justify-between gap-3 sm:gap-4 cursor-pointer hover:shadow-xs ${
                       !notif.isRead
                         ? 'bg-indigo-50/60 border-indigo-200 shadow-2xs'
                         : 'bg-slate-50/70 border-slate-200/70 hover:bg-white'
                     }`}
                   >
-                    <div className="flex items-start gap-3.5 min-w-0">
-                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5 ${
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 mt-0.5 ${
                         !notif.isRead ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-200 text-slate-600'
                       }`}>
-                        <Bell className="w-5 h-5" />
+                        <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
@@ -416,23 +481,23 @@ export default function DashboardLayout({
                         <p className="text-xs text-slate-600 mt-1 leading-relaxed">
                           {notif.desc}
                         </p>
-                        <p className="text-[11px] text-slate-400 mt-2 font-medium flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-slate-400" />
+                        <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1.5 font-medium flex items-center gap-1.5">
+                          <Clock className="w-3 h-3 text-slate-400" />
                           {notif.time}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           deleteNotification(notif.id);
                         }}
-                        className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                        className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                         title="Hapus Notifikasi"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       </button>
                     </div>
                   </div>
@@ -443,30 +508,30 @@ export default function DashboardLayout({
         </div>
       )}
 
-      {/* GLOBAL ROLE SWITCHER MODAL / DROPDOWN OVERLAY (Blurs 100% of Screen Including Sidebar!) */}
+      {/* GLOBAL ROLE SWITCHER MODAL (Responsif Bottom Sheet di Mobile, Popover di Desktop) */}
       {showRoleDropdown && (
         <div 
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowRoleDropdown(false);
           }}
-          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-start justify-end p-4 sm:p-6 animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-end sm:items-start justify-center sm:justify-end p-0 sm:p-6 animate-in fade-in duration-200"
         >
-          <div className="mt-14 sm:mt-16 mr-0 sm:mr-3 w-full max-w-sm rounded-[32px] p-5 bg-white/95 backdrop-blur-2xl border border-white/90 shadow-[0_25px_60px_rgba(8,15,30,0.3)] animate-in zoom-in-95 duration-200 space-y-3.5">
-            <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
+          <div className="w-full max-w-md sm:max-w-sm sm:mt-16 sm:mr-3 rounded-t-[32px] sm:rounded-[32px] p-5 sm:p-6 bg-white/95 backdrop-blur-2xl border border-white/90 shadow-[0_25px_60px_rgba(8,15,30,0.3)] animate-in slide-in-from-bottom sm:zoom-in-95 duration-200 space-y-3.5 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-start justify-between pb-3 border-b border-slate-100 gap-4">
               <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
+                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-0.5">
                   PILIH ROLE
                 </span>
                 <h4 className="text-base font-black text-slate-900 tracking-tight">
                   Ganti Akun Pengguna
                 </h4>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Pilih role untuk mencoba fitur yang tersedia.
+                  Pilih role untuk mencoba hak akses fitur yang berbeda.
                 </p>
               </div>
               <button
                 onClick={() => setShowRoleDropdown(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs cursor-pointer"
                 title="Tutup Menu"
               >
                 <X className="w-4 h-4" />
@@ -486,13 +551,13 @@ export default function DashboardLayout({
                       setRole(r);
                       setShowRoleDropdown(false);
                     }}
-                    className={`w-full text-left p-3.5 rounded-2xl transition-all flex items-start gap-3 border ${
+                    className={`w-full text-left p-3 sm:p-3.5 rounded-2xl transition-all flex items-start gap-3 border cursor-pointer ${
                       isSelected
                         ? 'bg-gradient-to-r from-indigo-50/90 to-purple-50/60 border-indigo-400/80 shadow-xs ring-1 ring-indigo-400/30'
                         : 'bg-slate-50/70 hover:bg-slate-100/80 border-slate-200/60 hover:border-slate-300'
                     }`}
                   >
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-xs shrink-0 shadow-xs ${
+                    <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center font-black text-xs shrink-0 shadow-xs ${
                       r === 'ADMIN' 
                         ? 'bg-gradient-to-br from-indigo-800 to-purple-900 text-white' 
                         : r === 'OWNER' 
@@ -500,11 +565,11 @@ export default function DashboardLayout({
                         : 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white'
                     }`}>
                       {r === 'ADMIN' ? (
-                        <Crown className="w-5 h-5 text-amber-300" />
+                        <Crown className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300" />
                       ) : r === 'OWNER' ? (
-                        <Building2 className="w-5 h-5 text-indigo-300" />
+                        <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-300" />
                       ) : (
-                        <User className="w-5 h-5 text-blue-200" />
+                        <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-200" />
                       )}
                     </div>
 

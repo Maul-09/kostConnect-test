@@ -401,15 +401,15 @@ export default function PropertiesPage() {
         </div>
       )}
 
-      {/* Modal Daftarkan Properti Baru (HANYA UNTUK SUPER ADMIN) */}
+      {/* Modal Daftarkan Properti Baru (HANYA UNTUK SUPER ADMIN - Responsif Mobile Bottom Sheet) */}
       {showPropertyModal && role === 'ADMIN' && (
         <div 
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowPropertyModal(false);
           }}
-          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in duration-200"
         >
-          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[32px] max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-t-[32px] sm:rounded-[32px] max-w-lg w-full p-5 sm:p-8 shadow-2xl space-y-4 sm:space-y-5 max-h-[88vh] overflow-y-auto animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
             <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
@@ -424,7 +424,7 @@ export default function PropertiesPage() {
               </div>
               <button 
                 onClick={() => setShowPropertyModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -499,15 +499,15 @@ export default function PropertiesPage() {
         </div>
       )}
 
-      {/* Modal Tambah Kamar (HANYA UNTUK PEMILIK KOS) */}
+      {/* Modal Tambah Kamar (HANYA UNTUK PEMILIK KOS - Responsif Mobile Bottom Sheet) */}
       {showRoomModal && role === 'OWNER' && (
         <div 
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowRoomModal(false);
           }}
-          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in duration-200"
         >
-          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[32px] max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-t-[32px] sm:rounded-[32px] max-w-lg w-full p-5 sm:p-8 shadow-2xl space-y-4 sm:space-y-5 max-h-[88vh] overflow-y-auto animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
             <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
@@ -522,7 +522,7 @@ export default function PropertiesPage() {
               </div>
               <button 
                 onClick={() => setShowRoomModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>

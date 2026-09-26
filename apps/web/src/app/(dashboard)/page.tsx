@@ -212,39 +212,39 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
 
-          {/* 4 Stat Cards Platform Admin */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Properti Platform</span>
+          {/* 4 Stat Cards Platform Admin (Responsive Mobile Grid) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Properti Platform</span>
               <div className="mt-2">
-                <span className="text-3xl font-black text-slate-900 tracking-tight block">{properties.length} Properti</span>
-                <p className="text-xs text-slate-500 mt-1">Kos Harmoni & Griya Asri</p>
+                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block truncate">{properties.length} Properti</span>
+                <p className="text-[11px] sm:text-xs text-slate-500 mt-1 truncate">Kos Harmoni & Griya Asri</p>
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Kapasitas Kamar Ekosistem</span>
+            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Kamar Ekosistem</span>
               <div className="mt-2">
-                <span className="text-3xl font-black text-slate-900 tracking-tight block">{totalRoomsAll} Unit</span>
-                <p className="text-xs text-slate-500 mt-1">{occupiedRoomsAll} Terisi • {availableRoomsAll} Kosong</p>
+                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block truncate">{totalRoomsAll} Unit</span>
+                <p className="text-[11px] sm:text-xs text-slate-500 mt-1 truncate">{occupiedRoomsAll} Terisi • {availableRoomsAll} Kosong</p>
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-purple-700 uppercase tracking-wider">Mitra Pemilik Aktif</span>
+            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+              <span className="text-[10px] sm:text-[11px] font-bold text-purple-700 uppercase tracking-wider truncate">Mitra Pemilik</span>
               <div className="mt-2">
-                <span className="text-3xl font-black text-purple-900 tracking-tight block">2 Mitra</span>
-                <p className="text-xs text-purple-700 mt-1 font-semibold">H. Rahmat & Ibu Fatimah</p>
+                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-purple-900 tracking-tight block truncate">2 Mitra</span>
+                <p className="text-[11px] sm:text-xs text-purple-700 mt-1 font-semibold truncate">H. Rahmat & Fatimah</p>
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Volume Transaksi Platform</span>
+            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Volume Platform</span>
               <div className="mt-2">
-                <span className="text-3xl font-black text-slate-900 tracking-tight block">
+                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block truncate">
                   Rp {totalInvoicedAll.toLocaleString('id-ID')}
                 </span>
-                <p className="text-xs text-emerald-600 mt-1 font-semibold">{paidInvoicesAll.length} transaksi terverifikasi</p>
+                <p className="text-[11px] sm:text-xs text-emerald-600 mt-1 font-semibold truncate">{paidInvoicesAll.length} transaksi lunas</p>
               </div>
             </div>
           </div>
@@ -375,39 +375,39 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
 
-          {/* 4 Stat Cards Pemilik Kos Harmoni (TERISOLASI) */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Kamar Kosong</span>
+          {/* 4 Stat Cards Pemilik Kos Harmoni (Responsive Mobile Grid) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Kamar Kosong</span>
               <div className="mt-2">
-                <span className="text-3xl font-black text-slate-900 tracking-tight block">{ownerAvailableRooms} Kamar</span>
-                <p className="text-xs text-emerald-600 mt-1 font-semibold">Siap disewakan (102, 103)</p>
+                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block truncate">{ownerAvailableRooms} Kamar</span>
+                <p className="text-[11px] sm:text-xs text-emerald-600 mt-1 font-semibold truncate">Siap sewa (102, 103)</p>
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Kamar Terisi</span>
+            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Kamar Terisi</span>
               <div className="mt-2">
-                <span className="text-3xl font-black text-slate-900 tracking-tight block">{ownerOccupiedRooms} Kamar</span>
-                <p className="text-xs text-slate-500 mt-1">Kamar 101 (Budi Santoso)</p>
+                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block truncate">{ownerOccupiedRooms} Kamar</span>
+                <p className="text-[11px] sm:text-xs text-slate-500 mt-1 truncate">Kamar 101 (Budi)</p>
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Penyewa Aktif Kos</span>
+            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Penyewa Aktif</span>
               <div className="mt-2">
-                <span className="text-3xl font-black text-slate-900 tracking-tight block">{ownerTenants.length} Orang</span>
-                <p className="text-xs text-slate-500 mt-1">Budi Santoso</p>
+                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block truncate">{ownerTenants.length} Orang</span>
+                <p className="text-[11px] sm:text-xs text-slate-500 mt-1 truncate">Budi Santoso</p>
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-rose-600 uppercase tracking-wider">Tagihan Belum Diterima</span>
+            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+              <span className="text-[10px] sm:text-[11px] font-bold text-rose-600 uppercase tracking-wider truncate">Belum Diterima</span>
               <div className="mt-2">
-                <span className="text-3xl font-black text-slate-900 tracking-tight block">
+                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block truncate">
                   Rp {ownerTotalReceivable.toLocaleString('id-ID')}
                 </span>
-                <p className="text-xs text-rose-600 mt-1 font-semibold">{ownerUnpaidInvoices.length} tagihan tertunda</p>
+                <p className="text-[11px] sm:text-xs text-rose-600 mt-1 font-semibold truncate">{ownerUnpaidInvoices.length} tagihan tertunda</p>
               </div>
             </div>
           </div>
@@ -524,40 +524,40 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
 
-          {/* 4 Stat Cards Penyewa */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Unit Kamar</span>
+          {/* 4 Stat Cards Penyewa (Responsive Mobile Grid) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Unit Kamar</span>
               <div className="mt-2">
-                <span className="text-3xl font-black text-slate-900 tracking-tight block">Kamar 101</span>
-                <p className="text-xs text-slate-500 mt-1">Lantai 1 • Kos Harmoni</p>
+                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block truncate">Kamar 101</span>
+                <p className="text-[11px] sm:text-xs text-slate-500 mt-1 truncate">Lantai 1 • Kos Harmoni</p>
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Biaya Sewa</span>
+            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Biaya Sewa</span>
               <div className="mt-2">
-                <span className="text-3xl font-black text-slate-900 tracking-tight block">Rp 1.800.000</span>
-                <p className="text-xs text-slate-500 mt-1">Per bulan</p>
+                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block truncate">Rp 1.800.000</span>
+                <p className="text-[11px] sm:text-xs text-slate-500 mt-1 truncate">Per bulan</p>
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Status Sewa</span>
+            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Status Sewa</span>
               <div className="mt-2">
-                <span className="text-3xl font-black text-emerald-600 tracking-tight block">AKTIF</span>
-                <p className="text-xs text-slate-500 mt-1">Kontrak sewa resmi</p>
+                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-emerald-600 tracking-tight block truncate">AKTIF</span>
+                <p className="text-[11px] sm:text-xs text-slate-500 mt-1 truncate">Kontrak resmi</p>
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tagihan Bulan Ini</span>
+            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Tagihan Bulan Ini</span>
               <div className="mt-2">
-                <span className={`text-3xl font-black tracking-tight block ${tenantUnpaidInvoice ? 'text-rose-600' : 'text-emerald-600'}`}>
+                <span className={`text-xl sm:text-2xl lg:text-3xl font-black tracking-tight block truncate ${tenantUnpaidInvoice ? 'text-rose-600' : 'text-emerald-600'}`}>
                   {tenantUnpaidInvoice ? `Rp ${Number(tenantUnpaidInvoice.amount).toLocaleString('id-ID')}` : 'LUNAS'}
                 </span>
-                <p className="text-xs text-slate-500 mt-1">
-                  {tenantUnpaidInvoice ? 'Menunggu pembayaran' : 'Semua tagihan lunas'}
+                <p className="text-[11px] sm:text-xs text-slate-500 mt-1 truncate">
+                  {tenantUnpaidInvoice ? 'Perlu dibayar' : 'Semua tagihan lunas'}
                 </p>
               </div>
             </div>
