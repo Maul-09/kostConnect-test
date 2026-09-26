@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Property, Room, ApiResponse } from '@/types';
+import { useRole } from '@/context/RoleContext';
 import { 
   Building2, 
   Plus, 
@@ -10,12 +11,14 @@ import {
   CheckCircle2, 
   Clock, 
   X, 
-  Sparkles, 
-  Layers,
-  MapPin
+  MapPin,
+  ShieldCheck,
+  UserCheck,
+  Lock
 } from 'lucide-react';
 
 export default function PropertiesPage() {
+  const { role } = useRole();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +28,7 @@ export default function PropertiesPage() {
   const [propertyName, setPropertyName] = useState('');
   const [propertyAddress, setPropertyAddress] = useState('');
   const [propertyCity, setPropertyCity] = useState('');
+  const [propertyOwner, setPropertyOwner] = useState('H. Rahmat Santoso');
 
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [showRoomModal, setShowRoomModal] = useState(false);
@@ -92,16 +96,34 @@ export default function PropertiesPage() {
     }
   };
 
-  // Metrics
-  const totalProperties = properties.length;
-  const allRooms: Room[] = properties.flatMap((p) => p.rooms || []);
+  // Helper untuk identifikasi pemilik properti
+  const getPropertyOwner = (p: Property) => {
+    if (p.name.toLowerCase().includes('harmoni')) {
+      return { name: 'H. Rahmat Santoso', isCurrentOwner: true, locationTag: 'Jakarta Selatan' };
+    }
+    if (p.name.toLowerCase().includes('griya')) {
+      return { name: 'Ibu Hj. Fatimah', isCurrentOwner: false, locationTag: 'Bandung' };
+    }
+    return { name: 'Mitra Terdaftar', isCurrentOwner: false, locationTag: p.city };
+  };
+
+  // MULTI-TENANT AUTHORIZATION ISOLATION:
+  // Role OWNER (H. Rahmat Santoso) HANYA melihat properti miliknya (Kos Harmoni Residence)!
+  // Properti milik mitra lain (Griya Asri Paviliun) difilter / diisolasi sepenuhnya.
+  const displayedProperties = role === 'OWNER'
+    ? properties.filter((p) => p.name.toLowerCase().includes('harmoni'))
+    : properties;
+
+  // Metrics dihitung tepat sesuai lingkup properti yang berhak diakses role
+  const totalProperties = displayedProperties.length;
+  const allRooms: Room[] = displayedProperties.flatMap((p) => p.rooms || []);
   const totalRooms = allRooms.length;
   const occupiedRooms = allRooms.filter((r) => r.status === 'OCCUPIED').length;
   const availableRooms = allRooms.filter((r) => r.status === 'AVAILABLE').length;
 
   return (
     <div className="space-y-6">
-      {/* 1. Frosted Hero Header (Selaras 100% dengan Dashboard) */}
+      {/* 1. Frosted Hero Header yang Berbeda Tegas per Role */}
       <div className="bg-gradient-to-r from-indigo-50/90 via-slate-50/80 to-blue-50/80 backdrop-blur-xl border border-indigo-200/70 rounded-[28px] p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
           <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#0b0f19] to-indigo-950 text-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-950/20 shrink-0">
@@ -110,33 +132,58 @@ export default function PropertiesPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[11px] font-bold text-indigo-800 uppercase tracking-wider">
-                Properti & Kamar
+                {role === 'ADMIN' ? 'Role: Super Admin • Platform' : role === 'OWNER' ? 'Role: Pemilik Kos • H. Rahmat Santoso' : 'Role: Penyewa'}
               </span>
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
-              Daftar Properti & Kamar Kos
+              {role === 'ADMIN' 
+                ? 'Pendaftaran & Manajemen Properti Mitra' 
+                : role === 'OWNER' 
+                ? 'Unit Kamar Kos Harmoni Residence' 
+                : 'Informasi Properti & Kamar'}
             </h1>
             <p className="text-xs text-slate-600 mt-1 max-w-xl">
-              Kelola data properti kos, nomor kamar, harga sewa per bulan, dan status ketersediaan kamar.
+              {role === 'ADMIN'
+                ? 'Daftarkan properti kos baru ke platform dan pantau seluruh aset milik mitra kos. (Unit kamar dikelola mandiri oleh masing-masing pemilik kos).'
+                : role === 'OWNER'
+                ? 'Kelola ketersediaan unit kamar, harga sewa per bulan, dan status hunian kamar di Kos Harmoni Residence.'
+                : 'Daftar informasi fasilitas kamar dan kondisi hunian kos yang sedang Anda sewa.'}
             </p>
           </div>
         </div>
 
-        <button
-          onClick={() => setShowPropertyModal(true)}
-          className="bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-2xl px-4 py-2.5 text-xs font-bold shadow-md shadow-indigo-950/20 hover:shadow-lg transition-all flex items-center gap-2 shrink-0 self-start sm:self-center"
-        >
-          <Plus className="w-4 h-4 text-indigo-400" /> Tambah Properti Baru
-        </button>
+        {/* HANYA Super Admin yang memiliki hak mendaftarkan Properti Baru ke Platform! */}
+        {role === 'ADMIN' && (
+          <button
+            onClick={() => setShowPropertyModal(true)}
+            className="bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-2xl px-4 py-2.5 text-xs font-bold shadow-md shadow-indigo-950/20 hover:shadow-lg transition-all flex items-center gap-2 shrink-0 self-start sm:self-center cursor-pointer"
+          >
+            <Plus className="w-4 h-4 text-indigo-400" /> Daftarkan Properti Baru
+          </button>
+        )}
+
+        {/* Pemilik Kos memiliki info badge hak kepemilikan */}
+        {role === 'OWNER' && (
+          <div className="bg-white/90 border border-indigo-200/80 rounded-2xl px-4 py-2.5 shadow-2xs self-start sm:self-center">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Kepemilikan Sah</span>
+            <span className="text-xs font-extrabold text-indigo-900 flex items-center gap-1.5 mt-0.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" /> Kos Harmoni Residence
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* 2. Glass Metric Cards (Selaras 100% dengan Dashboard) */}
+      {/* 2. Glass Metric Cards (Tersinkronisasi Presisi dengan Hak Akses) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all flex flex-col justify-between">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Properti</span>
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+            {role === 'ADMIN' ? 'Properti Terdaftar' : 'Properti Anda'}
+          </span>
           <div className="mt-2">
             <span className="text-3xl font-black text-slate-900 tracking-tight block">{totalProperties}</span>
-            <span className="text-xs font-bold text-slate-700 mt-1 block">Lokasi operasional</span>
+            <span className="text-xs font-bold text-slate-700 mt-1 block">
+              {role === 'ADMIN' ? 'Seluruh mitra platform' : 'Kos Harmoni Residence'}
+            </span>
           </div>
           <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
             <div className="bg-slate-400 h-full rounded-full" style={{ width: '100%' }} />
@@ -147,7 +194,9 @@ export default function PropertiesPage() {
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Unit Kamar</span>
           <div className="mt-2">
             <span className="text-3xl font-black text-slate-900 tracking-tight block">{totalRooms}</span>
-            <span className="text-xs font-bold text-slate-700 mt-1 block">Kapasitas hunian</span>
+            <span className="text-xs font-bold text-slate-700 mt-1 block">
+              {role === 'OWNER' ? 'Kapasitas Kos Harmoni' : 'Kapasitas hunian'}
+            </span>
           </div>
           <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
             <div className="bg-indigo-600 h-full rounded-full" style={{ width: '100%' }} />
@@ -189,128 +238,171 @@ export default function PropertiesPage() {
         </div>
       )}
 
-      {/* 3. Property List Container */}
+      {/* 3. Daftar Properti dengan Isolasi Kepemilikan & Hak Kelola Kamar */}
       {loading ? (
         <div className="p-16 text-center text-xs font-bold text-slate-400 bg-white/50 backdrop-blur-md rounded-[28px] border border-white/60">
           Memuat data properti...
         </div>
-      ) : properties.length === 0 ? (
+      ) : displayedProperties.length === 0 ? (
         <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] p-16 text-center shadow-xs">
           <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-sm font-bold text-slate-800">Belum ada properti terdaftar</h3>
-          <p className="text-xs text-slate-400 mt-1">Klik tombol &quot;Tambah Properti Baru&quot; untuk menambahkan kos pertama Anda.</p>
+          <h3 className="text-sm font-bold text-slate-800">Tidak ada properti yang tersedia</h3>
+          <p className="text-xs text-slate-400 mt-1">Anda tidak memiliki akses ke properti ini.</p>
         </div>
       ) : (
         <div className="space-y-6">
-          {properties.map((property) => (
-            <div 
-              key={property.id} 
-              className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] overflow-hidden transition-all"
-            >
-              {/* Header properti */}
-              <div className="p-5 md:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-50/40">
-                <div className="flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-200/60 flex items-center justify-center text-indigo-700 shrink-0">
-                    <Building2 className="w-5 h-5" />
+          {displayedProperties.map((property) => {
+            const ownerInfo = getPropertyOwner(property);
+            const isOwner = role === 'OWNER';
+            const isAdmin = role === 'ADMIN';
+
+            return (
+              <div 
+                key={property.id} 
+                className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] overflow-hidden transition-all"
+              >
+                {/* Header Properti */}
+                <div className="p-5 md:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-50/40">
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-11 h-11 rounded-2xl bg-indigo-50 border border-indigo-200/60 flex items-center justify-center text-indigo-700 shrink-0 mt-0.5">
+                      <Building2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-black text-base text-slate-900 leading-tight">
+                          {property.name}
+                        </h3>
+                        {/* Label Pemilik untuk Super Admin */}
+                        {isAdmin && (
+                          <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1">
+                            <UserCheck className="w-3 h-3 text-purple-600" /> Pemilik: {ownerInfo.name}
+                          </span>
+                        )}
+                        {/* Label Kepemilikan Sah untuk Owner */}
+                        {isOwner && (
+                          <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                            <ShieldCheck className="w-3 h-3 text-emerald-600" /> Properti Milik Anda
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                        {property.address}, {property.city}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-extrabold text-base text-slate-800 leading-tight">
-                      {property.name}
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                      {property.address}, {property.city}
-                    </p>
-                  </div>
+
+                  {/* AKSI PROPERTI BERDASARKAN OTORISASI:
+                      - Pemilik Kos: BISA Tambah Kamar di propertinya.
+                      - Super Admin: TIDAK BISA menambah kamar harian (karena ini tugas operasional pemilik kos). */}
+                  {isOwner && (
+                    <button
+                      onClick={() => {
+                        setSelectedPropertyId(property.id);
+                        setShowRoomModal(true);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-xs self-start sm:self-center cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-indigo-400" /> Tambah Kamar
+                    </button>
+                  )}
+
+                  {isAdmin && (
+                    <div className="flex items-center gap-2 self-start sm:self-center">
+                      <span className="text-[11px] font-bold text-slate-500 bg-slate-100/90 border border-slate-200/80 px-3 py-1.5 rounded-xl flex items-center gap-1.5" title="Kamar dan tarif dikelola secara independen oleh pemilik kos yang bersangkutan">
+                        <Lock className="w-3.5 h-3.5 text-slate-400" /> Unit Dikelola Pemilik Kos
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                <button
-                  onClick={() => {
-                    setSelectedPropertyId(property.id);
-                    setShowRoomModal(true);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-xs self-start sm:self-center"
-                >
-                  <Plus className="w-3.5 h-3.5 text-indigo-400" /> Tambah Kamar
-                </button>
-              </div>
+                {/* Daftar Kamar di Properti */}
+                <div className="p-5 md:p-6">
+                  {!property.rooms || property.rooms.length === 0 ? (
+                    <div className="p-8 text-center bg-slate-50/60 border border-dashed border-slate-200 rounded-2xl text-xs text-slate-400">
+                      Belum ada unit kamar di properti ini.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                      {property.rooms.map((room) => {
+                        const isOccupied = room.status === 'OCCUPIED';
+                        return (
+                          <div
+                            key={room.id}
+                            className={`p-4 rounded-2xl border transition-all flex flex-col justify-between ${
+                              isOccupied
+                                ? 'bg-slate-50/80 border-slate-200/80'
+                                : 'bg-blue-50/30 border-blue-200/70 hover:border-blue-300/90 shadow-2xs'
+                            }`}
+                          >
+                            <div>
+                              <div className="flex items-center justify-between mb-3">
+                                <span className="font-extrabold text-sm text-slate-800 flex items-center gap-1.5">
+                                  <DoorOpen className="w-4 h-4 text-slate-400" />
+                                  Kamar {room.roomNumber}
+                                </span>
+                                <span
+                                  className={`text-[10px] font-black px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 ${
+                                    isOccupied
+                                      ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                      : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                  }`}
+                                >
+                                  {isOccupied ? (
+                                    <>
+                                      <Clock className="w-3 h-3" /> OCCUPIED
+                                    </>
+                                  ) : (
+                                    <>
+                                      <CheckCircle2 className="w-3 h-3" /> AVAILABLE
+                                    </>
+                                  )}
+                                </span>
+                              </div>
 
-              {/* Rooms in property */}
-              <div className="p-5 md:p-6">
-                {!property.rooms || property.rooms.length === 0 ? (
-                  <div className="p-8 text-center bg-slate-50/60 border border-dashed border-slate-200 rounded-2xl text-xs text-slate-400">
-                    Belum ada unit kamar di properti ini. Klik tombol &quot;Tambah Kamar&quot; di atas.
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                    {property.rooms.map((room) => {
-                      const isOccupied = room.status === 'OCCUPIED';
-                      return (
-                        <div
-                          key={room.id}
-                          className={`p-4 rounded-2xl border transition-all flex flex-col justify-between ${
-                            isOccupied
-                              ? 'bg-slate-50/80 border-slate-200/80'
-                              : 'bg-blue-50/30 border-blue-200/70 hover:border-blue-300/90 shadow-2xs'
-                          }`}
-                        >
-                          <div>
-                            <div className="flex items-center justify-between mb-3">
-                              <span className="font-extrabold text-sm text-slate-800 flex items-center gap-1.5">
-                                <DoorOpen className="w-4 h-4 text-slate-400" />
-                                Kamar {room.roomNumber}
-                              </span>
-                              <span
-                                className={`text-[10px] font-black px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 ${
-                                  isOccupied
-                                    ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                                    : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                                }`}
-                              >
-                                {isOccupied ? (
-                                  <>
-                                    <Clock className="w-3 h-3" /> OCCUPIED
-                                  </>
-                                ) : (
-                                  <>
-                                    <CheckCircle2 className="w-3 h-3" /> AVAILABLE
-                                  </>
-                                )}
-                              </span>
+                              <p className="text-xs text-slate-500">Harga Sewa:</p>
+                              <p className="text-sm font-black text-slate-900">
+                                Rp {Number(room.monthlyPrice).toLocaleString('id-ID')}
+                                <span className="text-[10px] text-slate-400 font-normal"> /bln</span>
+                              </p>
                             </div>
 
-                            <p className="text-xs text-slate-500">Harga Sewa:</p>
-                            <p className="text-sm font-black text-slate-900">
-                              Rp {Number(room.monthlyPrice).toLocaleString('id-ID')}
-                              <span className="text-[10px] text-slate-400 font-normal"> /bln</span>
-                            </p>
-                          </div>
+                            {/* FOOTER KAMAR:
+                                - Pemilik Kos: BISA Toggle status untuk renovasi/perawatan.
+                                - Super Admin: View-only (tidak mengubah ketersediaan kamar pemilik). */}
+                            <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between">
+                              <span className="text-[10px] text-slate-400 font-medium">
+                                {isOccupied ? 'Sedang Disewa' : 'Siap Dihuni'}
+                              </span>
 
-                          <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between">
-                            <span className="text-[10px] text-slate-400 font-medium">
-                              {isOccupied ? 'Sedang Disewa' : 'Siap Dihuni'}
-                            </span>
-                            <button
-                              onClick={() => handleToggleRoomStatus(room.id)}
-                              className="text-[10px] font-bold text-indigo-600 hover:text-indigo-900 underline transition-colors"
-                              title="Ganti status secara manual untuk keperluan perawatan/renovasi"
-                            >
-                              Toggle
-                            </button>
+                              {isOwner ? (
+                                <button
+                                  onClick={() => handleToggleRoomStatus(room.id)}
+                                  className="text-[10px] font-bold text-indigo-600 hover:text-indigo-900 underline transition-colors cursor-pointer"
+                                  title="Ganti status secara manual untuk keperluan perawatan/renovasi kamar"
+                                >
+                                  Toggle Status
+                                </button>
+                              ) : (
+                                <span className="text-[10px] text-slate-400 italic">
+                                  {isAdmin ? 'Otoritas Pemilik' : 'Read-only'}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* Modal Tambah Properti (Selaras 100% dengan Notifikasi Popup) */}
-      {showPropertyModal && (
+      {/* Modal Daftarkan Properti Baru (HANYA UNTUK SUPER ADMIN) */}
+      {showPropertyModal && role === 'ADMIN' && (
         <div 
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowPropertyModal(false);
@@ -321,13 +413,13 @@ export default function PropertiesPage() {
             <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
-                  PROPERTI BARU
+                  PENDAFTARAN PROPERTI MITRA
                 </span>
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  Tambah Properti Kos Baru
+                  Daftarkan Properti Kos Baru
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Lengkapi data lokasi kos atau kontrakan yang akan dikelola.
+                  Sebagai Super Admin, daftarkan lokasi kos dan tentukan mitra pemilik kosnya.
                 </p>
               </div>
               <button 
@@ -344,9 +436,21 @@ export default function PropertiesPage() {
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: Kos Harmoni Residence"
+                  placeholder="Contoh: Griya Melati Asri"
                   value={propertyName}
                   onChange={(e) => setPropertyName(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Mitra Pemilik Kos</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Nama mitra pemilik kos"
+                  value={propertyOwner}
+                  onChange={(e) => setPropertyOwner(e.target.value)}
                   className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 />
               </div>
@@ -385,9 +489,9 @@ export default function PropertiesPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20"
+                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20 cursor-pointer"
                 >
-                  Simpan Properti
+                  Daftarkan Properti
                 </button>
               </div>
             </form>
@@ -395,8 +499,8 @@ export default function PropertiesPage() {
         </div>
       )}
 
-      {/* Modal Tambah Kamar (Selaras 100% dengan Notifikasi Popup) */}
-      {showRoomModal && (
+      {/* Modal Tambah Kamar (HANYA UNTUK PEMILIK KOS) */}
+      {showRoomModal && role === 'OWNER' && (
         <div 
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowRoomModal(false);
@@ -407,13 +511,13 @@ export default function PropertiesPage() {
             <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
-                  UNIT KAMAR BARU
+                  UNIT KAMAR KOS HARMONI
                 </span>
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   Tambah Unit Kamar Baru
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Daftarkan unit kamar baru beserta harga sewa bulanan.
+                  Daftarkan kamar baru di Kos Harmoni Residence beserta tarif sewa bulanan.
                 </p>
               </div>
               <button 
@@ -459,7 +563,7 @@ export default function PropertiesPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20"
+                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20 cursor-pointer"
                 >
                   Simpan Kamar
                 </button>

@@ -21,16 +21,16 @@ export const ROLE_PROFILES: Record<UserRole, RoleProfile> = {
     title: 'Super Admin',
     badge: 'Super Admin',
     avatar: 'MA',
-    description: 'Akses penuh ke semua data properti, kamar, penyewa, dan laporan keuangan.',
+    description: 'Pendaftaran properti & mitra kos baru, direktori pengguna, dan audit pembayaran platform.',
     avatarBg: 'bg-gradient-to-br from-indigo-700 via-purple-700 to-indigo-950 text-white',
   },
   OWNER: {
     role: 'OWNER',
     name: 'H. Rahmat Santoso',
-    title: 'Pemilik Kos',
+    title: 'Pemilik Kos Harmoni',
     badge: 'Pemilik Kos',
     avatar: 'RS',
-    description: 'Kelola properti kos, unit kamar, data penyewa, dan tagihan sewa.',
+    description: 'Kelola unit kamar & sewa Kos Harmoni, penerbitan kontrak penyewa, dan penagihan sewa.',
     avatarBg: 'bg-gradient-to-br from-slate-900 to-indigo-950 text-indigo-300',
   },
   TENANT: {
@@ -39,7 +39,7 @@ export const ROLE_PROFILES: Record<UserRole, RoleProfile> = {
     title: 'Penyewa Kamar 101',
     badge: 'Penyewa',
     avatar: 'BS',
-    description: 'Cek informasi kamar yang disewa, masa kontrak, dan bayar tagihan sewa.',
+    description: 'Akses informasi Kamar 101 Kos Harmoni, status kontrak sewa, dan pembayaran Midtrans Snap.',
     avatarBg: 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white',
   },
 };

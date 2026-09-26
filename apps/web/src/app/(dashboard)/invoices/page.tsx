@@ -4,19 +4,22 @@ import { useState, useEffect } from 'react';
 import Script from 'next/script';
 import { api } from '@/lib/api';
 import { Invoice, Contract, ApiResponse } from '@/types';
+import { useRole } from '@/context/RoleContext';
 import { 
   Receipt, 
   Plus, 
   CreditCard, 
   CheckCircle2, 
   Clock, 
-  XCircle, 
   AlertCircle, 
-  Sparkles,
-  Calendar,
-  X,
+  Sparkles, 
+  X, 
   FileCheck2,
-  Filter
+  ShieldCheck,
+  Send,
+  MessageCircle,
+  Building2,
+  Lock
 } from 'lucide-react';
 
 declare global {
@@ -26,6 +29,7 @@ declare global {
 }
 
 export default function InvoicesPage() {
+  const { role } = useRole();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +37,7 @@ export default function InvoicesPage() {
   const [clientKey, setClientKey] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'UNPAID' | 'PAID'>('ALL');
 
-  // Modal create invoice
+  // Modal create invoice (Hanya untuk Pemilik Kos)
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState('');
   const [amount, setAmount] = useState('1800000');
@@ -99,7 +103,7 @@ export default function InvoicesPage() {
     }
   };
 
-  // Payment Handler via Midtrans Snap
+  // Payment Handler via Midtrans Snap (KHUSUS PENYEWA)
   const handlePay = async (invoiceId: string) => {
     try {
       setPaymentLoading(invoiceId);
@@ -154,10 +158,33 @@ export default function InvoicesPage() {
     }
   };
 
-  const totalInvoiced = invoices.reduce((acc, curr) => acc + Number(curr.amount), 0);
-  const paidInvoices = invoices.filter((i) => i.status === 'PAID');
+  // OTORISASI & ISOLASI DATA TAGIHAN PER ROLE:
+  // 1. OWNER: Hanya melihat invoice di properti miliknya (Kos Harmoni Residence)!
+  // 2. TENANT: Hanya melihat invoice untuk dirinya sendiri (Budi Santoso).
+  // 3. ADMIN: Melihat seluruh tagihan platform untuk audit finansial.
+  const displayedInvoices = (() => {
+    if (role === 'OWNER') {
+      return invoices.filter((inv) => 
+        inv.contract?.room?.property?.name?.toLowerCase().includes('harmoni')
+      );
+    }
+    if (role === 'TENANT') {
+      return invoices.filter((inv) => 
+        inv.contract?.tenant?.name === 'Budi Santoso' || inv.contract?.room?.roomNumber === '101'
+      );
+    }
+    return invoices;
+  })();
+
+  // Filter kontrak untuk modal penerbitan tagihan (hanya kamar Kos Harmoni untuk Owner)
+  const availableContractsForOwner = contracts.filter((c) =>
+    c.room?.property?.name?.toLowerCase().includes('harmoni')
+  );
+
+  const totalInvoiced = displayedInvoices.reduce((acc, curr) => acc + Number(curr.amount), 0);
+  const paidInvoices = displayedInvoices.filter((i) => i.status === 'PAID');
   const totalPaid = paidInvoices.reduce((acc, curr) => acc + Number(curr.amount), 0);
-  const unpaidInvoices = invoices.filter((i) => i.status === 'UNPAID');
+  const unpaidInvoices = displayedInvoices.filter((i) => i.status === 'UNPAID');
   const totalUnpaid = unpaidInvoices.reduce((acc, curr) => acc + Number(curr.amount), 0);
 
   return (
@@ -169,7 +196,7 @@ export default function InvoicesPage() {
         strategy="lazyOnload"
       />
 
-      {/* 1. Frosted Hero Header (Selaras 100% dengan Modul Properti & CRM) */}
+      {/* 1. Frosted Hero Header dengan Penegasan Otorisasi */}
       <div className="bg-gradient-to-r from-indigo-50/90 via-slate-50/80 to-blue-50/80 backdrop-blur-xl border border-indigo-200/70 rounded-[28px] p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
           <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#0b0f19] to-indigo-950 text-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-950/20 shrink-0">
@@ -178,24 +205,46 @@ export default function InvoicesPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[11px] font-bold text-indigo-800 uppercase tracking-wider">
-                Tagihan & Pembayaran
+                {role === 'ADMIN' ? 'Role: Super Admin • Audit Finansial' : role === 'OWNER' ? 'Role: Pemilik Kos • H. Rahmat Santoso' : 'Role: Penyewa'}
               </span>
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
-              Tagihan & Pembayaran Sewa
+              {role === 'ADMIN' 
+                ? 'Audit Transaksi & Pembayaran Platform' 
+                : role === 'OWNER' 
+                ? 'Tagihan Sewa Kos Harmoni Residence' 
+                : 'Tagihan Sewa Kamar Saya'}
             </h1>
             <p className="text-xs text-slate-600 mt-1 max-w-xl">
-              Daftar tagihan sewa kos, pembayaran online via Midtrans Snap, dan pencatatan riwayat pelunasan.
+              {role === 'ADMIN'
+                ? 'Monitoring dan audit finansial seluruh arus kas sewa properti se-platform. (Penerbitan tagihan dilakukan mandiri oleh masing-masing pemilik kos).'
+                : role === 'OWNER'
+                ? 'Terbitkan tagihan sewa berkala untuk penyewa di Kos Harmoni Residence dan pantau riwayat pelunasan dana.'
+                : 'Daftar invoice tagihan sewa kamar Anda yang dapat dilunasi secara online melalui Midtrans Snap.'}
             </p>
           </div>
         </div>
 
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-2xl px-4 py-2.5 text-xs font-bold shadow-md shadow-indigo-950/20 hover:shadow-lg transition-all flex items-center gap-2 shrink-0 self-start sm:self-center"
-        >
-          <Plus className="w-4 h-4 text-indigo-400" /> Terbitkan Tagihan Baru
-        </button>
+        {/* HAK PENERBITAN TAGIHAN:
+            - Pemilik Kos: BISA menerbitkan tagihan baru untuk kamarnya.
+            - Super Admin & Tenant: TIDAK BISA menerbitkan tagihan sewa. */}
+        {role === 'OWNER' && (
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-2xl px-4 py-2.5 text-xs font-bold shadow-md shadow-indigo-950/20 hover:shadow-lg transition-all flex items-center gap-2 shrink-0 self-start sm:self-center cursor-pointer"
+          >
+            <Plus className="w-4 h-4 text-indigo-400" /> Terbitkan Tagihan Baru
+          </button>
+        )}
+
+        {role === 'ADMIN' && (
+          <div className="bg-white/90 border border-purple-200 rounded-2xl px-4 py-2.5 shadow-2xs self-start sm:self-center">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Mode Otorisasi</span>
+            <span className="text-xs font-extrabold text-purple-900 flex items-center gap-1.5 mt-0.5">
+              <ShieldCheck className="w-4 h-4 text-purple-600" /> Audit Finansial (Read-only)
+            </span>
+          </div>
+        )}
       </div>
 
       {/* 2. Glass Metric Cards */}
@@ -204,10 +253,10 @@ export default function InvoicesPage() {
         <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              TOTAL TAGIHAN TERBIT
+              {role === 'OWNER' ? 'TOTAL TAGIHAN KOS HARMONI' : role === 'ADMIN' ? 'VOLUME TRANSAKSI PLATFORM' : 'TOTAL TAGIHAN SAYA'}
             </span>
             <span className="text-[10px] font-bold text-slate-500 bg-slate-100/80 px-2 py-0.5 rounded-full">
-              {invoices.length} transaksi
+              {displayedInvoices.length} transaksi
             </span>
           </div>
           <div className="mt-3">
@@ -215,7 +264,7 @@ export default function InvoicesPage() {
               Rp {totalInvoiced.toLocaleString('id-ID')}
             </span>
             <p className="text-[11px] text-slate-400 mt-1">
-              Akumulasi seluruh tagihan kos
+              {role === 'OWNER' ? 'Akumulasi tagihan unit Kos Harmoni' : 'Akumulasi transaksi sewa'}
             </p>
           </div>
           <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
@@ -227,7 +276,7 @@ export default function InvoicesPage() {
         <div className="bg-white/85 backdrop-blur-xl border border-indigo-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-indigo-50/40 to-white/80 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider">
-              PEMBAYARAN DITERIMA (PAID)
+              {role === 'OWNER' ? 'DANA MASUK (PAID)' : 'PEMBAYARAN TERVERIFIKASI'}
             </span>
             <span className="text-[10px] font-bold text-indigo-800 bg-indigo-100/80 px-2 py-0.5 rounded-full">
               {paidInvoices.length} lunas
@@ -238,7 +287,7 @@ export default function InvoicesPage() {
               Rp {totalPaid.toLocaleString('id-ID')}
             </span>
             <p className="text-[11px] text-indigo-600 mt-1">
-              Arus kas masuk terverifikasi
+              Arus kas masuk terverifikasi Midtrans
             </p>
           </div>
           <div className="mt-4 w-full bg-indigo-100 h-1.5 rounded-full overflow-hidden">
@@ -253,7 +302,7 @@ export default function InvoicesPage() {
         <div className="bg-white/85 backdrop-blur-xl border border-rose-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-rose-50/40 to-white/80 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wider">
-              BELUM LUNAS (UNPAID)
+              {role === 'OWNER' ? 'TAGIHAN BELUM DITERIMA' : role === 'ADMIN' ? 'PIUTANG TERTUNDA PLATFORM' : 'MENUNGGU PEMBAYARAN'}
             </span>
             <span className="text-[10px] font-bold text-rose-800 bg-rose-100/80 px-2 py-0.5 rounded-full">
               {unpaidInvoices.length} tertunda
@@ -264,7 +313,7 @@ export default function InvoicesPage() {
               Rp {totalUnpaid.toLocaleString('id-ID')}
             </span>
             <p className="text-[11px] text-rose-600 mt-1">
-              Piutang sewa menunggu pelunasan
+              {role === 'OWNER' ? 'Tagihan sewa menunggu transfer penyewa' : 'Piutang sewa aktif'}
             </p>
           </div>
           <div className="mt-4 w-full bg-rose-100 h-1.5 rounded-full overflow-hidden">
@@ -276,11 +325,11 @@ export default function InvoicesPage() {
         </div>
       </div>
 
-      {/* 3. Filter Tabs (Sleek Pills) */}
+      {/* 3. Filter Tabs */}
       <div className="flex items-center gap-2 bg-white/70 backdrop-blur-md p-1.5 rounded-2xl border border-white/80 w-fit shadow-xs">
         <button
           onClick={() => setStatusFilter('ALL')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             statusFilter === 'ALL'
               ? 'bg-[#0b0f19] text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
@@ -290,7 +339,7 @@ export default function InvoicesPage() {
         </button>
         <button
           onClick={() => setStatusFilter('UNPAID')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             statusFilter === 'UNPAID'
               ? 'bg-rose-600 text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
@@ -300,7 +349,7 @@ export default function InvoicesPage() {
         </button>
         <button
           onClick={() => setStatusFilter('PAID')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             statusFilter === 'PAID'
               ? 'bg-indigo-600 text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
@@ -316,26 +365,30 @@ export default function InvoicesPage() {
         </div>
       )}
 
-      {/* 4. Invoices Glass Table Container */}
+      {/* 4. Tabel Tagihan dengan Pemisahan Aksi Hak Akses */}
       <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] p-6">
         <div className="flex items-center justify-between mb-5">
           <div>
             <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
               <Receipt className="w-5 h-5 text-indigo-600" />
-              Daftar Tagihan Sewa
+              {role === 'ADMIN' ? 'Rekapitulasi Transaksi Platform' : role === 'OWNER' ? 'Daftar Tagihan Kos Harmoni' : 'Tagihan Sewa Saya'}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Rekapitulasi tagihan sewa kos aktif dan riwayat pembayaran.
+              {role === 'ADMIN' 
+                ? 'Semua catatan faktur sewa dan status audit transaksi Midtrans.' 
+                : role === 'OWNER'
+                ? 'Daftar penagihan sewa bulanan kepada penghuni kamar Kos Harmoni.'
+                : 'Pilih tagihan untuk melakukan pelunasan via Midtrans Snap.'}
             </p>
           </div>
           <span className="text-xs font-bold text-slate-500 bg-slate-100/70 border border-slate-200/60 px-3 py-1 rounded-full">
-            {invoices.length} Invoice
+            {displayedInvoices.length} Invoice
           </span>
         </div>
 
         {loading ? (
           <div className="p-12 text-center text-xs text-slate-400 font-bold">Memuat data tagihan...</div>
-        ) : invoices.length === 0 ? (
+        ) : displayedInvoices.length === 0 ? (
           <div className="p-12 text-center text-xs text-slate-400 bg-slate-50/60 rounded-2xl border border-dashed border-slate-200">
             Tidak ada tagihan yang sesuai filter.
           </div>
@@ -345,17 +398,21 @@ export default function InvoicesPage() {
               <thead>
                 <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
                   <th className="pb-3 px-3">No. Invoice</th>
-                  <th className="pb-3 px-3">Penyewa & Kamar</th>
+                  <th className="pb-3 px-3">Penyewa & Unit</th>
                   <th className="pb-3 px-3">Jatuh Tempo</th>
                   <th className="pb-3 px-3">Nominal Tagihan</th>
                   <th className="pb-3 px-3">Status</th>
-                  <th className="pb-3 px-3 text-right">Opsi Pembayaran</th>
+                  <th className="pb-3 px-3 text-right">
+                    {role === 'TENANT' ? 'Pembayaran Online' : role === 'OWNER' ? 'Status Penagihan' : 'Status Audit Finansial'}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/80">
-                {invoices.map((inv) => {
+                {displayedInvoices.map((inv) => {
                   const isPaid = inv.status === 'PAID';
                   const isPaying = paymentLoading === inv.id;
+                  const tenantPhone = inv.contract?.tenant?.phone || '081234567890';
+                  const tenantName = inv.contract?.tenant?.name || 'Penyewa';
 
                   return (
                     <tr key={inv.id} className="hover:bg-slate-50/60 transition-colors">
@@ -365,7 +422,7 @@ export default function InvoicesPage() {
 
                       <td className="py-4 px-3">
                         <p className="font-bold text-slate-800 text-xs">
-                          {inv.contract?.tenant?.name || 'Penyewa'}
+                          {tenantName}
                         </p>
                         <p className="text-[11px] text-slate-400 mt-0.5">
                           Kamar {inv.contract?.room?.roomNumber} • {inv.contract?.room?.property?.name}
@@ -402,33 +459,72 @@ export default function InvoicesPage() {
                         </span>
                       </td>
 
+                      {/* KOLOM AKSI DENGAN OTORISASI KETAT:
+                          1. TENANT: Tombol "Bayar Sekarang (Midtrans)" & "Simulasi"
+                          2. OWNER: Menagih & kirim pengingat WhatsApp, atau konfirmasi dana diterima. TIDAK BISA BAYAR!
+                          3. ADMIN: Log audit finansial platform. TIDAK BISA BAYAR ATAU TERBITKAN! */}
                       <td className="py-4 px-3 text-right">
-                        {isPaid ? (
-                          <span className="text-[11px] text-emerald-700 font-bold inline-flex items-center gap-1">
-                            <FileCheck2 className="w-3.5 h-3.5" /> Terbayar Lunas
-                          </span>
-                        ) : (
-                          <div className="flex items-center justify-end gap-2">
-                            {/* Tombol Snap Midtrans Resmi */}
-                            <button
-                              disabled={isPaying}
-                              onClick={() => handlePay(inv.id)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
-                            >
-                              <CreditCard className="w-3.5 h-3.5 text-indigo-400" />
-                              {isPaying ? 'Memproses...' : 'Bayar Sekarang'}
-                            </button>
+                        {role === 'TENANT' && (
+                          <>
+                            {isPaid ? (
+                              <span className="text-[11px] text-emerald-700 font-bold inline-flex items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
+                                <FileCheck2 className="w-3.5 h-3.5 text-emerald-600" /> Terbayar Lunas
+                              </span>
+                            ) : (
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  disabled={isPaying}
+                                  onClick={() => handlePay(inv.id)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                                >
+                                  <CreditCard className="w-3.5 h-3.5 text-indigo-400" />
+                                  {isPaying ? 'Memproses...' : 'Bayar Sekarang'}
+                                </button>
+                                <button
+                                  disabled={isPaying}
+                                  onClick={() => handleSimulatePayment(inv.id)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                                  title="Simulasikan pelunasan instan"
+                                >
+                                  <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                                </button>
+                              </div>
+                            )}
+                          </>
+                        )}
 
-                            {/* Tombol Simulasi Cepat (Demo Reviewer) */}
-                            <button
-                              disabled={isPaying}
-                              onClick={() => handleSimulatePayment(inv.id)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 rounded-xl text-xs font-bold transition-colors"
-                              title="Simulasikan pelunasan instan untuk keperluan presentasi & pengujian reviewer"
-                            >
-                              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                            </button>
-                          </div>
+                        {role === 'OWNER' && (
+                          <>
+                            {isPaid ? (
+                              <span className="text-[11px] text-emerald-700 font-bold inline-flex items-center gap-1 bg-emerald-50 px-2.5 py-1.5 rounded-xl border border-emerald-200">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Dana Diterima
+                              </span>
+                            ) : (
+                              <a
+                                href={`https://wa.me/${tenantPhone.replace(/[^0-9]/g, '')}?text=Halo%20${encodeURIComponent(tenantName)},%20mengingatkan%20tagihan%20sewa%20${inv.invoiceNumber}%20sebesar%20Rp%20${Number(inv.amount).toLocaleString('id-ID')}%20telah%20terbit.%20Mohon%20melakukan%20pembayaran.`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                                title="Kirim pesan penagihan langsung ke WhatsApp penyewa"
+                              >
+                                <MessageCircle className="w-3.5 h-3.5" /> Ingatkan WA
+                              </a>
+                            )}
+                          </>
+                        )}
+
+                        {role === 'ADMIN' && (
+                          <>
+                            {isPaid ? (
+                              <span className="text-[11px] text-indigo-800 font-bold bg-indigo-50 px-2.5 py-1.5 rounded-xl border border-indigo-200 inline-flex items-center gap-1.5">
+                                <FileCheck2 className="w-3.5 h-3.5 text-indigo-600" /> Audit: Lunas Midtrans
+                              </span>
+                            ) : (
+                              <span className="text-[11px] text-amber-800 font-bold bg-amber-50 px-2.5 py-1.5 rounded-xl border border-amber-200 inline-flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5 text-amber-600" /> Audit: Piutang Mitra
+                              </span>
+                            )}
+                          </>
                         )}
                       </td>
                     </tr>
@@ -440,8 +536,8 @@ export default function InvoicesPage() {
         )}
       </div>
 
-      {/* Modal Terbitkan Tagihan Baru (Selaras 100% dengan Properti, Penyewa & Notifikasi) */}
-      {showCreateModal && (
+      {/* Modal Terbitkan Tagihan Baru (HANYA UNTUK PEMILIK KOS) */}
+      {showCreateModal && role === 'OWNER' && (
         <div 
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowCreateModal(false);
@@ -452,13 +548,13 @@ export default function InvoicesPage() {
             <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
-                  TERBITKAN TAGIHAN
+                  PENAGIHAN SEWA KOS HARMONI
                 </span>
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   Terbitkan Tagihan Sewa Baru
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Penerbitan tagihan sewa berkala yang terhubung ke Midtrans Snap Sandbox.
+                  Terbitkan tagihan sewa berkala untuk penyewa di Kos Harmoni Residence.
                 </p>
               </div>
               <button 
@@ -472,11 +568,11 @@ export default function InvoicesPage() {
             <form onSubmit={handleCreateInvoice} className="space-y-4">
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1.5">
-                  Pilih Kontrak Sewa Aktif
+                  Pilih Kontrak Penyewa di Kos Harmoni
                 </label>
-                {contracts.length === 0 ? (
+                {availableContractsForOwner.length === 0 ? (
                   <p className="text-xs text-rose-600 font-bold bg-rose-50 p-3 rounded-xl border border-rose-200">
-                    Tidak ada kontrak aktif saat ini.
+                    Tidak ada kontrak aktif di Kos Harmoni saat ini.
                   </p>
                 ) : (
                   <select
@@ -485,8 +581,8 @@ export default function InvoicesPage() {
                     onChange={(e) => setSelectedContractId(e.target.value)}
                     className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                   >
-                    <option value="">-- Pilih Kontrak Sewa --</option>
-                    {contracts.map((c) => (
+                    <option value="">-- Pilih Kontrak Sewa Kos Harmoni --</option>
+                    {availableContractsForOwner.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.tenant?.name} (Kamar {c.room?.roomNumber} - {c.room?.property?.name})
                       </option>
@@ -527,8 +623,8 @@ export default function InvoicesPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={contracts.length === 0}
-                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20"
+                  disabled={availableContractsForOwner.length === 0}
+                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20 cursor-pointer"
                 >
                   Terbitkan Invoice
                 </button>

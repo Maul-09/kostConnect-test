@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Tenant, Contract, Room, ApiResponse } from '@/types';
+import { useRole } from '@/context/RoleContext';
 import { 
   Users, 
   Plus, 
@@ -16,17 +17,20 @@ import {
   X,
   LogOut,
   Building2,
-  Sparkles
+  ShieldCheck,
+  UserCheck,
+  Lock
 } from 'lucide-react';
 
 export default function TenantsPage() {
+  const { role } = useRole();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Modal states
+  // Modal states (Khusus Pemilik Kos)
   const [showTenantModal, setShowTenantModal] = useState(false);
   const [tenantName, setTenantName] = useState('');
   const [tenantEmail, setTenantEmail] = useState('');
@@ -118,11 +122,27 @@ export default function TenantsPage() {
     }
   };
 
-  const activeContracts = contracts.filter((c) => c.isActive);
+  // MULTI-TENANT ISOLATION UNTUK KONTRAK & PENYEWA:
+  // Role OWNER (H. Rahmat) HANYA melihat kontrak di kos miliknya (Kos Harmoni Residence)!
+  // Kontrak milik kos lain (Siti di Griya Asri) diisolasi sepenuhnya.
+  const displayedContracts = role === 'OWNER'
+    ? contracts.filter((c) => c.room?.property?.name?.toLowerCase().includes('harmoni'))
+    : contracts;
+
+  const displayedTenants = role === 'OWNER'
+    ? tenants.filter((t) => t.name === 'Budi Santoso' || displayedContracts.some((c) => c.tenantId === t.id))
+    : tenants;
+
+  // Kamar kosong yang dapat dipilih Owner saat buat kontrak hanya kamar di Kos Harmoni!
+  const ownerAvailableRooms = availableRooms.filter((r) =>
+    r.property?.name?.toLowerCase().includes('harmoni')
+  );
+
+  const activeContracts = displayedContracts.filter((c) => c.isActive);
 
   return (
     <div className="space-y-6">
-      {/* 1. Frosted Hero Header (Selaras 100% dengan Dashboard & Properti) */}
+      {/* 1. Frosted Hero Header dengan Penegasan Otorisasi */}
       <div className="bg-gradient-to-r from-indigo-50/90 via-slate-50/80 to-blue-50/80 backdrop-blur-xl border border-indigo-200/70 rounded-[28px] p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
           <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#0b0f19] to-indigo-950 text-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-950/20 shrink-0">
@@ -131,41 +151,125 @@ export default function TenantsPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[11px] font-bold text-indigo-800 uppercase tracking-wider">
-                Data Penyewa & Kontrak
+                {role === 'ADMIN' ? 'Role: Super Admin • Direktori Platform' : role === 'OWNER' ? 'Role: Pemilik Kos • H. Rahmat Santoso' : 'Role: Penyewa'}
               </span>
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
-              Penyewa & Kontrak Sewa
+              {role === 'ADMIN' 
+                ? 'Direktori Mitra & Penyewa Ekosistem' 
+                : role === 'OWNER' 
+                ? 'Penyewa & Kontrak Kos Harmoni' 
+                : 'Informasi Sewa Saya'}
             </h1>
             <p className="text-xs text-slate-600 mt-1 max-w-xl">
-              Pencatatan data identitas penyewa, penerbitan kontrak sewa kamar, dan proses check-out.
+              {role === 'ADMIN'
+                ? 'Audit data mitra pemilik kos, identitas penyewa terdaftar, dan legalitas kontrak sewa se-platform. (Pembuatan kontrak & check-out dikelola pemilik kos).'
+                : role === 'OWNER'
+                ? 'Pencatatan data identitas penyewa, penerbitan kontrak sewa kamar Kos Harmoni, dan proses check-out saat masa sewa selesai.'
+                : 'Ringkasan masa aktif sewa kamar dan informasi kontrak resmi Anda.'}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0 self-start sm:self-center flex-wrap">
-          <button
-            onClick={() => setShowTenantModal(true)}
-            className="bg-white/90 hover:bg-white text-slate-800 border border-slate-200/80 rounded-2xl px-4 py-2.5 text-xs font-bold shadow-xs hover:shadow-sm transition-all flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4 text-slate-600" /> Daftarkan Penyewa
-          </button>
-          <button
-            onClick={() => setShowContractModal(true)}
-            className="bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-2xl px-4 py-2.5 text-xs font-bold shadow-md shadow-indigo-950/20 hover:shadow-lg transition-all flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4 text-indigo-400" /> Buat Kontrak Baru
-          </button>
-        </div>
+        {/* HAK BUAT KONTRAK & DAFTAR PENYEWA:
+            - Pemilik Kos: BISA Daftarkan Penyewa & Buat Kontrak Baru di kamarnya.
+            - Super Admin: Mode Audit Pengawasan (tidak membuat kontrak per unit). */}
+        {role === 'OWNER' && (
+          <div className="flex items-center gap-3 shrink-0 self-start sm:self-center flex-wrap">
+            <button
+              onClick={() => setShowTenantModal(true)}
+              className="bg-white/90 hover:bg-white text-slate-800 border border-slate-200/80 rounded-2xl px-4 py-2.5 text-xs font-bold shadow-xs hover:shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Plus className="w-4 h-4 text-slate-600" /> Daftarkan Penyewa
+            </button>
+            <button
+              onClick={() => setShowContractModal(true)}
+              className="bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-2xl px-4 py-2.5 text-xs font-bold shadow-md shadow-indigo-950/20 hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Plus className="w-4 h-4 text-indigo-400" /> Buat Kontrak Baru
+            </button>
+          </div>
+        )}
+
+        {role === 'ADMIN' && (
+          <div className="bg-white/90 border border-purple-200 rounded-2xl px-4 py-2.5 shadow-2xs self-start sm:self-center">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Mode Otorisasi</span>
+            <span className="text-xs font-extrabold text-purple-900 flex items-center gap-1.5 mt-0.5">
+              <ShieldCheck className="w-4 h-4 text-purple-600" /> Audit Kontrak Platform
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* 2. Glass Metric Cards (Selaras 100% dengan Dashboard & Properti) */}
+      {/* KHUSUS SUPER ADMIN: Bagian Direktori Mitra Pemilik Kos */}
+      {role === 'ADMIN' && (
+        <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] p-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-indigo-600" />
+                Mitra Pemilik Kos Terdaftar
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Daftar pemilik properti yang mengelola unit hunian di platform KosConnect.
+              </p>
+            </div>
+            <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full">
+              2 Mitra Aktif
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-slate-50/70 border border-slate-200/70 rounded-2xl p-4 flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-900 to-indigo-950 text-indigo-300 font-black text-sm flex items-center justify-center shrink-0">
+                RS
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-extrabold text-sm text-slate-900">H. Rahmat Santoso</h4>
+                  <span className="text-[10px] font-black px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full">
+                    Mitra Jakarta
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 mt-0.5">Kos Harmoni Residence • 3 Unit Kamar</p>
+                <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
+                  <span>Kontak: 0812-9876-5432</span>
+                  <span className="font-bold text-emerald-700">1 Penyewa Aktif</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-50/70 border border-slate-200/70 rounded-2xl p-4 flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-900 to-purple-950 text-purple-300 font-black text-sm flex items-center justify-center shrink-0">
+                HF
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-extrabold text-sm text-slate-900">Ibu Hj. Fatimah</h4>
+                  <span className="text-[10px] font-black px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full">
+                    Mitra Bandung
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 mt-0.5">Griya Asri Paviliun • 2 Unit Kamar</p>
+                <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
+                  <span>Kontak: 0821-4567-8901</span>
+                  <span className="font-bold text-emerald-700">1 Penyewa Aktif</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Glass Metric Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all flex flex-col justify-between">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Penyewa</span>
           <div className="mt-2">
-            <span className="text-3xl font-black text-slate-900 tracking-tight block">{tenants.length}</span>
-            <span className="text-xs font-bold text-slate-700 mt-1 block">Akun terdaftar</span>
+            <span className="text-3xl font-black text-slate-900 tracking-tight block">{displayedTenants.length}</span>
+            <span className="text-xs font-bold text-slate-700 mt-1 block">
+              {role === 'OWNER' ? 'Penyewa Kos Harmoni' : 'Seluruh platform'}
+            </span>
           </div>
           <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
             <div className="bg-slate-400 h-full rounded-full" style={{ width: '100%' }} />
@@ -181,16 +285,16 @@ export default function TenantsPage() {
           <div className="mt-4 w-full bg-indigo-100 h-1.5 rounded-full overflow-hidden">
             <div 
               className="bg-indigo-600 h-full rounded-full transition-all duration-500" 
-              style={{ width: `${contracts.length > 0 ? (activeContracts.length / contracts.length) * 100 : 0}%` }} 
+              style={{ width: `${displayedContracts.length > 0 ? (activeContracts.length / displayedContracts.length) * 100 : 0}%` }} 
             />
           </div>
         </div>
 
         <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all flex flex-col justify-between">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Riwayat Kontrak</span>
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Riwayat Kontrak</span>
           <div className="mt-2">
-            <span className="text-3xl font-black text-slate-900 tracking-tight block">{contracts.length}</span>
-            <span className="text-xs font-bold text-slate-700 mt-1 block">Histori transaksi</span>
+            <span className="text-3xl font-black text-slate-900 tracking-tight block">{displayedContracts.length}</span>
+            <span className="text-xs font-bold text-slate-700 mt-1 block">Histori sewa</span>
           </div>
           <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
             <div className="bg-slate-400 h-full rounded-full" style={{ width: '100%' }} />
@@ -200,8 +304,12 @@ export default function TenantsPage() {
         <div className="bg-white/85 backdrop-blur-xl border border-blue-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-blue-50/40 to-white/80 hover:shadow-md transition-all flex flex-col justify-between">
           <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider block">Kamar Kosong</span>
           <div className="mt-2">
-            <span className="text-3xl font-black text-blue-800 tracking-tight block">{availableRooms.length}</span>
-            <span className="text-xs font-bold text-blue-700 mt-1 block">Siap diisi kontrak baru</span>
+            <span className="text-3xl font-black text-blue-800 tracking-tight block">
+              {role === 'OWNER' ? ownerAvailableRooms.length : availableRooms.length}
+            </span>
+            <span className="text-xs font-bold text-blue-700 mt-1 block">
+              {role === 'OWNER' ? 'Siap sewa di Kos Harmoni' : 'Siap diisi se-platform'}
+            </span>
           </div>
           <div className="mt-4 w-full bg-blue-100 h-1.5 rounded-full overflow-hidden">
             <div className="bg-blue-600 h-full rounded-full" style={{ width: '60%' }} />
@@ -221,7 +329,7 @@ export default function TenantsPage() {
           <div>
             <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
               <FileText className="w-5 h-5 text-indigo-600" />
-              Daftar Kontrak Sewa Unit
+              {role === 'ADMIN' ? 'Semua Kontrak Sewa Unit Platform' : 'Daftar Kontrak Sewa Kos Harmoni'}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               Kontrak sewa mengikat antara penyewa dan unit kamar kos.
@@ -234,9 +342,9 @@ export default function TenantsPage() {
 
         {loading ? (
           <div className="p-12 text-center text-xs text-slate-400 font-bold">Memuat data kontrak...</div>
-        ) : contracts.length === 0 ? (
+        ) : displayedContracts.length === 0 ? (
           <div className="p-12 text-center text-xs text-slate-400 bg-slate-50/60 rounded-2xl border border-dashed border-slate-200">
-            Belum ada kontrak sewa. Klik &quot;Buat Kontrak Baru&quot; untuk memulai.
+            Belum ada kontrak sewa.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -251,7 +359,7 @@ export default function TenantsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/80">
-                {contracts.map((contract) => (
+                {displayedContracts.map((contract) => (
                   <tr key={contract.id} className="hover:bg-slate-50/60 transition-colors">
                     <td className="py-3.5 px-3">
                       <p className="font-bold text-slate-800 text-xs">
@@ -302,17 +410,26 @@ export default function TenantsPage() {
                       </span>
                     </td>
 
+                    {/* AKSI KONTRAK:
+                        - Pemilik Kos: BISA Check-out untuk mengembalikan status kamar menjadi AVAILABLE.
+                        - Super Admin: Hanya melihat status (tidak memutus kontrak sewa pihak lain). */}
                     <td className="py-3.5 px-3 text-right">
-                      {contract.isActive ? (
-                        <button
-                          onClick={() => handleTerminateContract(contract.id)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all shadow-2xs"
-                          title="Selesaikan kontrak sewa dan kembalikan status kamar menjadi AVAILABLE"
-                        >
-                          <LogOut className="w-3.5 h-3.5" /> Check-out
-                        </button>
+                      {role === 'OWNER' ? (
+                        contract.isActive ? (
+                          <button
+                            onClick={() => handleTerminateContract(contract.id)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                            title="Selesaikan kontrak sewa dan kembalikan status kamar menjadi AVAILABLE"
+                          >
+                            <LogOut className="w-3.5 h-3.5" /> Check-out
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 italic">Telah Berakhir</span>
+                        )
                       ) : (
-                        <span className="text-[11px] text-slate-400 italic">Telah Berakhir</span>
+                        <span className="text-[11px] text-slate-400 italic">
+                          {contract.isActive ? 'Kontrak Berjalan' : 'Selesai'}
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -332,19 +449,19 @@ export default function TenantsPage() {
               Direktori Identitas Penyewa
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Data kontak dan identitas penyewa yang terdaftar di dalam sistem.
+              Data kontak dan identitas penyewa yang terdaftar.
             </p>
           </div>
           <span className="text-xs font-bold text-slate-500 bg-slate-100/70 border border-slate-200/60 px-3 py-1 rounded-full">
-            {tenants.length} Penyewa
+            {displayedTenants.length} Penyewa
           </span>
         </div>
 
-        {tenants.length === 0 ? (
+        {displayedTenants.length === 0 ? (
           <p className="text-xs text-slate-400 italic">Belum ada penyewa terdaftar.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {tenants.map((t) => (
+            {displayedTenants.map((t) => (
               <div
                 key={t.id}
                 className="bg-slate-50/70 hover:bg-white border border-slate-200/60 rounded-2xl p-4 transition-all"
@@ -375,8 +492,8 @@ export default function TenantsPage() {
         )}
       </div>
 
-      {/* Modal Daftarkan Penyewa (Selaras 100% dengan Notifikasi Popup) */}
-      {showTenantModal && (
+      {/* Modal Daftarkan Penyewa (HANYA UNTUK PEMILIK KOS) */}
+      {showTenantModal && role === 'OWNER' && (
         <div 
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowTenantModal(false);
@@ -387,13 +504,13 @@ export default function TenantsPage() {
             <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
-                  DATA PENYEWA
+                  DATA PENYEWA KOS HARMONI
                 </span>
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   Daftarkan Penyewa Baru
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Input identitas penyewa untuk keperluan kontrak dan penerbitan invoice.
+                  Input identitas penyewa untuk keperluan penerbitan kontrak kamar Kos Harmoni.
                 </p>
               </div>
               <button 
@@ -450,7 +567,7 @@ export default function TenantsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20"
+                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20 cursor-pointer"
                 >
                   Simpan Penyewa
                 </button>
@@ -460,8 +577,8 @@ export default function TenantsPage() {
         </div>
       )}
 
-      {/* Modal Buat Kontrak Baru (Selaras 100% dengan Notifikasi Popup) */}
-      {showContractModal && (
+      {/* Modal Buat Kontrak Baru (HANYA UNTUK PEMILIK KOS) */}
+      {showContractModal && role === 'OWNER' && (
         <div 
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowContractModal(false);
@@ -472,13 +589,13 @@ export default function TenantsPage() {
             <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
-                  KONTRAK SEWA
+                  KONTRAK KOS HARMONI
                 </span>
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  Terbitkan Kontrak Sewa
+                  Terbitkan Kontrak Sewa Baru
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Status kamar otomatis beralih menjadi OCCUPIED.
+                  Status kamar yang dipilih otomatis beralih menjadi OCCUPIED.
                 </p>
               </div>
               <button 
@@ -499,7 +616,7 @@ export default function TenantsPage() {
                   className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 >
                   <option value="">-- Pilih Penyewa Terdaftar --</option>
-                  {tenants.map((t) => (
+                  {displayedTenants.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.name} ({t.phone})
                     </option>
@@ -509,11 +626,11 @@ export default function TenantsPage() {
 
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1.5">
-                  Pilih Unit Kamar (Hanya Kamar AVAILABLE)
+                  Pilih Unit Kamar (Hanya Kamar AVAILABLE di Kos Harmoni)
                 </label>
-                {availableRooms.length === 0 ? (
+                {ownerAvailableRooms.length === 0 ? (
                   <p className="text-xs text-rose-600 font-bold bg-rose-50 p-3 rounded-xl border border-rose-200">
-                    Tidak ada unit kamar kosong saat ini.
+                    Tidak ada unit kamar kosong di Kos Harmoni saat ini.
                   </p>
                 ) : (
                   <select
@@ -522,10 +639,10 @@ export default function TenantsPage() {
                     onChange={(e) => setSelectedRoomId(e.target.value)}
                     className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                   >
-                    <option value="">-- Pilih Kamar Kosong --</option>
-                    {availableRooms.map((r) => (
+                    <option value="">-- Pilih Kamar Kosong Kos Harmoni --</option>
+                    {ownerAvailableRooms.map((r) => (
                       <option key={r.id} value={r.id}>
-                        Kamar {r.roomNumber} - {r.property?.name || 'Kos'} (Rp {Number(r.monthlyPrice).toLocaleString('id-ID')}/bln)
+                        Kamar {r.roomNumber} - {r.property?.name} (Rp {Number(r.monthlyPrice).toLocaleString('id-ID')}/bln)
                       </option>
                     ))}
                   </select>
@@ -565,8 +682,8 @@ export default function TenantsPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={availableRooms.length === 0}
-                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20"
+                  disabled={ownerAvailableRooms.length === 0}
+                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20 cursor-pointer"
                 >
                   Terbitkan Kontrak
                 </button>

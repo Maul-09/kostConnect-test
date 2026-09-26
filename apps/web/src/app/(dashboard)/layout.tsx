@@ -40,37 +40,64 @@ export default function DashboardLayout({
   const { role, setRole, currentProfile } = useRole();
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
 
-  // Navigasi Sederhana & Standar per Role
+  // Navigasi Terstruktur & Berbeda Jelas per Role
   const navConfig = (() => {
     if (role === 'TENANT') {
       return {
-        sectionTitle: 'MENU PENYEWA',
+        sectionTitle: 'PENYEWA KOS',
         items: [
-          { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+          { name: 'Dashboard Saya', href: '/', icon: LayoutDashboard },
           { name: 'Tagihan Saya', href: '/invoices', icon: Receipt },
           { name: 'Kamar Saya', href: '/portal', icon: Home },
         ],
       };
     }
-    // Super Admin & Pemilik Kos
+    if (role === 'ADMIN') {
+      return {
+        sectionTitle: 'SUPER ADMIN PLATFORM',
+        items: [
+          { name: 'Dashboard Platform', href: '/', icon: LayoutDashboard },
+          { name: 'Pendaftaran Properti', href: '/properties', icon: Building2 },
+          { name: 'Mitra & Penyewa', href: '/tenants', icon: Users },
+          { name: 'Audit Pembayaran', href: '/invoices', icon: Receipt },
+        ],
+      };
+    }
+    // OWNER (Pemilik Kos Harmoni)
     return {
-      sectionTitle: 'MENU UTAMA',
+      sectionTitle: 'PEMILIK KOS HARMONI',
       items: [
-        { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-        { name: 'Properti & Kamar', href: '/properties', icon: Building2 },
-        { name: 'Data Penyewa', href: '/tenants', icon: Users },
+        { name: 'Dashboard Kos', href: '/', icon: LayoutDashboard },
+        { name: 'Kamar Kos Harmoni', href: '/properties', icon: Building2 },
+        { name: 'Penyewa Kos Saya', href: '/tenants', icon: Users },
         { name: 'Tagihan Sewa', href: '/invoices', icon: Receipt },
       ],
     };
   })();
 
-  // Judul Halaman yang Jelas & Ringkas
+  // Judul Halaman yang Selaras dengan Perspektif Role
   const getPageTitle = () => {
-    if (pathname === '/') return 'Dashboard';
-    if (pathname.startsWith('/properties')) return 'Properti & Kamar';
-    if (pathname.startsWith('/tenants')) return 'Data Penyewa';
-    if (pathname.startsWith('/invoices')) return 'Tagihan Sewa';
-    if (pathname.startsWith('/portal')) return 'Kamar Saya';
+    if (pathname === '/') {
+      if (role === 'ADMIN') return 'Dashboard Platform';
+      if (role === 'OWNER') return 'Dashboard Kos Harmoni';
+      return 'Dashboard Penyewa';
+    }
+    if (pathname.startsWith('/properties')) {
+      if (role === 'ADMIN') return 'Pendaftaran Properti Mitra';
+      if (role === 'OWNER') return 'Kamar Kos Harmoni Residence';
+      return 'Informasi Properti';
+    }
+    if (pathname.startsWith('/tenants')) {
+      if (role === 'ADMIN') return 'Direktori Mitra & Penyewa';
+      if (role === 'OWNER') return 'Penyewa Kos Harmoni';
+      return 'Data Penyewa';
+    }
+    if (pathname.startsWith('/invoices')) {
+      if (role === 'ADMIN') return 'Audit Transaksi Pembayaran';
+      if (role === 'OWNER') return 'Tagihan Sewa Masuk';
+      return 'Tagihan Sewa Saya';
+    }
+    if (pathname.startsWith('/portal')) return 'Kamar Kos Saya';
     return 'KosConnect';
   };
 

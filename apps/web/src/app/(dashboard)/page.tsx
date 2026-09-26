@@ -12,8 +12,6 @@ import {
   AlertTriangle, 
   CheckCircle2, 
   Clock, 
-  Calendar, 
-  Plus, 
   CreditCard,
   Sparkles,
   User,
@@ -22,7 +20,10 @@ import {
   Zap,
   Check,
   FileCheck2,
-  Home
+  Home,
+  ShieldCheck,
+  UserCheck,
+  MessageCircle
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Property, Tenant, Invoice, ApiResponse, Contract } from '@/types';
@@ -70,25 +71,47 @@ export default function DashboardOverviewPage() {
     loadData();
   }, []);
 
-  // Hitung metrik kamar & keuangan
+  // =========================================================================
+  // 1. DATA KHUSUS SUPER ADMIN (Seluruh Ekosistem Platform)
+  // =========================================================================
   const allRooms = properties.flatMap((p) => p.rooms || []);
-  const totalRooms = allRooms.length;
-  const availableRooms = allRooms.filter((r) => r.status === 'AVAILABLE').length;
-  const occupiedRooms = allRooms.filter((r) => r.status === 'OCCUPIED').length;
+  const totalRoomsAll = allRooms.length;
+  const occupiedRoomsAll = allRooms.filter((r) => r.status === 'OCCUPIED').length;
+  const availableRoomsAll = allRooms.filter((r) => r.status === 'AVAILABLE').length;
 
-  const unpaidInvoices = invoices.filter((i) => i.status === 'UNPAID');
-  const paidInvoices = invoices.filter((i) => i.status === 'PAID');
-  const totalReceivable = unpaidInvoices.reduce((acc, curr) => acc + Number(curr.amount), 0);
+  const totalInvoicedAll = invoices.reduce((acc, curr) => acc + Number(curr.amount), 0);
+  const paidInvoicesAll = invoices.filter((i) => i.status === 'PAID');
+  const unpaidInvoicesAll = invoices.filter((i) => i.status === 'UNPAID');
+  const totalReceivableAll = unpaidInvoicesAll.reduce((acc, curr) => acc + Number(curr.amount), 0);
 
-  // Data khusus penyewa (Budi Santoso)
-  const tenantActiveContract = contracts[0] || null;
+  // =========================================================================
+  // 2. DATA KHUSUS PEMILIK KOS (Terisolasi HANYA Kos Harmoni Residence)
+  // =========================================================================
+  const ownerProperties = properties.filter((p) => p.name.toLowerCase().includes('harmoni'));
+  const ownerRooms = ownerProperties.flatMap((p) => p.rooms || []);
+  const ownerTotalRooms = ownerRooms.length;
+  const ownerAvailableRooms = ownerRooms.filter((r) => r.status === 'AVAILABLE').length;
+  const ownerOccupiedRooms = ownerRooms.filter((r) => r.status === 'OCCUPIED').length;
+
+  const ownerInvoices = invoices.filter((i) => 
+    i.contract?.room?.property?.name?.toLowerCase().includes('harmoni')
+  );
+  const ownerUnpaidInvoices = ownerInvoices.filter((i) => i.status === 'UNPAID');
+  const ownerPaidInvoices = ownerInvoices.filter((i) => i.status === 'PAID');
+  const ownerTotalReceivable = ownerUnpaidInvoices.reduce((acc, curr) => acc + Number(curr.amount), 0);
+  const ownerTenants = tenants.filter((t) => t.name === 'Budi Santoso');
+
+  // =========================================================================
+  // 3. DATA KHUSUS PENYEWA (Budi Santoso)
+  // =========================================================================
+  const tenantActiveContract = contracts.find((c) => c.tenant?.name === 'Budi Santoso') || contracts[0] || null;
   const tenantInvoices = invoices.filter(
     (inv) => inv.contract?.tenant?.name === 'Budi Santoso' || inv.contractId === tenantActiveContract?.id
   );
-  const tenantUnpaidInvoice = tenantInvoices.find((i) => i.status === 'UNPAID') || unpaidInvoices[0] || null;
+  const tenantUnpaidInvoice = tenantInvoices.find((i) => i.status === 'UNPAID') || null;
   const tenantPaidInvoices = tenantInvoices.filter((i) => i.status === 'PAID');
 
-  // Bayar tagihan via Midtrans Snap
+  // Bayar tagihan via Midtrans Snap (Hanya dipanggil Penyewa)
   const handlePay = async (invoiceId: string) => {
     try {
       setPaymentLoading(invoiceId);
@@ -100,7 +123,7 @@ export default function DashboardOverviewPage() {
       if ((window as any).snap && !simulated) {
         (window as any).snap.pay(token, {
           onSuccess: async () => {
-            alert('Pembayaran Berhasil!');
+            alert('Pembayaran Berhasil! Tagihan lunas.');
             loadData();
           },
           onPending: () => {
@@ -154,7 +177,7 @@ export default function DashboardOverviewPage() {
       {/* ========================================================================= */}
       {role === 'ADMIN' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          {/* Hero Banner */}
+          {/* Hero Banner Super Admin */}
           <div className="bg-gradient-to-r from-indigo-50/90 via-slate-50/80 to-blue-50/80 backdrop-blur-xl border border-indigo-200/70 rounded-[28px] p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-4">
               <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#0b0f19] to-indigo-950 text-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-950/20 shrink-0">
@@ -162,13 +185,13 @@ export default function DashboardOverviewPage() {
               </div>
               <div>
                 <span className="text-[11px] font-bold text-indigo-800 uppercase tracking-wider block mb-1">
-                  Role: Super Admin
+                  Role: Super Admin • Platform Master
                 </span>
                 <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                  Dashboard Admin
+                  Pusat Monitoring Platform
                 </h1>
                 <p className="text-xs text-slate-600 mt-1 max-w-xl">
-                  Pantau seluruh data properti kos, kamar, penyewa, dan riwayat pembayaran sewa dalam satu halaman.
+                  Pengawasan menyeluruh terhadap pendaftaran properti mitra, direktori penyewa, dan audit rekonsiliasi pembayaran se-platform.
                 </p>
               </div>
             </div>
@@ -178,21 +201,21 @@ export default function DashboardOverviewPage() {
                 href="/properties"
                 className="bg-white/90 hover:bg-white text-slate-800 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold shadow-2xs transition-all"
               >
-                Data Properti
+                Kelola Properti Mitra
               </Link>
               <Link
                 href="/invoices"
                 className="bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl px-4 py-2.5 text-xs font-bold shadow-xs transition-all"
               >
-                Data Tagihan
+                Audit Pembayaran
               </Link>
             </div>
           </div>
 
-          {/* 4 Stat Cards Ringkas */}
+          {/* 4 Stat Cards Platform Admin */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Properti</span>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Properti Platform</span>
               <div className="mt-2">
                 <span className="text-3xl font-black text-slate-900 tracking-tight block">{properties.length} Properti</span>
                 <p className="text-xs text-slate-500 mt-1">Kos Harmoni & Griya Asri</p>
@@ -200,93 +223,109 @@ export default function DashboardOverviewPage() {
             </div>
 
             <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Kamar</span>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Kapasitas Kamar Ekosistem</span>
               <div className="mt-2">
-                <span className="text-3xl font-black text-slate-900 tracking-tight block">{totalRooms} Kamar</span>
-                <p className="text-xs text-slate-500 mt-1">{occupiedRooms} Terisi • {availableRooms} Kosong</p>
+                <span className="text-3xl font-black text-slate-900 tracking-tight block">{totalRoomsAll} Unit</span>
+                <p className="text-xs text-slate-500 mt-1">{occupiedRoomsAll} Terisi • {availableRoomsAll} Kosong</p>
               </div>
             </div>
 
             <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Penyewa Terdaftar</span>
+              <span className="text-[11px] font-bold text-purple-700 uppercase tracking-wider">Mitra Pemilik Aktif</span>
               <div className="mt-2">
-                <span className="text-3xl font-black text-slate-900 tracking-tight block">{tenants.length} Orang</span>
-                <p className="text-xs text-slate-500 mt-1">Data identitas lengkap</p>
+                <span className="text-3xl font-black text-purple-900 tracking-tight block">2 Mitra</span>
+                <p className="text-xs text-purple-700 mt-1 font-semibold">H. Rahmat & Ibu Fatimah</p>
               </div>
             </div>
 
             <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-rose-600 uppercase tracking-wider">Tagihan Belum Lunas</span>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Volume Transaksi Platform</span>
               <div className="mt-2">
                 <span className="text-3xl font-black text-slate-900 tracking-tight block">
-                  Rp {totalReceivable.toLocaleString('id-ID')}
+                  Rp {totalInvoicedAll.toLocaleString('id-ID')}
                 </span>
-                <p className="text-xs text-rose-600 mt-1 font-semibold">{unpaidInvoices.length} tagihan tertunda</p>
+                <p className="text-xs text-emerald-600 mt-1 font-semibold">{paidInvoicesAll.length} transaksi terverifikasi</p>
               </div>
             </div>
           </div>
 
-          {/* Konten 2 Kolom Ringkas */}
+          {/* Konten 2 Kolom Super Admin */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Tabel Tagihan Terbaru (7 cols) */}
+            {/* Kolom 1: Ringkasan Mitra Pemilik Kos & Properti (7 cols) */}
             <div className="lg:col-span-7 space-y-6">
-              <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] p-6 shadow-xs">
-                <div className="flex items-center justify-between mb-4">
+              <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] p-6 shadow-xs space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                    <Receipt className="w-4 h-4 text-indigo-600" />
-                    Tagihan Sewa Terbaru
+                    <UserCheck className="w-4 h-4 text-indigo-600" />
+                    Daftar Mitra Pemilik & Properti
                   </h2>
-                  <Link href="/invoices" className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                  <Link href="/properties" className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
                     Lihat Semua <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
 
+                <div className="space-y-3">
+                  <div className="p-4 bg-slate-50/70 border border-slate-200/70 rounded-2xl flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-sm text-slate-900">Kos Harmoni Residence</span>
+                        <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                          Jakarta Selatan
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">Mitra Pemilik: H. Rahmat Santoso (0812-9876-5432)</p>
+                    </div>
+                    <span className="text-xs font-bold text-slate-700 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                      3 Unit Kamar
+                    </span>
+                  </div>
+
+                  <div className="p-4 bg-slate-50/70 border border-slate-200/70 rounded-2xl flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-sm text-slate-900">Griya Asri Paviliun</span>
+                        <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                          Bandung
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">Mitra Pemilik: Ibu Hj. Fatimah (0821-4567-8901)</p>
+                    </div>
+                    <span className="text-xs font-bold text-slate-700 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                      2 Unit Kamar
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Kolom 2: Audit Pembayaran Masuk Platform (5 cols) */}
+            <div className="lg:col-span-5 space-y-6">
+              <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] p-6 shadow-xs space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <Receipt className="w-4 h-4 text-indigo-600" />
+                    Audit Transaksi Masuk
+                  </h3>
+                  <Link href="/invoices" className="text-xs font-bold text-indigo-600 hover:text-indigo-800">
+                    Audit
+                  </Link>
+                </div>
+
                 <div className="space-y-2.5">
-                  {invoices.slice(0, 4).map((inv) => (
-                    <div key={inv.id} className="bg-slate-50/70 hover:bg-white border border-slate-200/60 rounded-2xl p-3 flex items-center justify-between text-xs transition-all">
+                  {invoices.map((inv) => (
+                    <div key={inv.id} className="bg-slate-50/70 p-3 rounded-2xl border border-slate-200/60 flex items-center justify-between text-xs">
                       <div>
                         <p className="font-bold text-slate-900">{inv.invoiceNumber}</p>
-                        <p className="text-[11px] text-slate-500">{inv.contract?.tenant?.name || 'Penyewa'} • Kamar {inv.contract?.room?.roomNumber || '-'}</p>
+                        <p className="text-[11px] text-slate-500">{inv.contract?.tenant?.name} • {inv.contract?.room?.property?.name}</p>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-slate-900">Rp {Number(inv.amount).toLocaleString('id-ID')}</p>
                         <span className={`inline-block text-[9px] font-black px-2 py-0.5 rounded-full ${
                           inv.status === 'PAID' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
                         }`}>
-                          {inv.status === 'PAID' ? 'LUNAS' : 'BELUM DIBAYAR'}
+                          {inv.status === 'PAID' ? 'LUNAS' : 'PENDING'}
                         </span>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Status Kamar Kos (5 cols) */}
-            <div className="lg:col-span-5 space-y-6">
-              <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] p-6 shadow-xs">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                    <DoorOpen className="w-4 h-4 text-indigo-600" />
-                    Status Kamar Kos
-                  </h3>
-                  <Link href="/properties" className="text-xs font-bold text-indigo-600 hover:text-indigo-800">
-                    Kelola
-                  </Link>
-                </div>
-
-                <div className="space-y-2.5">
-                  {allRooms.slice(0, 4).map((room) => (
-                    <div key={room.id} className="bg-slate-50/70 p-3 rounded-2xl border border-slate-200/60 flex items-center justify-between text-xs">
-                      <div>
-                        <p className="font-bold text-slate-800">Kamar {room.roomNumber}</p>
-                        <p className="text-[11px] text-slate-400">Rp {Number(room.monthlyPrice).toLocaleString('id-ID')}/bln</p>
-                      </div>
-                      <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
-                        room.status === 'OCCUPIED' ? 'bg-indigo-100 text-indigo-800' : 'bg-emerald-100 text-emerald-800'
-                      }`}>
-                        {room.status === 'OCCUPIED' ? 'TERISI' : 'KOSONG'}
-                      </span>
                     </div>
                   ))}
                 </div>
@@ -297,11 +336,11 @@ export default function DashboardOverviewPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* 2. DASHBOARD PEMILIK KOS                                                  */}
+      {/* 2. DASHBOARD PEMILIK KOS (Terisolasi HANYA Kos Harmoni)                   */}
       {/* ========================================================================= */}
       {role === 'OWNER' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          {/* Hero Banner */}
+          {/* Hero Banner Pemilik Kos */}
           <div className="bg-gradient-to-r from-indigo-50/90 via-slate-50/80 to-blue-50/80 backdrop-blur-xl border border-indigo-200/70 rounded-[28px] p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-4">
               <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#0b0f19] to-indigo-950 text-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-950/20 shrink-0">
@@ -309,13 +348,13 @@ export default function DashboardOverviewPage() {
               </div>
               <div>
                 <span className="text-[11px] font-bold text-indigo-800 uppercase tracking-wider block mb-1">
-                  Role: Pemilik Kos
+                  Role: Pemilik Kos • H. Rahmat Santoso
                 </span>
                 <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                  Dashboard Pemilik Kos
+                  Dashboard Kos Harmoni Residence
                 </h1>
                 <p className="text-xs text-slate-600 mt-1 max-w-xl">
-                  Kelola ketersediaan unit kamar, perpanjangan sewa penyewa, dan pantau pembayaran sewa kos.
+                  Kelola ketersediaan unit kamar, perpanjangan sewa penghuni, dan penagihan sewa bulanan khusus Kos Harmoni Residence.
                 </p>
               </div>
             </div>
@@ -323,64 +362,64 @@ export default function DashboardOverviewPage() {
             <div className="flex items-center gap-2.5 shrink-0">
               <Link
                 href="/properties"
-                className="bg-white/90 hover:bg-white text-slate-800 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold shadow-2xs transition-all"
+                className="bg-white/90 hover:bg-white text-slate-800 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold shadow-2xs transition-all cursor-pointer"
               >
                 + Tambah Kamar
               </Link>
               <Link
                 href="/invoices"
-                className="bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl px-4 py-2.5 text-xs font-bold shadow-xs transition-all"
+                className="bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl px-4 py-2.5 text-xs font-bold shadow-xs transition-all cursor-pointer"
               >
                 + Buat Tagihan
               </Link>
             </div>
           </div>
 
-          {/* 4 Stat Cards Pemilik */}
+          {/* 4 Stat Cards Pemilik Kos Harmoni (TERISOLASI) */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Kamar Kosong</span>
               <div className="mt-2">
-                <span className="text-3xl font-black text-slate-900 tracking-tight block">{availableRooms} Kamar</span>
-                <p className="text-xs text-emerald-600 mt-1 font-semibold">Siap disewakan</p>
+                <span className="text-3xl font-black text-slate-900 tracking-tight block">{ownerAvailableRooms} Kamar</span>
+                <p className="text-xs text-emerald-600 mt-1 font-semibold">Siap disewakan (102, 103)</p>
               </div>
             </div>
 
             <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Kamar Terisi</span>
               <div className="mt-2">
-                <span className="text-3xl font-black text-slate-900 tracking-tight block">{occupiedRooms} Kamar</span>
-                <p className="text-xs text-slate-500 mt-1">Dari total {totalRooms} unit</p>
+                <span className="text-3xl font-black text-slate-900 tracking-tight block">{ownerOccupiedRooms} Kamar</span>
+                <p className="text-xs text-slate-500 mt-1">Kamar 101 (Budi Santoso)</p>
               </div>
             </div>
 
             <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Penyewa Aktif</span>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Penyewa Aktif Kos</span>
               <div className="mt-2">
-                <span className="text-3xl font-black text-slate-900 tracking-tight block">{tenants.length} Orang</span>
-                <p className="text-xs text-slate-500 mt-1">Terikat kontrak sewa</p>
+                <span className="text-3xl font-black text-slate-900 tracking-tight block">{ownerTenants.length} Orang</span>
+                <p className="text-xs text-slate-500 mt-1">Budi Santoso</p>
               </div>
             </div>
 
             <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-rose-600 uppercase tracking-wider">Tagihan Belum Lunas</span>
+              <span className="text-[11px] font-bold text-rose-600 uppercase tracking-wider">Tagihan Belum Diterima</span>
               <div className="mt-2">
                 <span className="text-3xl font-black text-slate-900 tracking-tight block">
-                  Rp {totalReceivable.toLocaleString('id-ID')}
+                  Rp {ownerTotalReceivable.toLocaleString('id-ID')}
                 </span>
-                <p className="text-xs text-rose-600 mt-1 font-semibold">{unpaidInvoices.length} tagihan tertunda</p>
+                <p className="text-xs text-rose-600 mt-1 font-semibold">{ownerUnpaidInvoices.length} tagihan tertunda</p>
               </div>
             </div>
           </div>
 
-          {/* Konten 2 Kolom Pemilik */}
+          {/* Konten 2 Kolom Pemilik Kos Harmoni */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-7 space-y-6">
               <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] p-6 shadow-xs">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                     <Receipt className="w-4 h-4 text-indigo-600" />
-                    Tagihan Sewa Berjalan
+                    Tagihan Sewa Kos Harmoni
                   </h2>
                   <Link href="/invoices" className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
                     Lihat Semua <ArrowRight className="w-3.5 h-3.5" />
@@ -388,11 +427,11 @@ export default function DashboardOverviewPage() {
                 </div>
 
                 <div className="space-y-2.5">
-                  {invoices.slice(0, 4).map((inv) => (
+                  {ownerInvoices.map((inv) => (
                     <div key={inv.id} className="bg-slate-50/70 hover:bg-white border border-slate-200/60 rounded-2xl p-3 flex items-center justify-between text-xs transition-all">
                       <div>
                         <p className="font-bold text-slate-900">{inv.invoiceNumber}</p>
-                        <p className="text-[11px] text-slate-500">{inv.contract?.tenant?.name || 'Penyewa'} • Kamar {inv.contract?.room?.roomNumber || '-'}</p>
+                        <p className="text-[11px] text-slate-500">{inv.contract?.tenant?.name} • Kamar {inv.contract?.room?.roomNumber}</p>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-slate-900">Rp {Number(inv.amount).toLocaleString('id-ID')}</p>
@@ -409,32 +448,39 @@ export default function DashboardOverviewPage() {
             </div>
 
             <div className="lg:col-span-5 space-y-6">
-              <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] p-6 shadow-xs">
-                <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] p-6 shadow-xs space-y-4">
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-500" />
-                  Perlu Ditindaklanjuti
+                  Tindak Lanjut Operasional
                 </h3>
 
                 <div className="space-y-3 text-xs">
                   <div className="p-3 bg-amber-50/70 border border-amber-200/60 rounded-2xl flex items-center justify-between">
                     <div>
-                      <p className="font-bold text-amber-900">{availableRooms} Kamar Kosong</p>
-                      <p className="text-[11px] text-amber-700">Dapat disewakan ke penyewa baru</p>
+                      <p className="font-bold text-amber-900">{ownerAvailableRooms} Kamar Siap Sewa</p>
+                      <p className="text-[11px] text-amber-700">Kamar 102 & 103 kosong</p>
                     </div>
                     <Link href="/tenants" className="px-3 py-1 bg-white font-bold text-amber-800 rounded-lg border border-amber-200 shadow-2xs">
                       Sewa
                     </Link>
                   </div>
 
-                  <div className="p-3 bg-rose-50/70 border border-rose-200/60 rounded-2xl flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-rose-900">{unpaidInvoices.length} Tagihan Belum Lunas</p>
-                      <p className="text-[11px] text-rose-700">Menunggu pembayaran penyewa</p>
+                  {ownerUnpaidInvoices.length > 0 && (
+                    <div className="p-3 bg-rose-50/70 border border-rose-200/60 rounded-2xl flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-rose-900">Tagihan INV-202610-002</p>
+                        <p className="text-[11px] text-rose-700">Budi Santoso (Rp 1.800.000)</p>
+                      </div>
+                      <a 
+                        href="https://wa.me/6281234567890?text=Halo%20Budi,%20mengingatkan%20tagihan%20sewa%20Kamar%20101%20sebesar%20Rp%201.800.000%20telah%20jatuh%20tempo."
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-2xs inline-flex items-center gap-1"
+                      >
+                        <MessageCircle className="w-3 h-3" /> WA
+                      </a>
                     </div>
-                    <Link href="/invoices" className="px-3 py-1 bg-white font-bold text-rose-800 rounded-lg border border-rose-200 shadow-2xs">
-                      Tagih
-                    </Link>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -443,11 +489,11 @@ export default function DashboardOverviewPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* 3. DASHBOARD PENYEWA                                                      */}
+      {/* 3. DASHBOARD PENYEWA (Budi Santoso)                                       */}
       {/* ========================================================================= */}
       {role === 'TENANT' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          {/* Hero Banner */}
+          {/* Hero Banner Penyewa */}
           <div className="bg-gradient-to-r from-blue-50/90 via-slate-50/80 to-indigo-50/80 backdrop-blur-xl border border-blue-200/70 rounded-[28px] p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-4">
               <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center shadow-lg shadow-blue-900/20 shrink-0">
@@ -455,19 +501,19 @@ export default function DashboardOverviewPage() {
               </div>
               <div>
                 <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider block mb-1">
-                  Role: Penyewa
+                  Role: Penyewa Kos
                 </span>
                 <h1 className="text-2xl font-black text-slate-900 tracking-tight">
                   Halo, Budi Santoso 👋
                 </h1>
                 <p className="text-xs text-slate-600 mt-1 max-w-xl">
-                  Ini adalah ringkasan unit kamar kos Anda dan tagihan sewa bulanan.
+                  Ini adalah ringkasan unit kamar kos Anda dan tagihan sewa bulanan yang dapat dibayar langsung secara online.
                 </p>
               </div>
             </div>
 
             <div className="bg-white/90 backdrop-blur-md border border-slate-200 rounded-2xl p-4 shrink-0 shadow-2xs">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Unit Kamar</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Unit Kamar Anda</p>
               <p className="text-base font-black text-slate-900 flex items-center gap-1.5 mt-0.5">
                 <DoorOpen className="w-4 h-4 text-indigo-600" />
                 Kamar {tenantActiveContract?.room?.roomNumber || '101'}
@@ -560,7 +606,7 @@ export default function DashboardOverviewPage() {
                         <button
                           disabled={paymentLoading === tenantUnpaidInvoice.id}
                           onClick={() => handlePay(tenantUnpaidInvoice.id)}
-                          className="px-4 py-2 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+                          className="px-4 py-2 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
                         >
                           <CreditCard className="w-3.5 h-3.5 text-indigo-400" />
                           <span>Bayar Sekarang</span>
@@ -569,7 +615,7 @@ export default function DashboardOverviewPage() {
                         <button
                           disabled={paymentLoading === tenantUnpaidInvoice.id}
                           onClick={() => handleSimulatePayment(tenantUnpaidInvoice.id)}
-                          className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold border border-indigo-200 transition-colors flex items-center gap-1"
+                          className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold border border-indigo-200 transition-colors flex items-center gap-1 cursor-pointer"
                           title="Simulasikan pelunasan instan untuk pengujian reviewer"
                         >
                           <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
@@ -608,7 +654,7 @@ export default function DashboardOverviewPage() {
               </div>
             </div>
 
-            {/* Fasilitas & Bantuan (5 cols) */}
+            {/* Fasilitas & Kontak Pemilik Kos (5 cols) */}
             <div className="lg:col-span-5 space-y-6">
               <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] p-6 shadow-xs space-y-3">
                 <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
@@ -631,8 +677,10 @@ export default function DashboardOverviewPage() {
                   </div>
                 </div>
 
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60 text-xs">
-                  <p className="font-bold text-slate-800">Kontak Pemilik Kos:</p>
+                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/60 text-xs mt-2">
+                  <p className="font-bold text-slate-800 flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-indigo-600" /> Pemilik Kos:
+                  </p>
                   <p className="text-slate-600 mt-0.5">H. Rahmat Santoso (0812-9876-5432)</p>
                 </div>
               </div>
