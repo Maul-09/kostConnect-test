@@ -129,20 +129,16 @@ export default function TenantsPage() {
             <Users className="w-7 h-7" />
           </div>
           <div>
-            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <span className="text-[11px] font-black uppercase tracking-wider text-indigo-950">
-                MODUL 2 • CRM PENYEWA
-              </span>
-              <span className="inline-flex items-center gap-1.5 bg-indigo-100/90 text-indigo-900 border border-indigo-300/60 rounded-full px-2.5 py-0.5 text-[11px] font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse" />
-                Kontrak Aktif Terikat
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-bold text-indigo-800 uppercase tracking-wider">
+                Data Penyewa & Kontrak
               </span>
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
               Penyewa & Kontrak Sewa
             </h1>
             <p className="text-xs text-slate-600 mt-1 max-w-xl">
-              Pencatatan data tenant, penerbitan kontrak sewa berjangka, dan otomasi alur status kamar (check-in $\rightarrow$ OCCUPIED, check-out $\rightarrow$ AVAILABLE).
+              Pencatatan data identitas penyewa, penerbitan kontrak sewa kamar, dan proses check-out.
             </p>
           </div>
         </div>
@@ -391,7 +387,7 @@ export default function TenantsPage() {
             <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
-                  • MODUL 2 • DATA PENYEWA
+                  DATA PENYEWA
                 </span>
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   Daftarkan Penyewa Baru
@@ -476,7 +472,7 @@ export default function TenantsPage() {
             <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
-                  • MODUL 2 • KONTRAK SEWA
+                  KONTRAK SEWA
                 </span>
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   Terbitkan Kontrak Sewa

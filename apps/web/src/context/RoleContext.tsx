@@ -18,28 +18,28 @@ export const ROLE_PROFILES: Record<UserRole, RoleProfile> = {
   ADMIN: {
     role: 'ADMIN',
     name: 'Muhammad Ajiz',
-    title: 'Super Admin Platform',
+    title: 'Super Admin',
     badge: 'Super Admin',
     avatar: 'MA',
-    description: 'Pusat tata kelola multi-mitra, lisensi ERP, dan arsitektur sistem global.',
+    description: 'Akses penuh ke semua data properti, kamar, penyewa, dan laporan keuangan.',
     avatarBg: 'bg-gradient-to-br from-indigo-700 via-purple-700 to-indigo-950 text-white',
   },
   OWNER: {
     role: 'OWNER',
     name: 'H. Rahmat Santoso',
-    title: 'Pemilik Kos Harmoni',
+    title: 'Pemilik Kos',
     badge: 'Pemilik Kos',
     avatar: 'RS',
-    description: 'Pengelola operasional aset kos, kamar, kontrak sewa, dan arus kas masuk.',
+    description: 'Kelola properti kos, unit kamar, data penyewa, dan tagihan sewa.',
     avatarBg: 'bg-gradient-to-br from-slate-900 to-indigo-950 text-indigo-300',
   },
   TENANT: {
     role: 'TENANT',
     name: 'Budi Santoso',
     title: 'Penyewa Kamar 101',
-    badge: 'Penyewa Kos',
+    badge: 'Penyewa',
     avatar: 'BS',
-    description: 'Penghuni kamar mandiri, monitoring masa sewa & pelunasan invoice Midtrans.',
+    description: 'Cek informasi kamar yang disewa, masa kontrak, dan bayar tagihan sewa.',
     avatarBg: 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white',
   },
 };
@@ -76,11 +76,11 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof document !== 'undefined') {
       if (role === 'ADMIN') {
-        document.title = 'KosConnect ERP • Super Admin Platform';
+        document.title = 'KosConnect • Super Admin';
       } else if (role === 'OWNER') {
-        document.title = 'KosConnect ERP • Pemilik Kos (Owner)';
+        document.title = 'KosConnect • Pemilik Kos';
       } else if (role === 'TENANT') {
-        document.title = 'KosConnect ERP • Portal Mandiri Penyewa';
+        document.title = 'KosConnect • Penyewa';
       }
     }
   }, [role]);

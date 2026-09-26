@@ -176,20 +176,16 @@ export default function InvoicesPage() {
             <Receipt className="w-7 h-7" />
           </div>
           <div>
-            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <span className="text-[11px] font-black uppercase tracking-wider text-indigo-950">
-                MODUL 3 • KEUANGAN & PEMBAYARAN
-              </span>
-              <span className="inline-flex items-center gap-1.5 bg-indigo-100/90 text-indigo-900 border border-indigo-300/60 rounded-full px-2.5 py-0.5 text-[11px] font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse" />
-                Midtrans Snap & Otomasi
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-bold text-indigo-800 uppercase tracking-wider">
+                Tagihan & Pembayaran
               </span>
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
-              Tagihan & Payment Gateway
+              Tagihan & Pembayaran Sewa
             </h1>
             <p className="text-xs text-slate-600 mt-1 max-w-xl">
-              Penerbitan invoice sewa berkala, integrasi Midtrans Snap Sandbox, dan otomasi status pelunasan melalui webhook.
+              Daftar tagihan sewa kos, pembayaran online via Midtrans Snap, dan pencatatan riwayat pelunasan.
             </p>
           </div>
         </div>
@@ -456,7 +452,7 @@ export default function InvoicesPage() {
             <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
-                  • MODUL 3 • KEUANGAN & INVOICING
+                  TERBITKAN TAGIHAN
                 </span>
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   Terbitkan Tagihan Sewa Baru

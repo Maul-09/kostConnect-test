@@ -108,20 +108,16 @@ export default function PropertiesPage() {
             <Building2 className="w-7 h-7" />
           </div>
           <div>
-            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <span className="text-[11px] font-black uppercase tracking-wider text-indigo-950">
-                MODUL 1 • ASET PROPERTI
-              </span>
-              <span className="inline-flex items-center gap-1.5 bg-indigo-100/90 text-indigo-900 border border-indigo-300/60 rounded-full px-2.5 py-0.5 text-[11px] font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse" />
-                Inventaris Real-Time
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-bold text-indigo-800 uppercase tracking-wider">
+                Properti & Kamar
               </span>
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
-              Manajemen Properti & Unit Kamar
+              Daftar Properti & Kamar Kos
             </h1>
             <p className="text-xs text-slate-600 mt-1 max-w-xl">
-              Kelola inventaris kos, kapasitas kamar, tarif sewa bulanan, dan pantau status ketersediaan secara real-time.
+              Kelola data properti kos, nomor kamar, harga sewa per bulan, dan status ketersediaan kamar.
             </p>
           </div>
         </div>
@@ -325,7 +321,7 @@ export default function PropertiesPage() {
             <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
-                  • MODUL 1 • TAMBAH PROPERTI
+                  PROPERTI BARU
                 </span>
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   Tambah Properti Kos Baru
@@ -411,7 +407,7 @@ export default function PropertiesPage() {
             <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
-                  • MODUL 1 • TAMBAH KAMAR
+                  UNIT KAMAR BARU
                 </span>
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   Tambah Unit Kamar Baru
