@@ -1,1 +1,96 @@
-{}
+{
+  "name": "KosConnect - Scheduled Overdue Invoice Checker",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Daily Cron Schedule (08:00 WIB)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://localhost:3001/api/invoices?status=UNPAID",
+        "options": {}
+      },
+      "id": "2",
+      "name": "Fetch UNPAID Invoices from NestJS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst invoices = response.data || [];\nconst today = new Date();\nconst threeDaysAhead = new Date();\nthreeDaysAhead.setDate(today.getDate() + 3);\n\nconst nearDueInvoices = invoices.filter(inv => {\n  const due = new Date(inv.dueDate);\n  return due <= threeDaysAhead;\n});\n\nreturn [\n  {\n    json: {\n      reportDate: today.toISOString(),\n      totalUnpaid: invoices.length,\n      nearDueCount: nearDueInvoices.length,\n      summaryList: nearDueInvoices.map(i => ({\n        invoiceNumber: i.invoiceNumber,\n        tenantName: i.contract?.tenant?.name,\n        roomNumber: i.contract?.room?.roomNumber,\n        amount: i.amount,\n        dueDate: i.dueDate\n      }))\n    }\n  }\n];"
+      },
+      "id": "3",
+      "name": "Identify Near Due Invoices",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://httpbin.org/post",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"channel\": \"KosConnect-Billing-Report\",\n  \"event\": \"DAILY_OVERDUE_CHECK\",\n  \"nearDueCount\": {{ $json.nearDueCount }},\n  \"totalUnpaid\": {{ $json.totalUnpaid }},\n  \"details\": {{ JSON.stringify($json.summaryList) }}\n}",
+        "options": {}
+      },
+      "id": "4",
+      "name": "Log Summary Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Daily Cron Schedule (08:00 WIB)": {
+      "main": [
+        [
+          {
+            "node": "Fetch UNPAID Invoices from NestJS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch UNPAID Invoices from NestJS": {
+      "main": [
+        [
+          {
+            "node": "Identify Near Due Invoices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identify Near Due Invoices": {
+      "main": [
+        [
+          {
+            "node": "Log Summary Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {}
+}

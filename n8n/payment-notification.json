@@ -1,1 +1,76 @@
-{}
+{
+  "name": "KosConnect - Payment Notification Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "payment-success",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook Trigger (Payment Success)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "notificationMessage",
+              "value": "=Halo {{ $json.body.tenantName }}, pembayaran untuk invoice {{ $json.body.invoiceNumber }} (Kamar {{ $json.body.roomNumber }} - {{ $json.body.propertyName }}) sebesar Rp {{ $json.body.amount }} telah BERHASIL diverifikasi lunas oleh sistem KosConnect ERP pada {{ $json.body.paidAt }}."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2",
+      "name": "Format Confirmation Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://httpbin.org/post",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"channel\": \"KosConnect-Payment-Dispatch\",\n  \"event\": \"INVOICE_PAID\",\n  \"message\": \"{{ $json.notificationMessage }}\",\n  \"recipient\": \"{{ $('Webhook Trigger (Payment Success)').item.json.body.tenantEmail }}\"\n}",
+        "options": {}
+      },
+      "id": "3",
+      "name": "Dispatch Notification (Email/Chat Log)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger (Payment Success)": {
+      "main": [
+        [
+          {
+            "node": "Format Confirmation Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Confirmation Message": {
+      "main": [
+        [
+          {
+            "node": "Dispatch Notification (Email/Chat Log)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {}
+}
