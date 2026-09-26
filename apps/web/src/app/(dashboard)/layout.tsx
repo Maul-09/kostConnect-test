@@ -8,20 +8,16 @@ import {
   Users, 
   Receipt, 
   LayoutDashboard, 
-  Search, 
   Bell, 
   KeyRound, 
   LogOut, 
-  ShieldCheck, 
-  SlidersHorizontal,
-  Home,
-  X,
-  Check,
-  Trash2,
-  Clock,
-  Sparkles,
-  User,
-  UserCheck
+  Home, 
+  X, 
+  Check, 
+  Trash2, 
+  Clock, 
+  User, 
+  UserCheck 
 } from 'lucide-react';
 
 interface NotificationItem {
@@ -47,6 +43,16 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const isTenantPortal = pathname.startsWith('/portal');
+
+  // Helper page title for clean navbar
+  const getPageTitle = () => {
+    if (pathname === '/') return 'Dashboard Overview';
+    if (pathname.startsWith('/properties')) return 'Properti & Unit Kamar (Aset)';
+    if (pathname.startsWith('/tenants')) return 'Penyewa & Kontrak Sewa (CRM)';
+    if (pathname.startsWith('/invoices')) return 'Tagihan & Pembayaran (Keuangan)';
+    if (pathname.startsWith('/portal')) return 'Portal Mandiri Penyewa';
+    return 'KosConnect ERP';
+  };
 
   // Notification Popup State
   const [showNotificationModal, setShowNotificationModal] = useState(false);
@@ -90,11 +96,10 @@ export default function DashboardLayout({
     : notifications;
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex bg-gradient-to-br from-[#f1f3f9] via-[#f8fafc] to-[#eef2ff] text-slate-800 p-3 md:p-4 gap-4 font-sans select-none relative">
+    <div className="flex h-screen w-full overflow-hidden bg-gradient-to-br from-[#f1f3f9] via-[#f8fafc] to-[#eef2ff] text-slate-800 p-3 md:p-4 gap-4 font-sans select-none relative">
       {/* Ambient Gradient Glows (Sapphire & Indigo Atmospheric Glow) */}
       <div className="fixed -top-24 -right-24 w-[600px] h-[600px] bg-indigo-200/25 rounded-full blur-[140px] pointer-events-none -z-10" />
       <div className="fixed bottom-10 left-64 w-[500px] h-[500px] bg-blue-200/20 rounded-full blur-[120px] pointer-events-none -z-10" />
-      <div className="fixed top-1/2 right-1/4 w-[350px] h-[350px] bg-purple-200/15 rounded-full blur-[100px] pointer-events-none -z-10" />
 
       {/* 100% FIXED & STICKY SIDEBAR (Deep Midnight Obsidian #0b0f19) */}
       <aside className="w-64 h-full shrink-0 bg-[#0b0f19] text-slate-200 rounded-[26px] p-5 flex flex-col justify-between shadow-2xl border border-slate-800/80 hidden lg:flex select-none z-30">
@@ -115,13 +120,13 @@ export default function DashboardLayout({
           </div>
 
           {/* Section: RUANG KERJA */}
-          <div className="mt-8 mb-2 px-3">
+          <div className="mt-8 mb-2.5 px-3">
             <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-500 block">
-              RUANG KERJA
+              NAVIGASI UTAMA
             </span>
           </div>
 
-          {/* Navigation Links */}
+          {/* Clean Core Navigation Links (No Swagger / No Clutter) */}
           <nav className="space-y-1.5">
             {navigation.map((item) => {
               const Icon = item.icon;
@@ -145,28 +150,6 @@ export default function DashboardLayout({
               );
             })}
           </nav>
-
-          {/* Section: INTEGRASI */}
-          <div className="mt-6 mb-2 px-3">
-            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-500 block">
-              INTEGRASI & SISTEM
-            </span>
-          </div>
-          <div className="space-y-1">
-            <a
-              href="http://localhost:3001/api/docs"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900/80 transition-all"
-            >
-              <ShieldCheck className="w-4 h-4 text-indigo-400" />
-              <span>Swagger OpenAPI</span>
-            </a>
-            <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-medium text-slate-600 cursor-not-allowed">
-              <SlidersHorizontal className="w-4 h-4 text-slate-600" />
-              <span>Pengaturan ERP</span>
-            </div>
-          </div>
         </div>
 
         {/* User Profile Card (Adapts to Active Role Persona) */}
@@ -199,29 +182,24 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      {/* MAIN VIEW AREA (With Independent Scrolling so Sidebar NEVER moves) */}
+      {/* MAIN VIEW AREA (Clean, Professional, Synchronized) */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
-        {/* Topbar: Fixed at top of right area */}
-        <header className="bg-white/80 backdrop-blur-xl border border-white/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] rounded-2xl px-5 py-3 mb-4 flex items-center justify-between shrink-0 z-20 gap-3">
-          {/* Left: Operational Status */}
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-200/80 px-2.5 py-1 rounded-full">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-600" />
-              </span>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-900">
-                OPERASIONAL
-              </span>
-            </div>
-            <span className="text-xs font-semibold text-slate-600 hidden sm:inline">
-              Sabtu, 26 September 2026 (WIB)
+        {/* Sleek Professional Topbar (Ringkas & Tidak Ramai) */}
+        <header className="bg-white/85 backdrop-blur-xl border border-white/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] rounded-2xl px-5 py-3 mb-4 flex items-center justify-between shrink-0 z-20 gap-4">
+          {/* Left: Active Section Title */}
+          <div className="flex items-center gap-3 min-w-0">
+            <h1 className="text-sm sm:text-base font-extrabold text-slate-800 tracking-tight truncate">
+              {getPageTitle()}
+            </h1>
+            <span className="hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Sistem Aktif
             </span>
           </div>
 
-          {/* Center: Role Switcher & Search Bar */}
-          <div className="flex items-center gap-3">
-            {/* Role Perspective Switcher Pill */}
+          {/* Right: Role Switcher & Notification & Profile */}
+          <div className="flex items-center gap-3 shrink-0">
+            {/* Minimalist Role Switcher */}
             <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/70 text-xs">
               <Link
                 href="/"
@@ -230,11 +208,10 @@ export default function DashboardLayout({
                     ? 'bg-[#0b0f19] text-white shadow-xs'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
-                title="Beralih ke sudut pandang Pemilik Kos (Kelola Kamar, Kontrak, dan Keuangan)"
+                title="Beralih ke Mode Pengelola Kos (Akses ERP Penuh)"
               >
                 <Building2 className="w-3.5 h-3.5 text-indigo-400" />
-                <span className="hidden md:inline">Mode Pengelola</span>
-                <span className="md:hidden">Admin</span>
+                <span>Pengelola</span>
               </Link>
               <Link
                 href="/portal"
@@ -243,30 +220,14 @@ export default function DashboardLayout({
                     ? 'bg-indigo-600 text-white shadow-xs'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
-                title="Beralih ke sudut pandang Penyewa (Lihat Kamar Sewa & Bayar Tagihan)"
+                title="Beralih ke Portal Penyewa (Bayar Tagihan)"
               >
                 <User className="w-3.5 h-3.5 text-indigo-200" />
-                <span className="hidden md:inline">Mode Penyewa</span>
-                <span className="md:hidden">Penyewa</span>
+                <span>Penyewa</span>
               </Link>
             </div>
 
-            {/* Quick Search */}
-            <div className="relative hidden xl:flex items-center">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Cari unit kamar, invoice, penyewa..."
-                className="bg-slate-100/70 hover:bg-slate-150/70 focus:bg-white border border-slate-200/70 rounded-full pl-9 pr-14 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 w-64 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-              />
-              <kbd className="absolute right-3 text-[10px] font-bold text-slate-400 bg-white border border-slate-200/80 rounded px-1.5 py-0.5 shadow-2xs pointer-events-none">
-                Ctrl K
-              </kbd>
-            </div>
-          </div>
-
-          {/* Right: Notifications Button & Quick Profile */}
-          <div className="flex items-center gap-3">
+            {/* Notification Bell */}
             <button 
               onClick={() => setShowNotificationModal(true)}
               className="relative p-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors focus:outline-none"
@@ -279,6 +240,8 @@ export default function DashboardLayout({
                 </span>
               )}
             </button>
+
+            {/* User Profile Avatar */}
             <div className="flex items-center gap-2.5 pl-2.5 border-l border-slate-200/80">
               <div className={`w-7 h-7 rounded-full text-white font-extrabold text-[11px] flex items-center justify-center shadow-xs ${
                 isTenantPortal ? 'bg-blue-600' : 'bg-[#0b0f19] text-indigo-300'
@@ -290,7 +253,7 @@ export default function DashboardLayout({
                   {isTenantPortal ? 'Budi Santoso' : 'Admin Ajiz'}
                 </p>
                 <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                  {isTenantPortal ? 'Penyewa Kamar 101' : 'Property Admin'}
+                  {isTenantPortal ? 'Penyewa' : 'Pengelola'}
                 </p>
               </div>
             </div>
@@ -298,12 +261,12 @@ export default function DashboardLayout({
         </header>
 
         {/* Scrollable Page Body (Only this area scrolls) */}
-        <main className="flex-1 overflow-y-auto pr-1 pb-6">
+        <main className="flex-1 overflow-y-auto pr-1 pb-6 space-y-6">
           {children}
         </main>
       </div>
 
-      {/* POPUP NOTIFIKASI MODAL (Diperbesar & Tanpa Tombol Arsipkan) */}
+      {/* POPUP NOTIFIKASI MODAL (Selaras, Lapang, Tanpa Tombol Arsipkan) */}
       {showNotificationModal && (
         <div 
           onClick={(e) => {
@@ -316,7 +279,7 @@ export default function DashboardLayout({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <span className="text-[11px] font-black uppercase tracking-widest text-indigo-600 block mb-1.5">
-                  • ADMIN • RUANG KERJA
+                  • ADMIN • NOTIFIKASI
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                   Notifikasi Operasional

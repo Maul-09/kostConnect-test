@@ -101,23 +101,24 @@ export default function PropertiesPage() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Frosted Hero Header */}
+      {/* 1. Frosted Hero Header (Selaras 100% dengan Dashboard) */}
       <div className="bg-gradient-to-r from-indigo-50/90 via-slate-50/80 to-blue-50/80 backdrop-blur-xl border border-indigo-200/70 rounded-[28px] p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0b0f19] to-indigo-950 text-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-950/20 shrink-0">
-            <Building2 className="w-6 h-6" />
+          <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#0b0f19] to-indigo-950 text-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-950/20 shrink-0">
+            <Building2 className="w-7 h-7" />
           </div>
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <span className="text-[11px] font-black uppercase tracking-wider text-indigo-950">
-                MODUL 1
+                MODUL 1 • ASET PROPERTI
               </span>
               <span className="inline-flex items-center gap-1.5 bg-indigo-100/90 text-indigo-900 border border-indigo-300/60 rounded-full px-2.5 py-0.5 text-[11px] font-bold">
-                Asset Module
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse" />
+                Inventaris Real-Time
               </span>
             </div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              Manajemen Properti & Kamar
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
+              Manajemen Properti & Unit Kamar
             </h1>
             <p className="text-xs text-slate-600 mt-1 max-w-xl">
               Kelola inventaris kos, kapasitas kamar, tarif sewa bulanan, dan pantau status ketersediaan secara real-time.
@@ -133,27 +134,56 @@ export default function PropertiesPage() {
         </button>
       </div>
 
-      {/* 2. Glass Metric Cards */}
+      {/* 2. Glass Metric Cards (Selaras 100% dengan Dashboard) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)]">
+        <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all flex flex-col justify-between">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Properti</span>
-          <span className="text-3xl font-black text-slate-900 mt-1 block">{totalProperties}</span>
-          <span className="text-[11px] text-slate-400 mt-1 block">Lokasi operasional</span>
+          <div className="mt-2">
+            <span className="text-3xl font-black text-slate-900 tracking-tight block">{totalProperties}</span>
+            <span className="text-xs font-bold text-slate-700 mt-1 block">Lokasi operasional</span>
+          </div>
+          <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+            <div className="bg-slate-400 h-full rounded-full" style={{ width: '100%' }} />
+          </div>
         </div>
-        <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)]">
+
+        <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all flex flex-col justify-between">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Unit Kamar</span>
-          <span className="text-3xl font-black text-slate-900 mt-1 block">{totalRooms}</span>
-          <span className="text-[11px] text-slate-400 mt-1 block">Kapasitas hunian</span>
+          <div className="mt-2">
+            <span className="text-3xl font-black text-slate-900 tracking-tight block">{totalRooms}</span>
+            <span className="text-xs font-bold text-slate-700 mt-1 block">Kapasitas hunian</span>
+          </div>
+          <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+            <div className="bg-indigo-600 h-full rounded-full" style={{ width: '100%' }} />
+          </div>
         </div>
-        <div className="bg-white/85 backdrop-blur-xl border border-blue-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-blue-50/40 to-white/80">
-          <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider block">Kamar Kosong (Available)</span>
-          <span className="text-3xl font-black text-blue-800 mt-1 block">{availableRooms}</span>
-          <span className="text-[11px] text-blue-600 mt-1 block">Siap disewa</span>
+
+        <div className="bg-white/85 backdrop-blur-xl border border-blue-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-blue-50/40 to-white/80 hover:shadow-md transition-all flex flex-col justify-between">
+          <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider block">Kamar Kosong</span>
+          <div className="mt-2">
+            <span className="text-3xl font-black text-blue-800 tracking-tight block">{availableRooms}</span>
+            <span className="text-xs font-bold text-blue-700 mt-1 block">AVAILABLE (Siap disewa)</span>
+          </div>
+          <div className="mt-4 w-full bg-blue-100 h-1.5 rounded-full overflow-hidden">
+            <div 
+              className="bg-blue-600 h-full rounded-full transition-all duration-500" 
+              style={{ width: `${totalRooms > 0 ? (availableRooms / totalRooms) * 100 : 0}%` }} 
+            />
+          </div>
         </div>
-        <div className="bg-white/85 backdrop-blur-xl border border-amber-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-amber-50/40 to-white/80">
-          <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider block">Terisi (Occupied)</span>
-          <span className="text-3xl font-black text-amber-800 mt-1 block">{occupiedRooms}</span>
-          <span className="text-[11px] text-amber-600 mt-1 block">Dalam kontrak</span>
+
+        <div className="bg-white/85 backdrop-blur-xl border border-amber-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-amber-50/40 to-white/80 hover:shadow-md transition-all flex flex-col justify-between">
+          <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider block">Kamar Terisi</span>
+          <div className="mt-2">
+            <span className="text-3xl font-black text-amber-800 tracking-tight block">{occupiedRooms}</span>
+            <span className="text-xs font-bold text-amber-700 mt-1 block">OCCUPIED (Dalam kontrak)</span>
+          </div>
+          <div className="mt-4 w-full bg-amber-100 h-1.5 rounded-full overflow-hidden">
+            <div 
+              className="bg-amber-500 h-full rounded-full transition-all duration-500" 
+              style={{ width: `${totalRooms > 0 ? (occupiedRooms / totalRooms) * 100 : 0}%` }} 
+            />
+          </div>
         </div>
       </div>
 
@@ -283,68 +313,83 @@ export default function PropertiesPage() {
         </div>
       )}
 
-      {/* Modal Tambah Properti */}
+      {/* Modal Tambah Properti (Selaras 100% dengan Notifikasi Popup) */}
       {showPropertyModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[28px] max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-extrabold text-base text-slate-900">Tambah Properti Kos Baru</h3>
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowPropertyModal(false);
+          }}
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
+        >
+          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[32px] max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
+                  • MODUL 1 • TAMBAH PROPERTI
+                </span>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                  Tambah Properti Kos Baru
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Lengkapi data lokasi kos atau kontrakan yang akan dikelola.
+                </p>
+              </div>
               <button 
                 onClick={() => setShowPropertyModal(false)}
-                className="p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateProperty} className="space-y-3.5">
+            <form onSubmit={handleCreateProperty} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Nama Properti Kos</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Nama Properti Kos</label>
                 <input
                   type="text"
                   required
                   placeholder="Contoh: Kos Harmoni Residence"
                   value={propertyName}
                   onChange={(e) => setPropertyName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
+                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Alamat Lengkap</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Alamat Lengkap</label>
                 <input
                   type="text"
                   required
                   placeholder="Contoh: Jl. Sukabumi No. 12"
                   value={propertyAddress}
                   onChange={(e) => setPropertyAddress(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
+                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Kota</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Kota</label>
                 <input
                   type="text"
                   required
                   placeholder="Contoh: Bandung"
                   value={propertyCity}
                   onChange={(e) => setPropertyCity(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
+                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-3">
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowPropertyModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20"
                 >
                   Simpan Properti
                 </button>
@@ -354,56 +399,71 @@ export default function PropertiesPage() {
         </div>
       )}
 
-      {/* Modal Tambah Kamar */}
+      {/* Modal Tambah Kamar (Selaras 100% dengan Notifikasi Popup) */}
       {showRoomModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[28px] max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-extrabold text-base text-slate-900">Tambah Unit Kamar Baru</h3>
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowRoomModal(false);
+          }}
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
+        >
+          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[32px] max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
+                  • MODUL 1 • TAMBAH KAMAR
+                </span>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                  Tambah Unit Kamar Baru
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Daftarkan unit kamar baru beserta harga sewa bulanan.
+                </p>
+              </div>
               <button 
                 onClick={() => setShowRoomModal(false)}
-                className="p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateRoom} className="space-y-3.5">
+            <form onSubmit={handleCreateRoom} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Nomor / Kode Kamar</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Nomor / Kode Kamar</label>
                 <input
                   type="text"
                   required
                   placeholder="Contoh: 104 atau B-02"
                   value={roomNumber}
                   onChange={(e) => setRoomNumber(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
+                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Harga Sewa Bulanan (IDR)</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Harga Sewa Bulanan (IDR)</label>
                 <input
                   type="number"
                   required
                   placeholder="Contoh: 1800000"
                   value={roomPrice}
                   onChange={(e) => setRoomPrice(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
+                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-3">
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowRoomModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20"
                 >
                   Simpan Kamar
                 </button>

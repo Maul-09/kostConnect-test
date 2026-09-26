@@ -169,22 +169,23 @@ export default function InvoicesPage() {
         strategy="lazyOnload"
       />
 
-      {/* 1. Frosted Hero Header */}
+      {/* 1. Frosted Hero Header (Selaras 100% dengan Modul Properti & CRM) */}
       <div className="bg-gradient-to-r from-indigo-50/90 via-slate-50/80 to-blue-50/80 backdrop-blur-xl border border-indigo-200/70 rounded-[28px] p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0b0f19] to-indigo-950 text-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-950/20 shrink-0">
-            <Receipt className="w-6 h-6" />
+          <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#0b0f19] to-indigo-950 text-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-950/20 shrink-0">
+            <Receipt className="w-7 h-7" />
           </div>
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <span className="text-[11px] font-black uppercase tracking-wider text-indigo-950">
-                MODUL 3
+                MODUL 3 • KEUANGAN & PEMBAYARAN
               </span>
               <span className="inline-flex items-center gap-1.5 bg-indigo-100/90 text-indigo-900 border border-indigo-300/60 rounded-full px-2.5 py-0.5 text-[11px] font-bold">
-                Financial Module
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse" />
+                Midtrans Snap & Otomasi
               </span>
             </div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
               Tagihan & Payment Gateway
             </h1>
             <p className="text-xs text-slate-600 mt-1 max-w-xl">
@@ -443,27 +444,42 @@ export default function InvoicesPage() {
         )}
       </div>
 
-      {/* Modal Terbitkan Tagihan Baru */}
+      {/* Modal Terbitkan Tagihan Baru (Selaras 100% dengan Properti, Penyewa & Notifikasi) */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[28px] max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-extrabold text-base text-slate-900">Terbitkan Tagihan Sewa Baru</h3>
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowCreateModal(false);
+          }}
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
+        >
+          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[32px] max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
+                  • MODUL 3 • KEUANGAN & INVOICING
+                </span>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                  Terbitkan Tagihan Sewa Baru
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Penerbitan tagihan sewa berkala yang terhubung ke Midtrans Snap Sandbox.
+                </p>
+              </div>
               <button 
                 onClick={() => setShowCreateModal(false)}
-                className="p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateInvoice} className="space-y-3.5">
+            <form onSubmit={handleCreateInvoice} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">
                   Pilih Kontrak Sewa Aktif
                 </label>
                 {contracts.length === 0 ? (
-                  <p className="text-xs text-rose-600 font-bold bg-rose-50 p-2.5 rounded-xl border border-rose-200">
+                  <p className="text-xs text-rose-600 font-bold bg-rose-50 p-3 rounded-xl border border-rose-200">
                     Tidak ada kontrak aktif saat ini.
                   </p>
                 ) : (
@@ -471,7 +487,7 @@ export default function InvoicesPage() {
                     required
                     value={selectedContractId}
                     onChange={(e) => setSelectedContractId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
+                    className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                   >
                     <option value="">-- Pilih Kontrak Sewa --</option>
                     {contracts.map((c) => (
@@ -484,39 +500,39 @@ export default function InvoicesPage() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Nominal Tagihan (IDR)</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Nominal Tagihan (IDR)</label>
                 <input
                   type="number"
                   required
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
+                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Tanggal Jatuh Tempo</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Tanggal Jatuh Tempo</label>
                 <input
                   type="date"
                   required
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
+                  className="w-full px-4 py-2 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-3">
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={contracts.length === 0}
-                  className="px-4 py-2 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20"
                 >
                   Terbitkan Invoice
                 </button>

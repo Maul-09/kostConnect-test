@@ -122,22 +122,23 @@ export default function TenantsPage() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Frosted Hero Header */}
+      {/* 1. Frosted Hero Header (Selaras 100% dengan Dashboard & Properti) */}
       <div className="bg-gradient-to-r from-indigo-50/90 via-slate-50/80 to-blue-50/80 backdrop-blur-xl border border-indigo-200/70 rounded-[28px] p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0b0f19] to-indigo-950 text-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-950/20 shrink-0">
-            <Users className="w-6 h-6" />
+          <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#0b0f19] to-indigo-950 text-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-950/20 shrink-0">
+            <Users className="w-7 h-7" />
           </div>
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <span className="text-[11px] font-black uppercase tracking-wider text-indigo-950">
-                MODUL 2
+                MODUL 2 • CRM PENYEWA
               </span>
               <span className="inline-flex items-center gap-1.5 bg-indigo-100/90 text-indigo-900 border border-indigo-300/60 rounded-full px-2.5 py-0.5 text-[11px] font-bold">
-                CRM Module
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse" />
+                Kontrak Aktif Terikat
               </span>
             </div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
               Penyewa & Kontrak Sewa
             </h1>
             <p className="text-xs text-slate-600 mt-1 max-w-xl">
@@ -162,27 +163,53 @@ export default function TenantsPage() {
         </div>
       </div>
 
-      {/* 2. Glass Metric Cards */}
+      {/* 2. Glass Metric Cards (Selaras 100% dengan Dashboard & Properti) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)]">
+        <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all flex flex-col justify-between">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Penyewa</span>
-          <span className="text-3xl font-black text-slate-900 mt-1 block">{tenants.length}</span>
-          <span className="text-[11px] text-slate-400 mt-1 block">Akun terdaftar</span>
+          <div className="mt-2">
+            <span className="text-3xl font-black text-slate-900 tracking-tight block">{tenants.length}</span>
+            <span className="text-xs font-bold text-slate-700 mt-1 block">Akun terdaftar</span>
+          </div>
+          <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+            <div className="bg-slate-400 h-full rounded-full" style={{ width: '100%' }} />
+          </div>
         </div>
-        <div className="bg-white/85 backdrop-blur-xl border border-indigo-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-indigo-50/40 to-white/80">
+
+        <div className="bg-white/85 backdrop-blur-xl border border-indigo-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-indigo-50/40 to-white/80 hover:shadow-md transition-all flex flex-col justify-between">
           <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider block">Kontrak Berjalan</span>
-          <span className="text-3xl font-black text-indigo-800 mt-1 block">{activeContracts.length}</span>
-          <span className="text-[11px] text-indigo-600 mt-1 block">Aktif saat ini</span>
+          <div className="mt-2">
+            <span className="text-3xl font-black text-indigo-800 tracking-tight block">{activeContracts.length}</span>
+            <span className="text-xs font-bold text-indigo-700 mt-1 block">Aktif saat ini</span>
+          </div>
+          <div className="mt-4 w-full bg-indigo-100 h-1.5 rounded-full overflow-hidden">
+            <div 
+              className="bg-indigo-600 h-full rounded-full transition-all duration-500" 
+              style={{ width: `${contracts.length > 0 ? (activeContracts.length / contracts.length) * 100 : 0}%` }} 
+            />
+          </div>
         </div>
-        <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)]">
+
+        <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all flex flex-col justify-between">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Riwayat Kontrak</span>
-          <span className="text-3xl font-black text-slate-900 mt-1 block">{contracts.length}</span>
-          <span className="text-[11px] text-slate-400 mt-1 block">Histori operasional</span>
+          <div className="mt-2">
+            <span className="text-3xl font-black text-slate-900 tracking-tight block">{contracts.length}</span>
+            <span className="text-xs font-bold text-slate-700 mt-1 block">Histori transaksi</span>
+          </div>
+          <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+            <div className="bg-slate-400 h-full rounded-full" style={{ width: '100%' }} />
+          </div>
         </div>
-        <div className="bg-white/85 backdrop-blur-xl border border-blue-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-blue-50/40 to-white/80">
+
+        <div className="bg-white/85 backdrop-blur-xl border border-blue-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-blue-50/40 to-white/80 hover:shadow-md transition-all flex flex-col justify-between">
           <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider block">Kamar Kosong</span>
-          <span className="text-3xl font-black text-blue-800 mt-1 block">{availableRooms.length}</span>
-          <span className="text-[11px] text-blue-600 mt-1 block">Siap diisi kontrak baru</span>
+          <div className="mt-2">
+            <span className="text-3xl font-black text-blue-800 tracking-tight block">{availableRooms.length}</span>
+            <span className="text-xs font-bold text-blue-700 mt-1 block">Siap diisi kontrak baru</span>
+          </div>
+          <div className="mt-4 w-full bg-blue-100 h-1.5 rounded-full overflow-hidden">
+            <div className="bg-blue-600 h-full rounded-full" style={{ width: '60%' }} />
+          </div>
         </div>
       </div>
 
@@ -194,7 +221,7 @@ export default function TenantsPage() {
 
       {/* 3. Contracts List Section */}
       <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] p-6">
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-100">
           <div>
             <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
               <FileText className="w-5 h-5 text-indigo-600" />
@@ -302,7 +329,7 @@ export default function TenantsPage() {
 
       {/* 4. Tenants Directory Section */}
       <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] p-6">
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-100">
           <div>
             <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
               <Users className="w-5 h-5 text-indigo-600" />
@@ -352,67 +379,82 @@ export default function TenantsPage() {
         )}
       </div>
 
-      {/* Modal Daftarkan Penyewa */}
+      {/* Modal Daftarkan Penyewa (Selaras 100% dengan Notifikasi Popup) */}
       {showTenantModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[28px] max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-extrabold text-base text-slate-900">Daftarkan Penyewa Baru</h3>
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowTenantModal(false);
+          }}
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
+        >
+          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[32px] max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
+                  • MODUL 2 • DATA PENYEWA
+                </span>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                  Daftarkan Penyewa Baru
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Input identitas penyewa untuk keperluan kontrak dan penerbitan invoice.
+                </p>
+              </div>
               <button 
                 onClick={() => setShowTenantModal(false)}
-                className="p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateTenant} className="space-y-3.5">
+            <form onSubmit={handleCreateTenant} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Nama Lengkap</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Nama Lengkap</label>
                 <input
                   type="text"
                   required
                   placeholder="Contoh: Budi Santoso"
                   value={tenantName}
                   onChange={(e) => setTenantName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
+                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Nomor WhatsApp / HP</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Nomor WhatsApp / HP</label>
                 <input
                   type="text"
                   required
                   placeholder="Contoh: 081234567890"
                   value={tenantPhone}
                   onChange={(e) => setTenantPhone(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
+                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Email</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Email</label>
                 <input
                   type="email"
                   placeholder="Contoh: budi@gmail.com"
                   value={tenantEmail}
                   onChange={(e) => setTenantEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
+                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-3">
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowTenantModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20"
                 >
                   Simpan Penyewa
                 </button>
@@ -422,31 +464,43 @@ export default function TenantsPage() {
         </div>
       )}
 
-      {/* Modal Buat Kontrak Baru */}
+      {/* Modal Buat Kontrak Baru (Selaras 100% dengan Notifikasi Popup) */}
       {showContractModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[28px] max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowContractModal(false);
+          }}
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
+        >
+          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[32px] max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
               <div>
-                <h3 className="font-extrabold text-base text-slate-900">Terbitkan Kontrak Sewa</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">Otomatis mengubah kamar menjadi OCCUPIED</p>
+                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
+                  • MODUL 2 • KONTRAK SEWA
+                </span>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                  Terbitkan Kontrak Sewa
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Status kamar otomatis beralih menjadi OCCUPIED.
+                </p>
               </div>
               <button 
                 onClick={() => setShowContractModal(false)}
-                className="p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateContract} className="space-y-3.5">
+            <form onSubmit={handleCreateContract} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Pilih Penyewa</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Pilih Penyewa</label>
                 <select
                   required
                   value={selectedTenantId}
                   onChange={(e) => setSelectedTenantId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
+                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 >
                   <option value="">-- Pilih Penyewa Terdaftar --</option>
                   {tenants.map((t) => (
@@ -458,11 +512,11 @@ export default function TenantsPage() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">
                   Pilih Unit Kamar (Hanya Kamar AVAILABLE)
                 </label>
                 {availableRooms.length === 0 ? (
-                  <p className="text-xs text-rose-600 font-bold bg-rose-50 p-2.5 rounded-xl border border-rose-200">
+                  <p className="text-xs text-rose-600 font-bold bg-rose-50 p-3 rounded-xl border border-rose-200">
                     Tidak ada unit kamar kosong saat ini.
                   </p>
                 ) : (
@@ -470,7 +524,7 @@ export default function TenantsPage() {
                     required
                     value={selectedRoomId}
                     onChange={(e) => setSelectedRoomId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
+                    className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                   >
                     <option value="">-- Pilih Kamar Kosong --</option>
                     {availableRooms.map((r) => (
@@ -484,39 +538,39 @@ export default function TenantsPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Mulai Sewa</label>
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">Mulai Sewa</label>
                   <input
                     type="date"
                     required
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
+                    className="w-full px-4 py-2 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Selesai Sewa</label>
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">Selesai Sewa</label>
                   <input
                     type="date"
                     required
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
+                    className="w-full px-4 py-2 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-3">
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowContractModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={availableRooms.length === 0}
-                  className="px-4 py-2 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20"
                 >
                   Terbitkan Kontrak
                 </button>
