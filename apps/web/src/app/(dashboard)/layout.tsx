@@ -17,8 +17,11 @@ import {
   Trash2, 
   Clock, 
   User, 
-  UserCheck 
+  UserCheck,
+  Crown,
+  ChevronDown
 } from 'lucide-react';
+import { useRole, ROLE_PROFILES, UserRole } from '@/context/RoleContext';
 
 interface NotificationItem {
   id: string;
@@ -42,11 +45,17 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const isTenantPortal = pathname.startsWith('/portal');
+  const { role, setRole, currentProfile } = useRole();
+  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
 
-  // Helper page title for clean navbar
+  // Helper page title for clean navbar that reflects the active role
   const getPageTitle = () => {
-    if (pathname === '/') return 'Dashboard Overview';
+    if (pathname === '/') {
+      if (role === 'ADMIN') return 'Super Admin • Tata Kelola Platform';
+      if (role === 'OWNER') return 'Dashboard Operasional Kos Harmoni';
+      if (role === 'TENANT') return 'Portal Mandiri Penyewa (Budi Santoso)';
+      return 'Dashboard Overview';
+    }
     if (pathname.startsWith('/properties')) return 'Properti & Unit Kamar (Aset)';
     if (pathname.startsWith('/tenants')) return 'Penyewa & Kontrak Sewa (CRM)';
     if (pathname.startsWith('/invoices')) return 'Tagihan & Pembayaran (Keuangan)';
@@ -155,28 +164,35 @@ export default function DashboardLayout({
         {/* User Profile Card (Adapts to Active Role Persona) */}
         <div className="bg-[#070b13] rounded-2xl p-3 border border-slate-800/80 flex flex-col gap-2.5">
           <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-xs text-white shrink-0 ${
-              isTenantPortal 
-                ? 'bg-gradient-to-br from-blue-600 to-indigo-700 border border-blue-400/40' 
-                : 'bg-gradient-to-br from-indigo-600 to-slate-800 border border-indigo-400/30'
-            }`}>
-              {isTenantPortal ? 'BS' : 'MA'}
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-xs shrink-0 shadow-xs ${currentProfile.avatarBg}`}>
+              {currentProfile.avatar}
             </div>
             <div className="min-w-0">
               <p className="text-xs font-bold text-white truncate leading-tight">
-                {isTenantPortal ? 'Budi Santoso' : 'Admin Muhammad Ajiz'}
+                {currentProfile.name}
               </p>
               <p className="text-[10px] text-indigo-400 font-medium">
-                {isTenantPortal ? 'Penyewa Kamar 101' : 'Owner / Property Admin'}
+                {currentProfile.title}
               </p>
             </div>
           </div>
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400 font-medium px-1">
-            <span className="hover:text-slate-200 flex items-center gap-1 cursor-pointer transition-colors">
-              <KeyRound className="w-3 h-3" /> Password
-            </span>
-            <span className="hover:text-rose-400 flex items-center gap-1 cursor-pointer transition-colors">
-              <LogOut className="w-3 h-3" /> Keluar
+            <button 
+              onClick={() => setShowRoleDropdown(true)}
+              className="hover:text-indigo-300 flex items-center gap-1 cursor-pointer transition-colors focus:outline-none"
+              title="Ganti Role Perspektif"
+            >
+              <KeyRound className="w-3 h-3" /> Ganti Role
+            </button>
+            <span 
+              onClick={() => {
+                if (confirm('Reset ke role Pemilik Kos default?')) {
+                  setRole('OWNER');
+                }
+              }}
+              className="hover:text-rose-400 flex items-center gap-1 cursor-pointer transition-colors"
+            >
+              <LogOut className="w-3 h-3" /> Reset
             </span>
           </div>
         </div>
@@ -197,65 +213,152 @@ export default function DashboardLayout({
             </span>
           </div>
 
-          {/* Right: Role Switcher & Notification & Profile */}
+          {/* Right: Notification & Interactive Role Switcher Dropdown */}
           <div className="flex items-center gap-3 shrink-0">
-            {/* Minimalist Role Switcher */}
-            <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/70 text-xs">
-              <Link
-                href="/"
-                className={`px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 ${
-                  !isTenantPortal
-                    ? 'bg-[#0b0f19] text-white shadow-xs'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-                title="Beralih ke Mode Pengelola Kos (Akses ERP Penuh)"
-              >
-                <Building2 className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Pengelola</span>
-              </Link>
-              <Link
-                href="/portal"
-                className={`px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 ${
-                  isTenantPortal
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-                title="Beralih ke Portal Penyewa (Bayar Tagihan)"
-              >
-                <User className="w-3.5 h-3.5 text-indigo-200" />
-                <span>Penyewa</span>
-              </Link>
-            </div>
-
             {/* Notification Bell */}
             <button 
               onClick={() => setShowNotificationModal(true)}
-              className="relative p-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors focus:outline-none"
+              className="relative p-2.5 rounded-2xl bg-slate-100/80 hover:bg-slate-200/70 border border-slate-200/80 text-slate-600 transition-colors focus:outline-none"
               title="Buka Notifikasi"
             >
               <Bell className="w-4 h-4 text-slate-600" />
               {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center animate-pulse">
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center animate-pulse">
                   {unreadCount}
                 </span>
               )}
             </button>
 
-            {/* User Profile Avatar */}
-            <div className="flex items-center gap-2.5 pl-2.5 border-l border-slate-200/80">
-              <div className={`w-7 h-7 rounded-full text-white font-extrabold text-[11px] flex items-center justify-center shadow-xs ${
-                isTenantPortal ? 'bg-blue-600' : 'bg-[#0b0f19] text-indigo-300'
-              }`}>
-                {isTenantPortal ? 'BS' : 'MA'}
-              </div>
-              <div className="hidden sm:block text-left">
-                <p className="text-xs font-bold text-slate-800 leading-none">
-                  {isTenantPortal ? 'Budi Santoso' : 'Admin Ajiz'}
-                </p>
-                <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                  {isTenantPortal ? 'Penyewa' : 'Pengelola'}
-                </p>
-              </div>
+            {/* Interactive Role Switcher Dropdown (Sedikit Diperbesar & Elegan) */}
+            <div className="relative">
+              <button
+                onClick={() => setShowRoleDropdown(!showRoleDropdown)}
+                className="flex items-center gap-3 p-1.5 sm:px-3.5 sm:py-2 bg-white/90 hover:bg-white border border-slate-200/80 rounded-2xl transition-all focus:outline-none group shadow-xs hover:shadow-sm"
+                title="Klik untuk memilih perspektif role (Super Admin, Pemilik Kos, Penyewa)"
+              >
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-extrabold text-xs shadow-xs ${currentProfile.avatarBg}`}>
+                  {currentProfile.avatar}
+                </div>
+                <div className="text-left hidden sm:block">
+                  <p className="text-xs font-black text-slate-900 leading-tight">
+                    {currentProfile.name}
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className={`inline-block w-1.5 h-1.5 rounded-full ${
+                      role === 'ADMIN' ? 'bg-purple-500' : role === 'OWNER' ? 'bg-indigo-500' : 'bg-blue-500'
+                    }`} />
+                    <p className="text-[10px] font-bold text-slate-500 leading-none">
+                      {currentProfile.badge}
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-slate-400 group-hover:text-slate-700 transition-transform duration-200 ml-0.5 ${showRoleDropdown ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Enlarged Role Perspective Dropdown Card */}
+              {showRoleDropdown && (
+                <>
+                  {/* Backdrop overlay for closing dropdown */}
+                  <div 
+                    className="fixed inset-0 z-40 bg-black/15 backdrop-blur-[1px]" 
+                    onClick={() => setShowRoleDropdown(false)} 
+                  />
+
+                  {/* Enlarged Dropdown Card */}
+                  <div className="absolute right-0 top-full mt-2.5 w-84 sm:w-96 rounded-[28px] p-4 bg-white/95 backdrop-blur-2xl border border-white/90 shadow-[0_20px_50px_rgba(8,15,30,0.18)] z-50 animate-in zoom-in-95 fade-in duration-150 space-y-3">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-0.5">
+                          • PERSPEKTIF ROLE ERP •
+                        </span>
+                        <h4 className="text-sm font-black text-slate-900 tracking-tight">
+                          Ganti Perspektif Pengguna
+                        </h4>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Uji coba tampilan & fitur unik untuk masing-masing hak akses.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setShowRoleDropdown(false)}
+                        className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Role Option List */}
+                    <div className="space-y-2">
+                      {(['ADMIN', 'OWNER', 'TENANT'] as UserRole[]).map((r) => {
+                        const profile = ROLE_PROFILES[r];
+                        const isSelected = role === r;
+
+                        return (
+                          <button
+                            key={r}
+                            onClick={() => {
+                              setRole(r);
+                              setShowRoleDropdown(false);
+                            }}
+                            className={`w-full text-left p-3 rounded-2xl transition-all flex items-start gap-3 border ${
+                              isSelected
+                                ? 'bg-gradient-to-r from-indigo-50/90 to-purple-50/60 border-indigo-300/80 shadow-xs'
+                                : 'bg-slate-50/70 hover:bg-slate-100/80 border-slate-200/60 hover:border-slate-300'
+                            }`}
+                          >
+                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-xs shrink-0 shadow-xs ${
+                              r === 'ADMIN' 
+                                ? 'bg-gradient-to-br from-indigo-800 to-purple-900 text-white' 
+                                : r === 'OWNER' 
+                                ? 'bg-gradient-to-br from-slate-900 to-indigo-950 text-indigo-300' 
+                                : 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white'
+                            }`}>
+                              {r === 'ADMIN' ? (
+                                <Crown className="w-5 h-5 text-amber-300" />
+                              ) : r === 'OWNER' ? (
+                                <Building2 className="w-5 h-5 text-indigo-300" />
+                              ) : (
+                                <User className="w-5 h-5 text-blue-200" />
+                              )}
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1 mb-0.5">
+                                <span className="text-xs font-black text-slate-900 truncate">
+                                  {profile.name}
+                                </span>
+                                <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${
+                                  isSelected
+                                    ? 'bg-indigo-600 text-white shadow-2xs'
+                                    : 'bg-slate-200/80 text-slate-700'
+                                }`}>
+                                  {profile.badge}
+                                </span>
+                              </div>
+                              <p className="text-[10px] font-bold text-indigo-950 truncate">
+                                {profile.title}
+                              </p>
+                              <p className="text-[11px] text-slate-500 leading-tight mt-1 line-clamp-2">
+                                {profile.description}
+                              </p>
+                            </div>
+
+                            {isSelected && (
+                              <div className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                                <Check className="w-3 h-3" />
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 px-1 font-medium">
+                      <span>*Tersimpan di browser session</span>
+                      <span className="text-indigo-600 font-bold">Simulasi 3 Role ERP</span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </header>
