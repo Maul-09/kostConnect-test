@@ -35,7 +35,7 @@ declare global {
 }
 
 export default function InvoicesPage() {
-  const { role } = useRole();
+  const { role, setRole } = useRole();
   const { showToast, showLoading, hideLoading, showConfirm } = useFeedback();
   const { triggerPaymentSuccess, addNotification } = useNotification();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -424,6 +424,43 @@ export default function InvoicesPage() {
   const unpaidInvoices = displayedInvoices.filter((i) => i.status === 'UNPAID');
   const totalUnpaid = unpaidInvoices.reduce((acc, curr) => acc + Number(curr.amount), 0);
 
+  if (role === 'ADMIN') {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white/90 backdrop-blur-xl border border-white/80 rounded-[32px] p-8 sm:p-12 text-center max-w-xl mx-auto my-12 shadow-xl space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto shadow-xs">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-amber-700 block mb-1">
+              • TRANSAKSI DIKELOLA KHUSUS
+            </span>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              Modul Transaksi & Pembayaran Sewa
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1.5 leading-relaxed max-w-md mx-auto">
+              Sesuai ketentuan sistem ERP, transaksi pembayaran dan penagihan sewa dikelola secara eksklusif oleh <strong>Pemilik Kos</strong> (penerbitan invoice) dan <strong>Penyewa</strong> (pelunasan via Midtrans Snap).
+            </p>
+          </div>
+          <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={() => setRole('OWNER')}
+              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-600/20 cursor-pointer"
+            >
+              Beralih ke Role Pemilik Kos
+            </button>
+            <button
+              onClick={() => setRole('TENANT')}
+              className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+            >
+              Beralih ke Role Penyewa
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Midtrans Snap Script Loader */}
@@ -442,20 +479,16 @@ export default function InvoicesPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[11px] font-bold text-indigo-800 uppercase tracking-wider">
-                {role === 'ADMIN' ? 'Role: Super Admin • Audit Finansial' : role === 'OWNER' ? 'Role: Pemilik Kos • H. Rahmat Santoso' : 'Role: Penyewa'}
+                {role === 'OWNER' ? 'Role: Pemilik Kos • H. Rahmat Santoso' : 'Role: Penyewa'}
               </span>
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
-              {role === 'ADMIN' 
-                ? 'Audit Transaksi & Pembayaran Platform' 
-                : role === 'OWNER' 
+              {role === 'OWNER' 
                 ? 'Tagihan Sewa Kos Harmoni Residence' 
                 : 'Tagihan Sewa Kamar Saya'}
             </h1>
             <p className="text-xs text-slate-600 mt-1 max-w-xl">
-              {role === 'ADMIN'
-                ? 'Monitoring dan audit finansial seluruh arus kas sewa properti se-platform.'
-                : role === 'OWNER'
+              {role === 'OWNER'
                 ? 'Terbitkan tagihan sewa berkala untuk penyewa di Kos Harmoni Residence dan pantau riwayat pelunasan dana.'
                 : 'Daftar invoice tagihan sewa kamar Anda yang dapat dilunasi secara online melalui Midtrans Snap.'}
             </p>
@@ -497,15 +530,6 @@ export default function InvoicesPage() {
               <Plus className="w-4 h-4 text-indigo-400" /> Terbitkan Tagihan Baru
             </button>
           )}
-
-          {role === 'ADMIN' && (
-            <div className="bg-white/90 border border-purple-200 rounded-2xl px-4 py-2.5 shadow-2xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Mode Otorisasi</span>
-              <span className="text-xs font-extrabold text-purple-900 flex items-center gap-1.5 mt-0.5">
-                <ShieldCheck className="w-4 h-4 text-purple-600" /> Audit Finansial
-              </span>
-            </div>
-          )}
         </div>
       </div>
 
@@ -538,7 +562,7 @@ export default function InvoicesPage() {
           <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                {role === 'OWNER' ? 'TOTAL TAGIHAN KOS HARMONI' : role === 'ADMIN' ? 'VOLUME TRANSAKSI PLATFORM' : 'TOTAL TAGIHAN SAYA'}
+                {role === 'OWNER' ? 'TOTAL TAGIHAN KOS HARMONI' : 'TOTAL TAGIHAN SAYA'}
               </span>
               <span className="text-[10px] font-bold text-slate-500 bg-slate-100/80 px-2 py-0.5 rounded-full">
                 {displayedInvoices.length} transaksi
@@ -583,37 +607,27 @@ export default function InvoicesPage() {
             </div>
           </div>
 
-          {/* Card 3: Platform Fee for Admin or Unpaid for Owner/Tenant */}
-          <div className={`bg-white/85 backdrop-blur-xl rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] flex flex-col justify-between ${
-            role === 'ADMIN' 
-              ? 'border border-purple-200/80 bg-gradient-to-br from-purple-50/40 to-white/80' 
-              : 'border border-rose-200/80 bg-gradient-to-br from-rose-50/40 to-white/80'
-          }`}>
+          {/* Card 3: Unpaid for Owner/Tenant */}
+          <div className="bg-white/85 backdrop-blur-xl rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] flex flex-col justify-between border border-rose-200/80 bg-gradient-to-br from-rose-50/40 to-white/80">
             <div className="flex items-center justify-between">
-              <span className={`text-[11px] font-bold uppercase tracking-wider ${
-                role === 'ADMIN' ? 'text-purple-700' : 'text-rose-700'
-              }`}>
-                {role === 'ADMIN' ? 'ESTIMASI REVENUE PLATFORM (2.5%)' : role === 'OWNER' ? 'TAGIHAN BELUM DITERIMA' : 'MENUNGGU PEMBAYARAN'}
+              <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700">
+                {role === 'OWNER' ? 'TAGIHAN BELUM DITERIMA' : 'MENUNGGU PEMBAYARAN'}
               </span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                role === 'ADMIN' ? 'text-purple-800 bg-purple-100/80' : 'text-rose-800 bg-rose-100/80'
-              }`}>
-                {role === 'ADMIN' ? 'Take Rate 2.5%' : `${unpaidInvoices.length} tertunda`}
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-rose-800 bg-rose-100/80">
+                {unpaidInvoices.length} tertunda
               </span>
             </div>
             <div className="mt-3">
-              <span className={`text-2xl sm:text-3xl font-black tracking-tight block ${
-                role === 'ADMIN' ? 'text-purple-900' : 'text-rose-800'
-              }`}>
-                {role === 'ADMIN' ? formatMoney(totalPaid * 0.025) : formatMoney(totalUnpaid)}
+              <span className="text-2xl sm:text-3xl font-black tracking-tight block text-rose-800">
+                {formatMoney(totalUnpaid)}
               </span>
-              <p className={`text-[11px] mt-1 ${role === 'ADMIN' ? 'text-purple-600' : 'text-rose-600'}`}>
-                {role === 'ADMIN' ? 'Bagi hasil komisi platform dari transaksi sewa yang telah lunas' : role === 'OWNER' ? 'Tagihan sewa menunggu transfer penyewa' : 'Piutang sewa aktif'}
+              <p className="text-[11px] mt-1 text-rose-600">
+                {role === 'OWNER' ? 'Tagihan sewa menunggu transfer penyewa' : 'Piutang sewa aktif'}
               </p>
             </div>
-            <div className={`mt-4 w-full h-1.5 rounded-full overflow-hidden ${role === 'ADMIN' ? 'bg-purple-100' : 'bg-rose-100'}`}>
+            <div className="mt-4 w-full h-1.5 rounded-full overflow-hidden bg-rose-100">
               <div 
-                className={`h-full rounded-full transition-all duration-500 ${role === 'ADMIN' ? 'bg-purple-600' : 'bg-rose-500'}`} 
+                className="h-full rounded-full transition-all duration-500 bg-rose-500" 
                 style={{ width: `${totalInvoiced > 0 ? (totalPaid / totalInvoiced) * 100 : 0}%` }} 
               />
             </div>
@@ -667,12 +681,10 @@ export default function InvoicesPage() {
           <div>
             <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
               <Receipt className="w-5 h-5 text-indigo-600" />
-              {role === 'ADMIN' ? 'Rekapitulasi Transaksi Platform' : role === 'OWNER' ? 'Daftar Tagihan Kos Harmoni' : 'Tagihan Sewa Saya'}
+              {role === 'OWNER' ? 'Daftar Tagihan Kos Harmoni' : 'Tagihan Sewa Saya'}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              {role === 'ADMIN' 
-                ? 'Semua catatan faktur sewa dan status audit transaksi Midtrans.' 
-                : role === 'OWNER'
+              {role === 'OWNER'
                 ? 'Daftar penagihan sewa bulanan kepada penghuni kamar Kos Harmoni.'
                 : 'Pilih tagihan untuk melakukan pelunasan via Midtrans Snap.'}
             </p>
@@ -701,7 +713,7 @@ export default function InvoicesPage() {
                   <th className="pb-3 px-3">Nominal Tagihan</th>
                   <th className="pb-3 px-3">Status</th>
                   <th className="pb-3 px-3 text-right">
-                    {role === 'TENANT' ? 'Pembayaran Online' : role === 'OWNER' ? 'Status Penagihan' : 'Status Audit Finansial'}
+                    {role === 'TENANT' ? 'Pembayaran Online' : 'Status Penagihan'}
                   </th>
                 </tr>
               </thead>
@@ -815,20 +827,6 @@ export default function InvoicesPage() {
                               >
                                 <MessageCircle className="w-3.5 h-3.5" /> Ingatkan WA
                               </a>
-                            )}
-                          </>
-                        )}
-
-                        {role === 'ADMIN' && (
-                          <>
-                            {isPaid ? (
-                              <span className="text-[11px] text-indigo-800 font-bold bg-indigo-50 px-2.5 py-1.5 rounded-xl border border-indigo-200 inline-flex items-center gap-1.5">
-                                <FileCheck2 className="w-3.5 h-3.5 text-indigo-600" /> Audit: Lunas Midtrans
-                              </span>
-                            ) : (
-                              <span className="text-[11px] text-amber-800 font-bold bg-amber-50 px-2.5 py-1.5 rounded-xl border border-amber-200 inline-flex items-center gap-1.5">
-                                <Clock className="w-3.5 h-3.5 text-amber-600" /> Audit: Piutang Mitra
-                              </span>
                             )}
                           </>
                         )}

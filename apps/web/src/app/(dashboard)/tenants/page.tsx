@@ -303,11 +303,22 @@ export default function TenantsPage() {
 
   // Filter tenants and contracts by user role
   const displayedContracts = role === 'OWNER'
-    ? contracts.filter((c) => c.room?.property?.name?.toLowerCase().includes('harmoni'))
+    ? contracts.filter((c) => 
+        c.room?.property?.name?.toLowerCase().includes('harmoni') ||
+        c.room?.property?.owner?.name?.toLowerCase().includes('rahmat') ||
+        !c.room?.property?.ownerId
+      )
     : contracts;
 
   const displayedTenants = role === 'OWNER'
-    ? tenants.filter((t) => t.name === 'Budi Santoso' || displayedContracts.some((c) => c.tenantId === t.id))
+    ? tenants.filter((t) => 
+        // 1. Penyewa yang sudah memiliki kontrak di kos pemilik
+        displayedContracts.some((c) => c.tenantId === t.id) ||
+        // 2. Penyewa yang baru didaftarkan / calon penghuni (belum memiliki kontrak sewa manapun)
+        (!t.contracts || t.contracts.length === 0) ||
+        // 3. Penyewa default mock
+        t.name === 'Budi Santoso'
+      )
     : tenants;
 
   // Available rooms for contract creation in owned property
@@ -666,61 +677,90 @@ export default function TenantsPage() {
           <p className="text-xs text-slate-400 italic">Belum ada penyewa terdaftar.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {displayedTenants.map((t) => (
-              <div
-                key={t.id}
-                className="bg-slate-50/70 hover:bg-white border border-slate-200/60 rounded-2xl p-4 transition-all flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2.5">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-800 font-black text-xs flex items-center justify-center shrink-0">
-                        {t.name.substring(0, 2).toUpperCase()}
+            {displayedTenants.map((t) => {
+              const hasActiveContract = displayedContracts.some((c) => c.tenantId === t.id && c.isActive);
+              const hasAnyContract = displayedContracts.some((c) => c.tenantId === t.id);
+
+              return (
+                <div
+                  key={t.id}
+                  className="bg-slate-50/70 hover:bg-white border border-slate-200/60 rounded-2xl p-4 transition-all flex flex-col justify-between shadow-2xs hover:shadow-xs"
+                >
+                  <div>
+                    <div className="flex items-start justify-between mb-2.5 gap-2">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-800 font-black text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                          {t.name.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="font-bold text-xs text-slate-800 truncate">{t.name}</p>
+                            {hasActiveContract ? (
+                              <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                                Kontrak Aktif
+                              </span>
+                            ) : (
+                              <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                                Calon Penyewa
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-slate-400 truncate mt-0.5">ID: {t.id.substring(0, 8)}...</p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-xs text-slate-800 truncate">{t.name}</p>
-                        <p className="text-[10px] text-slate-400 truncate">ID: {t.id.substring(0, 8)}...</p>
+
+                      {(role === 'OWNER' || role === 'ADMIN') && (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => handleOpenEditTenant(t)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
+                            title="Edit Data Penyewa"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            disabled={deletingTenantId === t.id}
+                            onClick={() => handleDeleteTenant(t)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer disabled:opacity-50"
+                            title="Hapus Data Penyewa"
+                          >
+                            {deletingTenantId === t.id ? (
+                              <Spinner size="sm" className="text-rose-600" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-1 text-[11px] text-slate-600 pt-2 border-t border-slate-200/60">
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{t.phone || '-'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="truncate">{t.email || '-'}</span>
                       </div>
                     </div>
 
-                    {(role === 'OWNER' || role === 'ADMIN') && (
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => handleOpenEditTenant(t)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
-                          title="Edit Data Penyewa"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          disabled={deletingTenantId === t.id}
-                          onClick={() => handleDeleteTenant(t)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer disabled:opacity-50"
-                          title="Hapus Data Penyewa"
-                        >
-                          {deletingTenantId === t.id ? (
-                            <Spinner size="sm" className="text-rose-600" />
-                          ) : (
-                            <Trash2 className="w-3.5 h-3.5" />
-                          )}
-                        </button>
-                      </div>
+                    {/* Tombol Cepat Terbitkan Kontrak jika belum punya kontrak dan role Pemilik Kos */}
+                    {!hasActiveContract && role === 'OWNER' && (
+                      <button
+                        onClick={() => {
+                          setSelectedTenantId(t.id);
+                          setShowContractModal(true);
+                        }}
+                        className="mt-3 w-full py-1.5 px-3 bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Terbitkan Kontrak Sewa
+                      </button>
                     )}
                   </div>
-
-                  <div className="space-y-1 text-[11px] text-slate-600 pt-2 border-t border-slate-200/60">
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{t.phone || '-'}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-3.5 h-3.5 text-slate-400" />
-                      <span className="truncate">{t.email || '-'}</span>
-                    </div>
-                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -737,97 +777,115 @@ export default function TenantsPage() {
           className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in duration-200"
         >
           <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-t-[32px] sm:rounded-[32px] max-w-lg w-full p-5 sm:p-8 shadow-2xl space-y-4 sm:space-y-5 max-h-[88vh] overflow-y-auto animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
-            <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
-                  MANAJEMEN MITRA PROPERTI
-                </span>
-                <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  Daftarkan Akun Pemilik Kos
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Super Admin membuatkan akun dan kredensial login sementara untuk mitra pemilik kos.
-                </p>
-              </div>
-              <button 
-                onClick={() => {
-                  setShowOwnerModal(false);
-                  setCreatedOwnerResult(null);
-                }}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {createdOwnerResult ? (
-              <div className="space-y-4">
-                <div className="p-4 bg-emerald-50/80 border border-emerald-200 rounded-2xl">
-                  <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm mb-1">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                    Akun Pemilik Kos Berhasil Dibuat!
-                  </div>
-                  <p className="text-xs text-emerald-700">
-                    Akun telah didaftarkan ke database. Berikan kredensial login sementara di bawah kepada mitra pemilik kos.
+            {!createdOwnerResult ? (
+              <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
+                    MANAJEMEN MITRA PROPERTI
+                  </span>
+                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                    Daftarkan Akun Pemilik Kos
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Super Admin membuatkan akun dan kredensial login sementara untuk mitra pemilik kos.
                   </p>
                 </div>
+                <button 
+                  onClick={() => {
+                    setShowOwnerModal(false);
+                    setCreatedOwnerResult(null);
+                  }}
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : null}
 
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3.5">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                      KREDENSIAL RESMI AKUN PEMILIK KOS
-                    </span>
-                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100/80 border border-amber-300/80 px-2 py-0.5 rounded-md">
-                      Password Sementara: 123456789
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Nama Pemilik</span>
-                    <span className="text-xs font-bold text-slate-800">{createdOwnerResult.name}</span>
-                  </div>
-
-                  {/* Email Login with Quick Copy */}
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider mb-1">Email Login</span>
-                    <div className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-2xs">
-                      <span className="text-xs font-mono font-bold text-indigo-700 select-all">{createdOwnerResult.email}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(createdOwnerResult.email);
-                          setCopiedOwner(true);
-                          setTimeout(() => setCopiedOwner(false), 2000);
-                        }}
-                        className="text-[11px] font-bold text-slate-500 hover:text-indigo-600 flex items-center gap-1 cursor-pointer hover:bg-slate-100 px-2 py-0.5 rounded-lg transition-colors"
-                      >
-                        <Copy className="w-3 h-3" /> Salin Email
-                      </button>
+            {createdOwnerResult ? (
+              <div className="space-y-4 animate-in zoom-in-95 duration-200">
+                {/* Header Sukses & Icon */}
+                <div className="flex items-start justify-between pb-2 border-b border-slate-100 gap-3">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/25">
+                      <ShieldCheck className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 block">
+                        • AKUN RESMI DIAKTIFKAN
+                      </span>
+                      <h3 className="text-lg font-black text-slate-900 tracking-tight leading-tight">
+                        Akun Pemilik Kos Berhasil Dibuat!
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Berikan kredensial resmi berikut kepada mitra pemilik kos:
+                      </p>
                     </div>
                   </div>
+                  <button 
+                    onClick={() => {
+                      setShowOwnerModal(false);
+                      setCreatedOwnerResult(null);
+                    }}
+                    className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
 
-                  {/* Password Sementara with Quick Copy */}
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider mb-1">Password Sementara</span>
-                    <div className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-2xs">
-                      <span className="font-mono text-sm font-black text-indigo-950 tracking-wider select-all">
+                {/* Sleek Glass Credential Card */}
+                <div className="bg-[#0b0f19] text-white rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-xl space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Nama Mitra</span>
+                      <span className="text-sm font-extrabold text-white tracking-tight">{createdOwnerResult.name}</span>
+                    </div>
+                    <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                      Pemilik Kos
+                    </span>
+                  </div>
+
+                  {/* Email Row */}
+                  <div className="flex items-center justify-between bg-slate-900/80 px-3.5 py-2.5 rounded-xl border border-slate-800">
+                    <div className="min-w-0 pr-2">
+                      <span className="text-[10px] text-slate-400 block font-medium">Email Login</span>
+                      <span className="font-mono text-xs font-bold text-indigo-300 truncate block select-all">{createdOwnerResult.email}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(createdOwnerResult.email);
+                        setCopiedOwner(true);
+                        setTimeout(() => setCopiedOwner(false), 2000);
+                      }}
+                      className="text-[11px] font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 rounded-lg transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" /> Salin
+                    </button>
+                  </div>
+
+                  {/* Password Row */}
+                  <div className="flex items-center justify-between bg-slate-900/80 px-3.5 py-2.5 rounded-xl border border-slate-800">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block font-medium">Password Sementara</span>
+                      <span className="font-mono text-xs font-black text-amber-300 tracking-wider select-all">
                         {createdOwnerResult.temporaryPassword || '123456789'}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(createdOwnerResult.temporaryPassword || '123456789');
-                          setCopiedOwner(true);
-                          setTimeout(() => setCopiedOwner(false), 2000);
-                        }}
-                        className="text-[11px] font-bold text-slate-500 hover:text-indigo-600 flex items-center gap-1 cursor-pointer hover:bg-slate-100 px-2 py-0.5 rounded-lg transition-colors"
-                      >
-                        <Copy className="w-3 h-3" /> Salin Password
-                      </button>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(createdOwnerResult.temporaryPassword || '123456789');
+                        setCopiedOwner(true);
+                        setTimeout(() => setCopiedOwner(false), 2000);
+                      }}
+                      className="text-[11px] font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 rounded-lg transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" /> Salin
+                    </button>
                   </div>
 
-                  {/* Tombol Salin Email & Password Sekaligus */}
+                  {/* Tombol Salin Sekaligus */}
                   <button
                     type="button"
                     onClick={() => {
@@ -836,32 +894,32 @@ export default function TenantsPage() {
                       setCopiedOwner(true);
                       setTimeout(() => setCopiedOwner(false), 2500);
                     }}
-                    className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs ${
-                      copiedOwner 
-                        ? 'bg-emerald-600 text-white' 
-                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20'
+                    className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm ${
+                      copiedOwner
+                        ? 'bg-emerald-600 text-white shadow-emerald-600/30'
+                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/30'
                     }`}
                   >
                     {copiedOwner ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    <span>{copiedOwner ? '✓ Email & Password Berhasil Disalin!' : '📋 Salin Email & Password Sekaligus'}</span>
+                    <span>{copiedOwner ? '✓ Kredensial Berhasil Disalin!' : '📋 Salin Email & Password Sekaligus'}</span>
                   </button>
-
-                  <div className="p-3 bg-amber-50/90 border border-amber-200/90 rounded-xl text-[11px] text-amber-900 flex items-start gap-2">
-                    <Key className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                    <span>
-                      <strong>Ketentuan Keamanan:</strong> Pemilik kos <strong>wajib mengganti password baru</strong> (minimal 8 karakter, huruf besar, huruf kecil, angka & simbol) saat login pertama kali.
-                    </span>
-                  </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2.5 pt-2">
+                {/* Security Note */}
+                <div className="px-3.5 py-2 bg-amber-50/90 border border-amber-200/80 rounded-xl text-[11px] text-amber-900 flex items-center gap-2">
+                  <Key className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>Wajib mengganti password baru pada login pertama kali.</span>
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="pt-2 flex items-center justify-end">
                   <button
                     type="button"
                     onClick={() => {
                       setShowOwnerModal(false);
                       setCreatedOwnerResult(null);
                     }}
-                    className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                    className="w-full sm:w-auto px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
                   >
                     Selesai
                   </button>
@@ -947,102 +1005,115 @@ export default function TenantsPage() {
           className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in duration-200"
         >
           <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-t-[32px] sm:rounded-[32px] max-w-lg w-full p-5 sm:p-8 shadow-2xl space-y-4 sm:space-y-5 max-h-[88vh] overflow-y-auto animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
-            <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
-                  DATA PENYEWA KOS HARMONI
-                </span>
-                <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  Daftarkan Penyewa Baru
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Input identitas penyewa untuk otomatis membuatkan akun login dan penerbitan kontrak sewa.
-                </p>
-              </div>
-              <button 
-                onClick={() => {
-                  setShowTenantModal(false);
-                  setCreatedTenantResult(null);
-                }}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {createdTenantResult ? (
-              <div className="space-y-4">
-                <div className="p-4 bg-emerald-50/80 border border-emerald-200 rounded-2xl">
-                  <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm mb-1">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                    Akun Penyewa Berhasil Dibuat!
-                  </div>
-                  <p className="text-xs text-emerald-700">
-                    Akun login penyewa telah dibuat secara otomatis di database dengan password sementara.
+            {!createdTenantResult ? (
+              <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
+                    DATA PENYEWA KOS HARMONI
+                  </span>
+                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                    Daftarkan Penyewa Baru
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Input identitas penyewa untuk otomatis membuatkan akun login dan penerbitan kontrak sewa.
                   </p>
                 </div>
+                <button 
+                  onClick={() => {
+                    setShowTenantModal(false);
+                    setCreatedTenantResult(null);
+                  }}
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : null}
 
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3.5">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                      KREDENSIAL RESMI AKUN PENYEWA
-                    </span>
-                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100/80 border border-amber-300/80 px-2 py-0.5 rounded-md">
-                      Password Sementara: 123456789
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Nama Penyewa</span>
-                    <span className="text-xs font-bold text-slate-800">{createdTenantResult.name}</span>
-                  </div>
-
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Nomor WhatsApp / HP</span>
-                    <span className="text-xs font-medium text-slate-700">{createdTenantResult.phone}</span>
-                  </div>
-
-                  {/* Email Login with Quick Copy */}
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider mb-1">Email Login</span>
-                    <div className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-2xs">
-                      <span className="text-xs font-mono font-bold text-indigo-700 select-all">{createdTenantResult.email}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(createdTenantResult.email);
-                          setCopiedTenant(true);
-                          setTimeout(() => setCopiedTenant(false), 2000);
-                        }}
-                        className="text-[11px] font-bold text-slate-500 hover:text-indigo-600 flex items-center gap-1 cursor-pointer hover:bg-slate-100 px-2 py-0.5 rounded-lg transition-colors"
-                      >
-                        <Copy className="w-3 h-3" /> Salin Email
-                      </button>
+            {createdTenantResult ? (
+              <div className="space-y-4 animate-in zoom-in-95 duration-200">
+                {/* Header Sukses & Icon */}
+                <div className="flex items-start justify-between pb-2 border-b border-slate-100 gap-3">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/25">
+                      <CheckCircle2 className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 block">
+                        • AKUN RESMI DIAKTIFKAN
+                      </span>
+                      <h3 className="text-lg font-black text-slate-900 tracking-tight leading-tight">
+                        Akun Penyewa Berhasil Dibuat!
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Berikan kredensial resmi berikut kepada penyewa / calon penghuni:
+                      </p>
                     </div>
                   </div>
+                  <button 
+                    onClick={() => {
+                      setShowTenantModal(false);
+                      setCreatedTenantResult(null);
+                    }}
+                    className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
 
-                  {/* Password Sementara with Quick Copy */}
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider mb-1">Password Sementara</span>
-                    <div className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-2xs">
-                      <span className="font-mono text-sm font-black text-indigo-950 tracking-wider select-all">
+                {/* Sleek Glass Credential Card */}
+                <div className="bg-[#0b0f19] text-white rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-xl space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Nama Penyewa</span>
+                      <span className="text-sm font-extrabold text-white tracking-tight">{createdTenantResult.name}</span>
+                    </div>
+                    <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      Penyewa Kos
+                    </span>
+                  </div>
+
+                  {/* Email Row */}
+                  <div className="flex items-center justify-between bg-slate-900/80 px-3.5 py-2.5 rounded-xl border border-slate-800">
+                    <div className="min-w-0 pr-2">
+                      <span className="text-[10px] text-slate-400 block font-medium">Email Login</span>
+                      <span className="font-mono text-xs font-bold text-indigo-300 truncate block select-all">{createdTenantResult.email}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(createdTenantResult.email);
+                        setCopiedTenant(true);
+                        setTimeout(() => setCopiedTenant(false), 2000);
+                      }}
+                      className="text-[11px] font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 rounded-lg transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" /> Salin
+                    </button>
+                  </div>
+
+                  {/* Password Row */}
+                  <div className="flex items-center justify-between bg-slate-900/80 px-3.5 py-2.5 rounded-xl border border-slate-800">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block font-medium">Password Sementara</span>
+                      <span className="font-mono text-xs font-black text-amber-300 tracking-wider select-all">
                         {createdTenantResult.temporaryPassword || '123456789'}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(createdTenantResult.temporaryPassword || '123456789');
-                          setCopiedTenant(true);
-                          setTimeout(() => setCopiedTenant(false), 2000);
-                        }}
-                        className="text-[11px] font-bold text-slate-500 hover:text-indigo-600 flex items-center gap-1 cursor-pointer hover:bg-slate-100 px-2 py-0.5 rounded-lg transition-colors"
-                      >
-                        <Copy className="w-3 h-3" /> Salin Password
-                      </button>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(createdTenantResult.temporaryPassword || '123456789');
+                        setCopiedTenant(true);
+                        setTimeout(() => setCopiedTenant(false), 2000);
+                      }}
+                      className="text-[11px] font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 rounded-lg transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" /> Salin
+                    </button>
                   </div>
 
-                  {/* Tombol Salin Email & Password Sekaligus */}
+                  {/* Tombol Salin Sekaligus */}
                   <button
                     type="button"
                     onClick={() => {
@@ -1051,25 +1122,25 @@ export default function TenantsPage() {
                       setCopiedTenant(true);
                       setTimeout(() => setCopiedTenant(false), 2500);
                     }}
-                    className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs ${
-                      copiedTenant 
-                        ? 'bg-emerald-600 text-white' 
-                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20'
+                    className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm ${
+                      copiedTenant
+                        ? 'bg-emerald-600 text-white shadow-emerald-600/30'
+                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/30'
                     }`}
                   >
                     {copiedTenant ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    <span>{copiedTenant ? '✓ Email & Password Berhasil Disalin!' : '📋 Salin Email & Password Sekaligus'}</span>
+                    <span>{copiedTenant ? '✓ Kredensial Berhasil Disalin!' : '📋 Salin Email & Password Sekaligus'}</span>
                   </button>
-
-                  <div className="p-3 bg-amber-50/90 border border-amber-200/90 rounded-xl text-[11px] text-amber-900 flex items-start gap-2">
-                    <Key className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                    <span>
-                      <strong>Ketentuan Sistem:</strong> Penyewa <strong>wajib mengganti password baru</strong> (minimal 8 karakter, huruf besar, huruf kecil, angka & simbol) saat pertama kali login sebelum dapat melihat tagihan atau kontrak sewa.
-                    </span>
-                  </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2.5 pt-2">
+                {/* Security Note */}
+                <div className="px-3.5 py-2 bg-amber-50/90 border border-amber-200/80 rounded-xl text-[11px] text-amber-900 flex items-center gap-2">
+                  <Key className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>Wajib mengganti password baru pada login pertama kali.</span>
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="pt-2 flex items-center justify-end gap-2.5">
                   <button
                     type="button"
                     onClick={() => {

@@ -60,7 +60,6 @@ export default function DashboardLayout({
           { name: 'Dashboard Platform', href: '/', icon: LayoutDashboard },
           { name: 'Pendaftaran Properti', href: '/properties', icon: Building2 },
           { name: 'Mitra & Penyewa', href: '/tenants', icon: Users },
-          { name: 'Audit Pembayaran', href: '/invoices', icon: Receipt },
         ],
       };
     }

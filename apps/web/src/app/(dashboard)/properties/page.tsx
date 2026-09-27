@@ -264,7 +264,12 @@ export default function PropertiesPage() {
 
   // Filter properties based on active user role
   const displayedProperties = role === 'OWNER'
-    ? properties.filter((p) => p.name.toLowerCase().includes('harmoni'))
+    ? properties.filter((p) => 
+        p.name.toLowerCase().includes('harmoni') || 
+        p.owner?.name?.toLowerCase().includes('rahmat') ||
+        (selectedOwnerId && p.ownerId === selectedOwnerId) ||
+        !p.ownerId
+      )
     : properties;
 
   // Summary counts for current role scope
@@ -305,7 +310,7 @@ export default function PropertiesPage() {
           </div>
         </div>
 
-        {/* HANYA Super Admin yang memiliki hak mendaftarkan Properti Baru */}
+        {/* Super Admin & Pemilik Kos dapat mendaftarkan Properti Baru */}
         {role === 'ADMIN' && (
           <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start sm:self-center">
             <button
@@ -317,13 +322,18 @@ export default function PropertiesPage() {
           </div>
         )}
 
-        {/* Pemilik Kos memiliki info badge hak kepemilikan */}
         {role === 'OWNER' && (
-          <div className="bg-white/90 border border-indigo-200/80 rounded-2xl px-4 py-2.5 shadow-2xs self-start sm:self-center">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Kepemilikan Sah</span>
-            <span className="text-xs font-extrabold text-indigo-900 flex items-center gap-1.5 mt-0.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" /> Kos Harmoni Residence
-            </span>
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start sm:self-center">
+            <button
+              onClick={() => {
+                const currentOwnerObj = owners.find(o => o.name.toLowerCase().includes('rahmat')) || owners[0];
+                if (currentOwnerObj) setSelectedOwnerId(currentOwnerObj.id);
+                setShowPropertyModal(true);
+              }}
+              className="bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-2xl px-4 py-2.5 text-xs font-bold shadow-md shadow-indigo-950/20 hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Plus className="w-4 h-4 text-indigo-400" /> Daftarkan Properti Kos Baru
+            </button>
           </div>
         )}
       </div>
@@ -683,45 +693,57 @@ export default function PropertiesPage() {
                 />
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-bold text-slate-700">Mitra Pemilik Kos Terdaftar</label>
-                  <Link
-                    href="/tenants"
-                    className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
-                  >
-                    Kelola di Direktori Mitra &rarr;
-                  </Link>
-                </div>
-                {owners.length === 0 ? (
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center justify-between">
-                    <span>Belum ada akun pemilik kos yang terdaftar di database.</span>
+              {role === 'ADMIN' ? (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-slate-700">Mitra Pemilik Kos Terdaftar</label>
                     <Link
                       href="/tenants"
-                      className="font-bold underline text-amber-900 ml-2 cursor-pointer"
+                      className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
                     >
-                      Daftarkan di Menu Mitra
+                      Kelola di Direktori Mitra &rarr;
                     </Link>
                   </div>
-                ) : (
-                  <select
-                    required
-                    value={selectedOwnerId}
-                    onChange={(e) => setSelectedOwnerId(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all cursor-pointer"
-                  >
-                    <option value="" disabled>-- Pilih Pemilik Kos Terdaftar --</option>
-                    {owners.map((o) => (
-                      <option key={o.id} value={o.id}>
-                        {o.name} ({o.email}) - {o.phone || 'Tanpa No. HP'}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Properti wajib dihubungkan ke akun pemilik kos terdaftar yang dibuatkan oleh Super Admin.
-                </p>
-              </div>
+                  {owners.length === 0 ? (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center justify-between">
+                      <span>Belum ada akun pemilik kos yang terdaftar di database.</span>
+                      <Link
+                        href="/tenants"
+                        className="font-bold underline text-amber-900 ml-2 cursor-pointer"
+                      >
+                        Daftarkan di Menu Mitra
+                      </Link>
+                    </div>
+                  ) : (
+                    <select
+                      required
+                      value={selectedOwnerId}
+                      onChange={(e) => setSelectedOwnerId(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all cursor-pointer"
+                    >
+                      <option value="" disabled>-- Pilih Pemilik Kos Terdaftar --</option>
+                      {owners.map((o) => (
+                        <option key={o.id} value={o.id}>
+                          {o.name} ({o.email}) - {o.phone || 'Tanpa No. HP'}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Properti wajib dihubungkan ke akun pemilik kos terdaftar yang dibuatkan oleh Super Admin.
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3.5 bg-indigo-50/80 border border-indigo-200/80 rounded-2xl flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Pemilik Properti</span>
+                    <span className="text-xs font-bold text-indigo-950">H. Rahmat Santoso (Akun Anda)</span>
+                  </div>
+                  <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-indigo-600 text-white shadow-2xs">
+                    Pemilik Sah
+                  </span>
+                </div>
+              )}
 
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1.5">Alamat Lengkap</label>
