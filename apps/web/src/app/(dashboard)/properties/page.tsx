@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Property, Room, ApiResponse } from '@/types';
 import { useRole } from '@/context/RoleContext';
+import { useFeedback } from '@/context/FeedbackContext';
+import { formatNumberWithDots, parseNumberFromDots } from '@/lib/utils';
 import { 
   Building2, 
   Plus, 
@@ -23,6 +25,7 @@ import { Skeleton, SkeletonCard, Spinner } from '@/components/ui/skeleton';
 
 export default function PropertiesPage() {
   const { role } = useRole();
+  const { showToast, showLoading, hideLoading } = useFeedback();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -50,7 +53,7 @@ export default function PropertiesPage() {
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [roomNumber, setRoomNumber] = useState('');
-  const [roomPrice, setRoomPrice] = useState('1800000');
+  const [roomPrice, setRoomPrice] = useState('1.800.000');
 
   const fetchProperties = async () => {
     try {
@@ -87,6 +90,7 @@ export default function PropertiesPage() {
     e.preventDefault();
     try {
       setSubmitting(true);
+      showLoading('Mendaftarkan akun pemilik kos baru...');
       const res = await api.post<any, ApiResponse<any>>('/users/owners', {
         name: newOwnerName,
         email: newOwnerEmail,
@@ -100,10 +104,12 @@ export default function PropertiesPage() {
       setNewOwnerName('');
       setNewOwnerEmail('');
       setNewOwnerPhone('');
+      showToast('success', 'Akun Pemilik Kos Berhasil Dibuat', 'Kredensial login sementara (123456789) siap disalin.');
     } catch (err: any) {
-      alert(err.message || 'Gagal membuat akun pemilik kos');
+      showToast('error', 'Gagal Membuat Akun Pemilik', err.message || 'Terjadi kesalahan pada server');
     } finally {
       setSubmitting(false);
+      hideLoading();
     }
   };
 
@@ -111,6 +117,7 @@ export default function PropertiesPage() {
     e.preventDefault();
     try {
       setSubmitting(true);
+      showLoading('Mendaftarkan properti kos baru ke sistem...');
       await api.post('/properties', {
         name: propertyName,
         address: propertyAddress,
@@ -118,14 +125,17 @@ export default function PropertiesPage() {
         ownerId: selectedOwnerId || undefined,
       });
       setShowPropertyModal(false);
+      const createdName = propertyName;
       setPropertyName('');
       setPropertyAddress('');
       setPropertyCity('');
       fetchProperties();
+      showToast('success', 'Properti Berhasil Didaftarkan', `Properti ${createdName} berhasil ditambahkan ke database.`);
     } catch (err: any) {
-      alert(err.message);
+      showToast('error', 'Gagal Mendaftarkan Properti', err.message);
     } finally {
       setSubmitting(false);
+      hideLoading();
     }
   };
 
@@ -134,30 +144,37 @@ export default function PropertiesPage() {
     if (!selectedPropertyId) return;
     try {
       setSubmitting(true);
+      showLoading('Menyimpan unit kamar baru...');
       await api.post(`/properties/${selectedPropertyId}/rooms`, {
         roomNumber,
-        monthlyPrice: Number(roomPrice),
+        monthlyPrice: parseNumberFromDots(roomPrice),
       });
       setShowRoomModal(false);
+      const createdRoom = roomNumber;
       setRoomNumber('');
-      setRoomPrice('1800000');
+      setRoomPrice('1.800.000');
       fetchProperties();
+      showToast('success', 'Unit Kamar Berhasil Ditambahkan', `Kamar ${createdRoom} kini siap dihuni dan dipasarkan.`);
     } catch (err: any) {
-      alert(err.message);
+      showToast('error', 'Gagal Menambahkan Kamar', err.message);
     } finally {
       setSubmitting(false);
+      hideLoading();
     }
   };
 
   const handleToggleRoomStatus = async (roomId: string) => {
     try {
       setTogglingRoomId(roomId);
+      showLoading('Memperbarui status ketersediaan kamar...');
       await api.patch(`/properties/rooms/${roomId}/toggle-status`);
       fetchProperties();
+      showToast('success', 'Status Kamar Berhasil Diperbarui', 'Ketersediaan kamar telah tersinkronisasi.');
     } catch (err: any) {
-      alert(err.message);
+      showToast('error', 'Gagal Mengubah Status Kamar', err.message);
     } finally {
       setTogglingRoomId(null);
+      hideLoading();
     }
   };
 
@@ -920,14 +937,18 @@ export default function PropertiesPage() {
 
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1.5">Harga Sewa Bulanan (IDR)</label>
-                <input
-                  type="number"
-                  required
-                  placeholder="Contoh: 1800000"
-                  value={roomPrice}
-                  onChange={(e) => setRoomPrice(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                />
+                <div className="relative">
+                  <span className="absolute left-3.5 top-2.5 text-xs font-black text-slate-400">Rp</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    placeholder="Contoh: 1.800.000"
+                    value={roomPrice}
+                    onChange={(e) => setRoomPrice(formatNumberWithDots(e.target.value))}
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">

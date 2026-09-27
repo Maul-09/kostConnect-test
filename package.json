@@ -8,6 +8,10 @@
     "build": "pnpm --filter ./apps/* run build",
     "lint": "pnpm --filter ./apps/* run lint",
     "seed": "pnpm --filter api run seed",
+    "prisma:generate": "pnpm --filter api exec prisma generate",
+    "prisma:migrate": "pnpm --filter api exec prisma migrate dev",
+    "prisma:push": "pnpm --filter api exec prisma db push",
+    "prisma:validate": "pnpm --filter api exec prisma validate",
     "prisma:studio": "pnpm --filter api run prisma:studio",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down"

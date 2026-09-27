@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Script from 'next/script';
 import { api } from '@/lib/api';
 import { Invoice, Contract, ApiResponse } from '@/types';
+import { useFeedback } from '@/context/FeedbackContext';
 import { 
   User, 
   DoorOpen, 
@@ -29,6 +30,7 @@ declare global {
 }
 
 export default function TenantPortalPage() {
+  const { showToast, showLoading, hideLoading } = useFeedback();
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,38 +75,37 @@ export default function TenantPortalPage() {
   const handlePay = async (invoiceId: string) => {
     try {
       setPaymentLoading(invoiceId);
+      showLoading('Menghubungkan ke Gateway Midtrans Snap...');
       const res = await api.post<any, ApiResponse<{ token: string; redirect_url: string; orderId: string; simulated?: boolean }>>(
         `/payments/create-token/${invoiceId}`,
       );
 
       const { token, simulated, redirect_url } = res.data;
+      hideLoading();
 
       if (window.snap && !simulated) {
         window.snap.pay(token, {
           onSuccess: async () => {
-            alert('Pembayaran Berhasil! Terima kasih telah melunasi sewa kos.');
+            showToast('success', 'Pembayaran Berhasil!', 'Terima kasih telah melunasi sewa kos Harmoni.');
             loadData();
           },
           onPending: () => {
-            alert('Menunggu penyelesaian pembayaran.');
+            showToast('info', 'Menunggu Pembayaran', 'Selesaikan pembayaran sebelum batas waktu berakhir.');
             loadData();
           },
           onError: (err: any) => {
-            alert('Pembayaran gagal atau dibatalkan.');
+            showToast('error', 'Pembayaran Dibatalkan', 'Transaksi pembayaran belum diselesaikan.');
           },
           onClose: () => {
             loadData();
           },
         });
       } else {
-        if (confirm('Token dibuat. Jalankan simulasi pelunasan langsung untuk demo reviewer?')) {
-          handleSimulatePayment(invoiceId);
-        } else if (redirect_url) {
-          window.open(redirect_url, '_blank');
-        }
+        handleSimulatePayment(invoiceId);
       }
     } catch (err: any) {
-      alert(err.message || 'Gagal memproses pembayaran');
+      hideLoading();
+      showToast('error', 'Gagal Memproses Pembayaran', err.message || 'Terjadi kesalahan sistem.');
     } finally {
       setPaymentLoading(null);
     }
@@ -113,12 +114,14 @@ export default function TenantPortalPage() {
   const handleSimulatePayment = async (invoiceId: string) => {
     try {
       setPaymentLoading(invoiceId);
+      showLoading('Mensimulasikan pelunasan tagihan & webhook...');
       await api.post(`/webhooks/simulate-payment/${invoiceId}`);
-      alert('Simulasi Pelunasan Berhasil! Status tagihan diperbarui menjadi PAID & webhook n8n terpicu.');
+      showToast('success', 'Simulasi Pelunasan Berhasil!', 'Status tagihan menjadi PAID dan otomatis terverifikasi.');
       loadData();
     } catch (err: any) {
-      alert('Simulasi gagal: ' + err.message);
+      showToast('error', 'Simulasi Gagal', err.message);
     } finally {
+      hideLoading();
       setPaymentLoading(null);
     }
   };

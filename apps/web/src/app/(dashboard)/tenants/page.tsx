@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Tenant, Contract, Room, ApiResponse } from '@/types';
 import { useRole } from '@/context/RoleContext';
+import { useFeedback } from '@/context/FeedbackContext';
 import { 
   Users, 
   Plus, 
@@ -28,6 +29,7 @@ import { SkeletonCard, SkeletonTable, Spinner } from '@/components/ui/skeleton';
 
 export default function TenantsPage() {
   const { role } = useRole();
+  const { showToast, showLoading, hideLoading } = useFeedback();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
@@ -85,6 +87,7 @@ export default function TenantsPage() {
     e.preventDefault();
     try {
       setSubmitting(true);
+      showLoading('Mendaftarkan penyewa & membuat akun login...');
       const res = await api.post<any, ApiResponse<any>>('/tenants', {
         name: tenantName,
         email: tenantEmail,
@@ -92,24 +95,28 @@ export default function TenantsPage() {
       });
       setCreatedTenantResult(res.data);
       loadData();
+      const registeredName = tenantName;
       setTenantName('');
       setTenantEmail('');
       setTenantPhone('');
+      showToast('success', 'Akun Penyewa Berhasil Didaftarkan', `Akun untuk ${registeredName} aktif dengan password 123456789.`);
     } catch (err: any) {
-      alert(err.message || 'Gagal mendaftarkan penyewa');
+      showToast('error', 'Gagal Mendaftarkan Penyewa', err.message || 'Terjadi kesalahan sistem');
     } finally {
       setSubmitting(false);
+      hideLoading();
     }
   };
 
   const handleCreateContract = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTenantId || !selectedRoomId) {
-      alert('Pilih penyewa dan kamar terlebih dahulu.');
+      showToast('warning', 'Pilihan Belum Lengkap', 'Pilih penyewa dan unit kamar terlebih dahulu.');
       return;
     }
     try {
       setSubmitting(true);
+      showLoading('Menerbitkan kontrak sewa baru...');
       await api.post('/tenants/contracts', {
         tenantId: selectedTenantId,
         roomId: selectedRoomId,
@@ -120,10 +127,12 @@ export default function TenantsPage() {
       setSelectedTenantId('');
       setSelectedRoomId('');
       loadData();
+      showToast('success', 'Kontrak Sewa Berhasil Diterbitkan', 'Status kamar otomatis beralih menjadi OCCUPIED.');
     } catch (err: any) {
-      alert(err.message);
+      showToast('error', 'Gagal Menerbitkan Kontrak', err.message);
     } finally {
       setSubmitting(false);
+      hideLoading();
     }
   };
 
@@ -133,12 +142,15 @@ export default function TenantsPage() {
     }
     try {
       setTerminatingId(contractId);
+      showLoading('Memproses check-out sewa...');
       await api.patch(`/tenants/contracts/${contractId}/terminate`);
       loadData();
+      showToast('success', 'Check-out Berhasil', 'Kontrak diselesaikan dan status unit kamar kembali AVAILABLE.');
     } catch (err: any) {
-      alert(err.message);
+      showToast('error', 'Gagal Check-out Kontrak', err.message);
     } finally {
       setTerminatingId(null);
+      hideLoading();
     }
   };
 

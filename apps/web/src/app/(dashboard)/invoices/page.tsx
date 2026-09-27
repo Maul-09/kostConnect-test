@@ -5,6 +5,8 @@ import Script from 'next/script';
 import { api } from '@/lib/api';
 import { Invoice, Contract, ApiResponse, ExchangeRate } from '@/types';
 import { useRole } from '@/context/RoleContext';
+import { useFeedback } from '@/context/FeedbackContext';
+import { formatNumberWithDots, parseNumberFromDots } from '@/lib/utils';
 import { 
   Receipt, 
   Plus, 
@@ -32,6 +34,7 @@ declare global {
 
 export default function InvoicesPage() {
   const { role } = useRole();
+  const { showToast, showLoading, hideLoading } = useFeedback();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +50,7 @@ export default function InvoicesPage() {
   // Invoice creation form modal
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState('');
-  const [amount, setAmount] = useState('1800000');
+  const [amount, setAmount] = useState('1.800.000');
   const [dueDate, setDueDate] = useState('');
 
   const [paymentLoading, setPaymentLoading] = useState<string | null>(null);
@@ -115,23 +118,27 @@ export default function InvoicesPage() {
   const handleCreateInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedContractId) {
-      alert('Pilih kontrak sewa terlebih dahulu.');
+      showToast('warning', 'Kontrak Belum Dipilih', 'Pilih kontrak sewa aktif terlebih dahulu.');
       return;
     }
     try {
       setSubmitting(true);
+      showLoading('Menerbitkan invoice tagihan sewa baru...');
       await api.post('/invoices', {
         contractId: selectedContractId,
-        amount: Number(amount),
+        amount: parseNumberFromDots(amount),
         dueDate: new Date(dueDate).toISOString(),
       });
       setShowCreateModal(false);
       setSelectedContractId('');
+      setAmount('1.800.000');
       loadData();
+      showToast('success', 'Invoice Berhasil Diterbitkan', 'Tagihan sewa siap dibayarkan via Midtrans Snap.');
     } catch (err: any) {
-      alert(err.message);
+      showToast('error', 'Gagal Menerbitkan Invoice', err.message);
     } finally {
       setSubmitting(false);
+      hideLoading();
     }
   };
 
@@ -139,24 +146,26 @@ export default function InvoicesPage() {
   const handlePay = async (invoiceId: string) => {
     try {
       setPaymentLoading(invoiceId);
+      showLoading('Menghubungkan ke Gateway Midtrans Snap...');
       const res = await api.post<any, ApiResponse<{ token: string; redirect_url: string; orderId: string; simulated?: boolean }>>(
         `/payments/create-token/${invoiceId}`,
       );
 
       const { token, simulated, redirect_url } = res.data;
+      hideLoading();
 
       if (window.snap && !simulated) {
         window.snap.pay(token, {
           onSuccess: async () => {
-            alert('Pembayaran Berhasil Diverifikasi!');
+            showToast('success', 'Pembayaran Berhasil Diverifikasi', 'Status tagihan otomatis lunas.');
             loadData();
           },
           onPending: () => {
-            alert('Menunggu penyelesaian pembayaran.');
+            showToast('info', 'Menunggu Pembayaran', 'Selesaikan pembayaran sebelum batas waktu berakhir.');
             loadData();
           },
           onError: (err: any) => {
-            alert('Pembayaran gagal atau dibatalkan: ' + JSON.stringify(err));
+            showToast('error', 'Pembayaran Dibatalkan', 'Transaksi Midtrans belum diselesaikan.');
           },
           onClose: () => {
             loadData();
@@ -170,7 +179,8 @@ export default function InvoicesPage() {
         }
       }
     } catch (err: any) {
-      alert(err.message || 'Gagal memproses pembayaran');
+      hideLoading();
+      showToast('error', 'Gagal Memproses Pembayaran', err.message || 'Terjadi kesalahan sistem');
     } finally {
       setPaymentLoading(null);
     }
@@ -180,13 +190,15 @@ export default function InvoicesPage() {
   const handleSimulatePayment = async (invoiceId: string) => {
     try {
       setPaymentLoading(invoiceId);
+      showLoading('Memverifikasi simulasi pembayaran Midtrans...');
       await api.post(`/webhooks/simulate-payment/${invoiceId}`);
-      alert('Simulasi Pelunasan Berhasil! Status tagihan diperbarui menjadi PAID & webhook n8n terpicu.');
       loadData();
+      showToast('success', 'Pelunasan Berhasil Diverifikasi', 'Status invoice berubah menjadi PAID dan webhook n8n berhasil dipicu.');
     } catch (err: any) {
-      alert('Simulasi gagal: ' + err.message);
+      showToast('error', 'Simulasi Pelunasan Gagal', err.message);
     } finally {
       setPaymentLoading(null);
+      hideLoading();
     }
   };
 
@@ -678,13 +690,18 @@ export default function InvoicesPage() {
 
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1.5">Nominal Tagihan (IDR)</label>
-                <input
-                  type="number"
-                  required
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                />
+                <div className="relative">
+                  <span className="absolute left-3.5 top-2.5 text-xs font-black text-slate-400">Rp</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    placeholder="Contoh: 1.800.000"
+                    value={amount}
+                    onChange={(e) => setAmount(formatNumberWithDots(e.target.value))}
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono"
+                  />
+                </div>
               </div>
 
               <div>
