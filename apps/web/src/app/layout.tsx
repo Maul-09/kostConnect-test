@@ -17,6 +17,7 @@ const geistMono = Geist_Mono({
 
 import { RoleProvider } from "@/context/RoleContext";
 import { FeedbackProvider } from "@/context/FeedbackContext";
+import { NotificationProvider } from "@/context/NotificationContext";
 
 export const metadata: Metadata = {
   title: "KosConnect ERP • Sistem Manajemen Sewa Kos & Properti",
@@ -31,11 +32,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <FeedbackProvider>
-          <RoleProvider>
-            {children}
-          </RoleProvider>
+          <NotificationProvider>
+            <RoleProvider>
+              {children}
+            </RoleProvider>
+          </NotificationProvider>
         </FeedbackProvider>
       </body>
     </html>
   );
 }
+

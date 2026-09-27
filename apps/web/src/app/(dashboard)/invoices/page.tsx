@@ -6,7 +6,9 @@ import { api } from '@/lib/api';
 import { Invoice, Contract, ApiResponse, ExchangeRate } from '@/types';
 import { useRole } from '@/context/RoleContext';
 import { useFeedback } from '@/context/FeedbackContext';
+import { useNotification } from '@/context/NotificationContext';
 import { formatNumberWithDots, parseNumberFromDots } from '@/lib/utils';
+
 import { 
   Receipt, 
   Plus, 
@@ -35,6 +37,7 @@ declare global {
 export default function InvoicesPage() {
   const { role } = useRole();
   const { showToast, showLoading, hideLoading, showConfirm } = useFeedback();
+  const { triggerPaymentSuccess, addNotification } = useNotification();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,6 +112,30 @@ export default function InvoicesPage() {
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
     setDueDate(nextWeek.toISOString().split('T')[0]);
+
+    // Deteksi otomatis jika pengguna baru saja kembali dari redirect Midtrans (Finish URL)
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const orderId = urlParams.get('order_id');
+      const transactionStatus = urlParams.get('transaction_status');
+      const statusCode = urlParams.get('status_code');
+
+      if (orderId && (transactionStatus === 'settlement' || transactionStatus === 'capture' || statusCode === '200')) {
+        window.history.replaceState({}, '', window.location.pathname);
+
+        api.get<any, ApiResponse<Invoice[]>>('/invoices').then((res) => {
+          const invList = res.data || [];
+          const matched = invList.find(
+            (i) => i.midtransOrderId === orderId || orderId.includes(i.invoiceNumber)
+          );
+          if (matched) {
+            handleCheckStatus(matched.id);
+          } else {
+            loadData();
+          }
+        });
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -134,6 +161,18 @@ export default function InvoicesPage() {
       setAmount('1.800.000');
       loadData();
       showToast('success', 'Invoice Berhasil Diterbitkan', 'Tagihan sewa siap dibayarkan via Midtrans Snap.');
+
+      // Kirimkan notifikasi ke Notification feed
+      addNotification({
+        category: 'invoice',
+        title: 'Invoice Tagihan Baru Diterbitkan',
+        desc: `Tagihan sewa senilai Rp ${amount} telah berhasil dibuat untuk kontrak penghuni terpilih.`,
+        meta: {
+          amount: parseNumberFromDots(amount),
+          actionUrl: '/invoices',
+          actionLabel: 'Buka Tagihan',
+        },
+      });
     } catch (err: any) {
       showToast('error', 'Gagal Menerbitkan Invoice', err.message);
     } finally {
@@ -163,15 +202,14 @@ export default function InvoicesPage() {
       }
 
       // KASUS 2: Token Midtrans nyata tersedia — buka halaman pembayaran Snap di TAB BARU
-      // Menggunakan redirect_url (bukan popup window.snap) agar tidak ada PIN overlay
       window.open(redirect_url, '_blank', 'noopener,noreferrer');
       showToast(
         'info',
         'Halaman Pembayaran Dibuka',
-        'Selesaikan pembayaran di tab Midtrans yang baru terbuka, lalu klik "Cek Status" di bawah untuk memperbarui status tagihan.',
+        'Selesaikan pembayaran di tab Midtrans yang baru terbuka, lalu klik tombol "Cek Status" di bawah untuk melihat bukti pelunasan.',
         8000,
       );
-      // Auto-refresh status invoice setelah 8 detik (beri waktu user menyelesaikan pembayaran)
+      // Auto-refresh status invoice setelah 8 detik
       setTimeout(() => {
         loadData();
       }, 8000);
@@ -189,9 +227,23 @@ export default function InvoicesPage() {
     try {
       setPaymentLoading(invoiceId);
       showLoading('Memverifikasi simulasi pembayaran Midtrans...');
+      const targetInv = invoices.find((i) => i.id === invoiceId);
       await api.post(`/webhooks/simulate-payment/${invoiceId}`);
-      loadData();
-      showToast('success', 'Pelunasan Berhasil Diverifikasi', 'Status invoice berubah menjadi PAID dan webhook n8n berhasil dipicu.');
+      await loadData();
+
+      // Tampilkan Modal Perayaan Sukses Pembayaran
+      if (targetInv) {
+        triggerPaymentSuccess({
+          invoiceNumber: targetInv.invoiceNumber,
+          amount: Number(targetInv.amount),
+          tenantName: targetInv.contract?.tenant?.name || 'Budi Santoso',
+          roomNumber: targetInv.contract?.room?.roomNumber || '101',
+          propertyName: targetInv.contract?.room?.property?.name || 'Kos Harmoni Residence',
+          paymentMethod: 'Midtrans Sandbox (Simulasi Instan)',
+        });
+      } else {
+        showToast('success', 'Pelunasan Berhasil Diverifikasi', 'Status invoice berubah menjadi PAID.');
+      }
     } catch (err: any) {
       showToast('error', 'Simulasi Pelunasan Gagal', err.message);
     } finally {
@@ -205,12 +257,25 @@ export default function InvoicesPage() {
     try {
       setPaymentLoading(invoiceId);
       showLoading('Mengecek status pembayaran ke Midtrans...');
+      const targetInv = invoices.find((i) => i.id === invoiceId);
       const res = await api.get<any, ApiResponse<{ isPaid: boolean; status: string; message?: string }>>(
         `/payments/status/${invoiceId}`,
       );
 
       if (res.data?.isPaid) {
-        showToast('success', 'Pembayaran Terverifikasi!', 'Tagihan sewa Anda sudah tercatat LUNAS di sistem.');
+        // Tampilkan Modal Perayaan Sukses Pembayaran
+        if (targetInv) {
+          triggerPaymentSuccess({
+            invoiceNumber: targetInv.invoiceNumber,
+            amount: Number(targetInv.amount),
+            tenantName: targetInv.contract?.tenant?.name || 'Budi Santoso',
+            roomNumber: targetInv.contract?.room?.roomNumber || '101',
+            propertyName: targetInv.contract?.room?.property?.name || 'Kos Harmoni Residence',
+            paymentMethod: 'Midtrans Snap Gateway (Settlement)',
+          });
+        } else {
+          showToast('success', 'Pembayaran Terverifikasi!', 'Tagihan sewa Anda sudah tercatat LUNAS di sistem.');
+        }
       } else {
         showToast('info', 'Status: ' + (res.data?.status || 'Pending'), res.data?.message || 'Pembayaran belum diselesaikan di Midtrans.');
       }

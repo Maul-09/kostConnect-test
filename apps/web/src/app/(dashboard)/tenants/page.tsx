@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { Tenant, Contract, Room, ApiResponse } from '@/types';
 import { useRole } from '@/context/RoleContext';
 import { useFeedback } from '@/context/FeedbackContext';
+import { useNotification } from '@/context/NotificationContext';
 import { 
   Users, 
   Plus, 
@@ -30,6 +31,7 @@ import { SkeletonCard, SkeletonTable, Spinner } from '@/components/ui/skeleton';
 export default function TenantsPage() {
   const { role } = useRole();
   const { showToast, showLoading, hideLoading, showConfirm } = useFeedback();
+  const { addNotification } = useNotification();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
@@ -108,6 +110,16 @@ export default function TenantsPage() {
       setOwnerEmail('');
       setOwnerPhone('');
       showToast('success', 'Akun Pemilik Kos Berhasil Dibuat', `Akun untuk ${registeredName} aktif dengan password sementara 123456789.`);
+
+      addNotification({
+        category: 'system',
+        title: 'Akun Mitra Pemilik Kos Baru Dibuat',
+        desc: `Akun untuk mitra pemilik kos ${registeredName} telah terdaftar dan siap mengelola properti.`,
+        meta: {
+          actionUrl: '/tenants',
+          actionLabel: 'Lihat Direktori',
+        },
+      });
     } catch (err: any) {
       showToast('error', 'Gagal Membuat Akun Pemilik', err.message || 'Terjadi kesalahan sistem');
     } finally {
@@ -133,6 +145,17 @@ export default function TenantsPage() {
       setTenantEmail('');
       setTenantPhone('');
       showToast('success', 'Akun Penyewa Berhasil Didaftarkan', `Akun untuk ${registeredName} aktif dengan password 123456789.`);
+
+      addNotification({
+        category: 'system',
+        title: 'Akun Penyewa Baru Terdaftar',
+        desc: `Akun penghuni atas nama ${registeredName} berhasil didaftarkan dengan password sementara 123456789.`,
+        meta: {
+          tenantName: registeredName,
+          actionUrl: '/tenants',
+          actionLabel: 'Lihat Penghuni',
+        },
+      });
     } catch (err: any) {
       showToast('error', 'Gagal Mendaftarkan Penyewa', err.message || 'Terjadi kesalahan sistem');
     } finally {
@@ -161,6 +184,16 @@ export default function TenantsPage() {
       setSelectedRoomId('');
       loadData();
       showToast('success', 'Kontrak Sewa Berhasil Diterbitkan', 'Status kamar otomatis beralih menjadi OCCUPIED.');
+
+      addNotification({
+        category: 'contract',
+        title: 'Kontrak Sewa Baru Aktif',
+        desc: `Kontrak sewa baru telah terbit. Status unit kamar otomatis terkunci menjadi OCCUPIED.`,
+        meta: {
+          actionUrl: '/tenants',
+          actionLabel: 'Lihat Kontrak Sewa',
+        },
+      });
     } catch (err: any) {
       showToast('error', 'Gagal Menerbitkan Kontrak', err.message);
     } finally {
@@ -183,6 +216,16 @@ export default function TenantsPage() {
           await api.patch(`/tenants/contracts/${contractId}/terminate`);
           loadData();
           showToast('success', 'Check-out Berhasil', 'Kontrak diselesaikan dan status unit kamar kembali AVAILABLE.');
+
+          addNotification({
+            category: 'contract',
+            title: 'Check-out Sewa Berhasil',
+            desc: `Kontrak sewa telah diselesaikan. Status unit kamar otomatis dikembalikan menjadi AVAILABLE.`,
+            meta: {
+              actionUrl: '/properties',
+              actionLabel: 'Cek Unit Kamar',
+            },
+          });
         } catch (err: any) {
           showToast('error', 'Gagal Check-out Kontrak', err.message);
         } finally {

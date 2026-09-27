@@ -24,15 +24,9 @@ import {
 } from 'lucide-react';
 import { useRole, ROLE_PROFILES, UserRole } from '@/context/RoleContext';
 import { useFeedback } from '@/context/FeedbackContext';
+import { useNotification, NotificationItem } from '@/context/NotificationContext';
 import { ForcePasswordModal } from '@/components/auth/ForcePasswordModal';
 
-interface NotificationItem {
-  id: string;
-  title: string;
-  desc: string;
-  time: string;
-  isRead: boolean;
-}
 
 export default function DashboardLayout({
   children,
@@ -118,41 +112,16 @@ export default function DashboardLayout({
   };
 
   // Notification Popup State
+  // Notification Popup State (Centralized from NotificationContext)
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [notifTab, setNotifTab] = useState<'all' | 'unread'>('all');
-  const [notifications, setNotifications] = useState<NotificationItem[]>([
-    {
-      id: '1',
-      title: 'Tagihan sewa mendekati jatuh tempo',
-      desc: 'Invoice INV-202610-002 untuk Budi Santoso (Kamar 101) belum dibayar. Perlu tindak lanjut.',
-      time: 'Hari ini, 12.00 WIB',
-      isRead: false,
-    },
-    {
-      id: '2',
-      title: 'Pembayaran Midtrans berhasil diverifikasi',
-      desc: 'Invoice INV-202609-001 senilai Rp 1.800.000 telah lunas via Midtrans Snap.',
-      time: 'Kemarin, 14.30 WIB',
-      isRead: false,
-    },
-    {
-      id: '3',
-      title: 'Kontrak sewa baru aktif',
-      desc: 'Kontrak sewa Siti Rahma di Kamar A1 telah terbit. Kamar otomatis menjadi OCCUPIED.',
-      time: '24 Sep 2026, 09.15 WIB',
-      isRead: true,
-    },
-  ]);
-
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
-
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-  };
-
-  const deleteNotification = (id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-  };
+  const {
+    notifications,
+    unreadCount,
+    markAllAsRead,
+    deleteNotification,
+    openNotificationDetail,
+  } = useNotification();
 
   const filteredNotifications = notifTab === 'unread' 
     ? notifications.filter((n) => !n.isRead) 
@@ -508,9 +477,7 @@ export default function DashboardLayout({
                   <div
                     key={notif.id}
                     onClick={() => {
-                      setNotifications((prev) =>
-                        prev.map((n) => (n.id === notif.id ? { ...n, isRead: true } : n))
-                      );
+                      openNotificationDetail(notif);
                     }}
                     className={`rounded-2xl p-3.5 sm:p-5 border transition-all flex items-start justify-between gap-3 sm:gap-4 cursor-pointer hover:shadow-xs ${
                       !notif.isRead
