@@ -7,6 +7,7 @@ import { InvoicesModule } from './modules/invoices/invoices.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
 import { CurrencyModule } from './modules/currency/currency.module';
+import { UsersModule } from './modules/users/users.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -17,6 +18,7 @@ import { AppService } from './app.service';
       envFilePath: '.env',
     }),
     PrismaModule,
+    UsersModule,
     PropertiesModule,
     TenantsModule,
     InvoicesModule,

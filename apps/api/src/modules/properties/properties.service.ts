@@ -15,6 +15,14 @@ export class PropertiesService {
   async findAll() {
     return this.prisma.property.findMany({
       include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
         rooms: {
           select: {
             id: true,
@@ -35,6 +43,14 @@ export class PropertiesService {
     const property = await this.prisma.property.findUnique({
       where: { id },
       include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
         rooms: {
           include: {
             contracts: {
@@ -57,6 +73,16 @@ export class PropertiesService {
   async create(createPropertyDto: CreatePropertyDto) {
     return this.prisma.property.create({
       data: createPropertyDto,
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
     });
   }
 

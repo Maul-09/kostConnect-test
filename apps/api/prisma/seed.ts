@@ -1,4 +1,5 @@
-import { PrismaClient, RoomStatus, InvoiceStatus } from '@prisma/client';
+import { PrismaClient, RoomStatus, InvoiceStatus, Role } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -10,12 +11,54 @@ async function main() {
   await prisma.room.deleteMany();
   await prisma.tenant.deleteMany();
   await prisma.property.deleteMany();
+  await prisma.user.deleteMany();
 
+  // 1. Akun Pengguna Terdaftar (Users)
+  const passwordAdmin = await bcrypt.hash('Admin2026!', 10);
+  const passwordRahmat = await bcrypt.hash('Harmoni2026!', 10);
+  const passwordFatimah = await bcrypt.hash('Griya2026!', 10);
+  const passwordBudi = await bcrypt.hash('Tenant2026!', 10);
+
+  const userAdmin = await prisma.user.create({
+    data: {
+      email: 'admin@kosconnect.id',
+      password: passwordAdmin,
+      name: 'Muhammad Ajiz',
+      phone: '081234567899',
+      role: Role.ADMIN,
+      mustChangePassword: false,
+    },
+  });
+
+  const userRahmat = await prisma.user.create({
+    data: {
+      email: 'rahmat@kosconnect.id',
+      password: passwordRahmat,
+      name: 'H. Rahmat Santoso',
+      phone: '081298765432',
+      role: Role.OWNER,
+      mustChangePassword: false,
+    },
+  });
+
+  const userFatimah = await prisma.user.create({
+    data: {
+      email: 'fatimah@kosconnect.id',
+      password: passwordFatimah,
+      name: 'Ibu Hj. Fatimah',
+      phone: '082145678901',
+      role: Role.OWNER,
+      mustChangePassword: false,
+    },
+  });
+
+  // 2. Properti Terhubung dengan Akun Pemilik Sah (ownerId)
   const propertyHarmoni = await prisma.property.create({
     data: {
       name: 'Kos Harmoni Residence',
       address: 'Jl. Kemang Raya No. 45',
       city: 'Jakarta Selatan',
+      ownerId: userRahmat.id,
     },
   });
 
@@ -24,6 +67,7 @@ async function main() {
       name: 'Griya Asri Paviliun',
       address: 'Jl. Dago Asri No. 12',
       city: 'Bandung',
+      ownerId: userFatimah.id,
     },
   });
 
@@ -79,6 +123,18 @@ async function main() {
       name: 'Budi Santoso',
       email: 'budi.santoso@example.com',
       phone: '081234567890',
+    },
+  });
+
+  const userBudi = await prisma.user.create({
+    data: {
+      email: 'budi@kosconnect.id',
+      password: passwordBudi,
+      name: 'Budi Santoso',
+      phone: '081234567890',
+      role: Role.TENANT,
+      mustChangePassword: false,
+      tenantId: tenantBudi.id,
     },
   });
 

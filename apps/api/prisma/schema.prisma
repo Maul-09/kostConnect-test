@@ -7,6 +7,12 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum Role {
+  ADMIN
+  OWNER
+  TENANT
+}
+
 enum RoomStatus {
   AVAILABLE
   OCCUPIED
@@ -18,14 +24,34 @@ enum InvoiceStatus {
   CANCELLED
 }
 
+model User {
+  id                 String     @id @default(uuid())
+  email              String     @unique
+  password           String
+  name               String
+  phone              String?
+  role               Role       @default(TENANT)
+  mustChangePassword Boolean    @default(true)
+  properties         Property[]
+  tenantId           String?    @unique
+  tenant             Tenant?    @relation(fields: [tenantId], references: [id])
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@index([role])
+}
+
 model Property {
   id        String   @id @default(uuid())
   name      String
   address   String
   city      String
+  ownerId   String?
+  owner     User?    @relation(fields: [ownerId], references: [id])
   rooms     Room[]
   createdAt DateTime @default(now())
 
+  @@index([ownerId])
   @@index([city])
 }
 
@@ -48,6 +74,7 @@ model Tenant {
   name      String
   email     String     @unique
   phone     String
+  user      User?
   contracts Contract[]
   createdAt DateTime   @default(now())
 

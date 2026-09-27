@@ -7,7 +7,8 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { CreateContractDto } from './dto/create-contract.dto';
-import { RoomStatus } from '@prisma/client';
+import { RoomStatus, Role } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class TenantsService {
@@ -18,6 +19,14 @@ export class TenantsService {
   async findAll() {
     return this.prisma.tenant.findMany({
       include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            mustChangePassword: true,
+          },
+        },
         contracts: {
           include: {
             room: {
@@ -38,6 +47,14 @@ export class TenantsService {
     const tenant = await this.prisma.tenant.findUnique({
       where: { id },
       include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            mustChangePassword: true,
+          },
+        },
         contracts: {
           include: {
             room: {
@@ -67,9 +84,30 @@ export class TenantsService {
       throw new ConflictException(`Tenant with email ${createTenantDto.email} already exists`);
     }
 
-    return this.prisma.tenant.create({
+    const temporaryPassword = `Penyewa${Math.floor(1000 + Math.random() * 9000)}!`;
+    const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+
+    const tenant = await this.prisma.tenant.create({
       data: createTenantDto,
     });
+
+    await this.prisma.user.create({
+      data: {
+        name: tenant.name,
+        email: tenant.email,
+        phone: tenant.phone,
+        password: hashedPassword,
+        role: Role.TENANT,
+        mustChangePassword: true,
+        tenantId: tenant.id,
+      },
+    });
+
+    return {
+      ...tenant,
+      temporaryPassword,
+      message: 'Akun penyewa berhasil dibuat. Berikan password sementara kepada penyewa untuk login pertama kali.',
+    };
   }
 
   async update(id: string, updateTenantDto: UpdateTenantDto) {

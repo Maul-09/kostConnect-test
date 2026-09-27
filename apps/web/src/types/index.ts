@@ -1,11 +1,31 @@
+export type UserRole = 'ADMIN' | 'OWNER' | 'TENANT';
 export type RoomStatus = 'AVAILABLE' | 'OCCUPIED';
 export type InvoiceStatus = 'UNPAID' | 'PAID' | 'CANCELLED';
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  phone?: string;
+  role: UserRole;
+  mustChangePassword: boolean;
+  temporaryPassword?: string;
+  properties?: Property[];
+  createdAt: string;
+}
 
 export interface Property {
   id: string;
   name: string;
   address: string;
   city: string;
+  ownerId?: string | null;
+  owner?: {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
+  } | null;
   createdAt: string;
   rooms?: Room[];
   _count?: {

@@ -19,7 +19,10 @@ import {
   Building2,
   ShieldCheck,
   UserCheck,
-  Lock
+  Lock,
+  Key,
+  Copy,
+  Check
 } from 'lucide-react';
 import { SkeletonCard, SkeletonTable, Spinner } from '@/components/ui/skeleton';
 
@@ -28,6 +31,7 @@ export default function TenantsPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
+  const [owners, setOwners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [terminatingId, setTerminatingId] = useState<string | null>(null);
@@ -38,6 +42,8 @@ export default function TenantsPage() {
   const [tenantName, setTenantName] = useState('');
   const [tenantEmail, setTenantEmail] = useState('');
   const [tenantPhone, setTenantPhone] = useState('');
+  const [createdTenantResult, setCreatedTenantResult] = useState<any | null>(null);
+  const [copiedTenant, setCopiedTenant] = useState(false);
 
   const [showContractModal, setShowContractModal] = useState(false);
   const [selectedTenantId, setSelectedTenantId] = useState('');
@@ -48,14 +54,16 @@ export default function TenantsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [tenantsRes, contractsRes, roomsRes] = await Promise.all([
+      const [tenantsRes, contractsRes, roomsRes, ownersRes] = await Promise.all([
         api.get<any, ApiResponse<Tenant[]>>('/tenants'),
         api.get<any, ApiResponse<Contract[]>>('/tenants/contracts/all'),
         api.get<any, ApiResponse<Room[]>>('/properties/rooms/all?status=AVAILABLE'),
+        api.get<any, ApiResponse<any[]>>('/users/owners').catch(() => ({ data: [] })),
       ]);
       setTenants(tenantsRes.data);
       setContracts(contractsRes.data);
       setAvailableRooms(roomsRes.data);
+      setOwners(ownersRes?.data || []);
       setError(null);
     } catch (err: any) {
       setError(err.message || 'Gagal memuat data penyewa & kontrak');
@@ -77,18 +85,18 @@ export default function TenantsPage() {
     e.preventDefault();
     try {
       setSubmitting(true);
-      await api.post('/tenants', {
+      const res = await api.post<any, ApiResponse<any>>('/tenants', {
         name: tenantName,
         email: tenantEmail,
         phone: tenantPhone,
       });
-      setShowTenantModal(false);
+      setCreatedTenantResult(res.data);
+      loadData();
       setTenantName('');
       setTenantEmail('');
       setTenantPhone('');
-      loadData();
     } catch (err: any) {
-      alert(err.message);
+      alert(err.message || 'Gagal mendaftarkan penyewa');
     } finally {
       setSubmitting(false);
     }
@@ -230,43 +238,34 @@ export default function TenantsPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-slate-50/70 border border-slate-200/70 rounded-2xl p-4 flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-900 to-indigo-950 text-indigo-300 font-black text-sm flex items-center justify-center shrink-0">
-                RS
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-extrabold text-sm text-slate-900">H. Rahmat Santoso</h4>
-                  <span className="text-[10px] font-black px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full">
-                    Mitra Jakarta
-                  </span>
+            {owners.length > 0 ? (
+              owners.map((owner) => (
+                <div key={owner.id} className="bg-slate-50/70 border border-slate-200/70 rounded-2xl p-4 flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-900 to-indigo-950 text-indigo-300 font-black text-sm flex items-center justify-center shrink-0">
+                    {owner.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-extrabold text-sm text-slate-900">{owner.name}</h4>
+                      <span className="text-[10px] font-black px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full">
+                        Mitra Aktif
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 mt-0.5">{owner.email}</p>
+                    <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
+                      <span>Kontak: {owner.phone || '-'}</span>
+                      <span className="font-bold text-indigo-700">
+                        {owner.properties?.length ? `${owner.properties.length} Properti` : 'Mitra Terdaftar'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-xs text-slate-600 mt-0.5">Kos Harmoni Residence • 3 Unit Kamar</p>
-                <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
-                  <span>Kontak: 0812-9876-5432</span>
-                  <span className="font-bold text-emerald-700">1 Penyewa Aktif</span>
-                </div>
+              ))
+            ) : (
+              <div className="p-4 text-center text-xs text-slate-400 col-span-2">
+                Memuat data mitra pemilik kos...
               </div>
-            </div>
-
-            <div className="bg-slate-50/70 border border-slate-200/70 rounded-2xl p-4 flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-900 to-purple-950 text-purple-300 font-black text-sm flex items-center justify-center shrink-0">
-                HF
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-extrabold text-sm text-slate-900">Ibu Hj. Fatimah</h4>
-                  <span className="text-[10px] font-black px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full">
-                    Mitra Bandung
-                  </span>
-                </div>
-                <p className="text-xs text-slate-600 mt-0.5">Griya Asri Paviliun • 2 Unit Kamar</p>
-                <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
-                  <span>Kontak: 0821-4567-8901</span>
-                  <span className="font-bold text-emerald-700">1 Penyewa Aktif</span>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}
@@ -519,7 +518,10 @@ export default function TenantsPage() {
       {showTenantModal && role === 'OWNER' && (
         <div 
           onClick={(e) => {
-            if (e.target === e.currentTarget) setShowTenantModal(false);
+            if (e.target === e.currentTarget) {
+              setShowTenantModal(false);
+              setCreatedTenantResult(null);
+            }
           }}
           className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in duration-200"
         >
@@ -533,71 +535,164 @@ export default function TenantsPage() {
                   Daftarkan Penyewa Baru
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Input identitas penyewa untuk keperluan penerbitan kontrak kamar Kos Harmoni.
+                  Input identitas penyewa untuk otomatis membuatkan akun login dan penerbitan kontrak sewa.
                 </p>
               </div>
               <button 
-                onClick={() => setShowTenantModal(false)}
+                onClick={() => {
+                  setShowTenantModal(false);
+                  setCreatedTenantResult(null);
+                }}
                 className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateTenant} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1.5">Nama Lengkap</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: Budi Santoso"
-                  value={tenantName}
-                  onChange={(e) => setTenantName(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                />
-              </div>
+            {createdTenantResult ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-emerald-50/80 border border-emerald-200 rounded-2xl">
+                  <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm mb-1">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    Akun Penyewa Berhasil Dibuat!
+                  </div>
+                  <p className="text-xs text-emerald-700">
+                    Akun login penyewa telah dibuat secara otomatis di database dengan password sementara.
+                  </p>
+                </div>
 
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1.5">Nomor WhatsApp / HP</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: 081234567890"
-                  value={tenantPhone}
-                  onChange={(e) => setTenantPhone(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                />
-              </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Nama Penyewa</span>
+                    <span className="text-xs font-bold text-slate-800">{createdTenantResult.name}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Nomor WhatsApp / HP</span>
+                    <span className="text-xs font-medium text-slate-700">{createdTenantResult.phone}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Email Login</span>
+                    <span className="text-xs font-mono font-bold text-indigo-700">{createdTenantResult.email}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Password Sementara</span>
+                    <div className="mt-1 flex items-center justify-between bg-white px-3.5 py-2.5 rounded-xl border border-indigo-200 shadow-2xs">
+                      <span className="font-mono text-sm font-black text-indigo-900 tracking-wider">
+                        {createdTenantResult.temporaryPassword}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(
+                            `Halo ${createdTenantResult.name},\nBerikut kredensial login KosConnect Anda:\nEmail: ${createdTenantResult.email}\nPassword Sementara: ${createdTenantResult.temporaryPassword}\n\nSilakan login di dashboard dan ganti kata sandi Anda.`
+                          );
+                          setCopiedTenant(true);
+                          setTimeout(() => setCopiedTenant(false), 2500);
+                        }}
+                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 cursor-pointer bg-indigo-50 px-2.5 py-1 rounded-lg transition-colors"
+                      >
+                        {copiedTenant ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                        {copiedTenant ? 'Tersalin!' : 'Salin Kredensial'}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-xl text-[11px] text-amber-800 flex items-start gap-2">
+                    <Key className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Ketentuan Sistem:</strong> Penyewa <strong>wajib mengganti password baru</strong> saat pertama kali login sebelum dapat melihat tagihan Midtrans atau kontrak sewa.
+                    </span>
+                  </div>
+                </div>
 
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1.5">Email</label>
-                <input
-                  type="email"
-                  placeholder="Contoh: budi@gmail.com"
-                  value={tenantEmail}
-                  onChange={(e) => setTenantEmail(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                />
+                <div className="flex items-center justify-end gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowTenantModal(false);
+                      setCreatedTenantResult(null);
+                    }}
+                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Tutup
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedTenantId(createdTenantResult.id);
+                      setShowTenantModal(false);
+                      setCreatedTenantResult(null);
+                      setShowContractModal(true);
+                    }}
+                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-600/20 cursor-pointer inline-flex items-center gap-2"
+                  >
+                    <FileText className="w-4 h-4" /> Lanjut Terbitkan Kontrak
+                  </button>
+                </div>
               </div>
+            ) : (
+              <form onSubmit={handleCreateTenant} className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">Nama Lengkap</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Budi Santoso"
+                    value={tenantName}
+                    onChange={(e) => setTenantName(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  />
+                </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowTenantModal(false)}
-                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20 cursor-pointer inline-flex items-center gap-2"
-                >
-                  {submitting && <Spinner size="sm" className="text-white" />}
-                  {submitting ? 'Menyimpan...' : 'Simpan Penyewa'}
-                </button>
-              </div>
-            </form>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">Nomor WhatsApp / HP</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: 081234567890"
+                    value={tenantPhone}
+                    onChange={(e) => setTenantPhone(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">Email (Untuk Akun Login)</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="Contoh: budi@gmail.com"
+                    value={tenantEmail}
+                    onChange={(e) => setTenantEmail(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  />
+                </div>
+
+                <div className="p-3 bg-indigo-50/70 border border-indigo-200/70 rounded-xl text-[11px] text-indigo-900 flex items-start gap-2">
+                  <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                  <span>
+                    Sistem akan otomatis membuatkan akun login penyewa dengan password sementara dan status <strong>wajib ganti password</strong> saat login pertama.
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowTenantModal(false)}
+                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20 cursor-pointer inline-flex items-center gap-2"
+                  >
+                    {submitting && <Spinner size="sm" className="text-white" />}
+                    {submitting ? 'Menyimpan & Membuat Akun...' : 'Simpan & Buat Akun Penyewa'}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

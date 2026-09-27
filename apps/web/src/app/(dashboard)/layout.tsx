@@ -22,6 +22,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { useRole, ROLE_PROFILES, UserRole } from '@/context/RoleContext';
+import { ForcePasswordModal } from '@/components/auth/ForcePasswordModal';
 
 interface NotificationItem {
   id: string;
@@ -37,7 +38,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { role, setRole, currentProfile } = useRole();
+  const { role, setRole, currentProfile, triggerForcePasswordDemo } = useRole();
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
 
   // Navigasi Terstruktur & Berbeda Jelas per Role
@@ -604,13 +605,26 @@ export default function DashboardLayout({
               })}
             </div>
 
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 px-1 font-medium">
-              <span>*Tersimpan di browser session</span>
+            <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 px-1 font-medium gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  triggerForcePasswordDemo();
+                  setShowRoleDropdown(false);
+                }}
+                className="text-[10px] text-amber-700 bg-amber-50 hover:bg-amber-100 font-bold px-2 py-1 rounded-lg border border-amber-200 transition-colors cursor-pointer"
+                title="Simulasi alur wajib ganti password pada login pertama kali"
+              >
+                🔐 Uji Wajib Ganti Password
+              </button>
               <span className="text-indigo-600 font-bold">Simulasi 3 Role ERP</span>
             </div>
           </div>
         </div>
       )}
+
+      {/* Modal Wajib Ganti Password Pertama Kali (Force Password Change) */}
+      <ForcePasswordModal />
     </div>
   );
 }
