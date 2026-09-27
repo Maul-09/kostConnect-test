@@ -164,7 +164,14 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      '@prisma/client':
+        specifier: ^6.19.3
+        version: 6.19.3(prisma@6.19.3(typescript@6.0.3))(typescript@6.0.3)
+      prisma:
+        specifier: ^6.19.3
+        version: 6.19.3(typescript@6.0.3)
 
   apps/api:
     dependencies:

@@ -20,5 +20,9 @@
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@12.6.0",
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "@prisma/client": "^6.19.3",
+    "prisma": "^6.19.3"
+  }
 }

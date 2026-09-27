@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -19,9 +19,11 @@ import {
   User, 
   UserCheck,
   Crown,
-  ChevronDown
+  ChevronDown,
+  Loader2
 } from 'lucide-react';
 import { useRole, ROLE_PROFILES, UserRole } from '@/context/RoleContext';
+import { useFeedback } from '@/context/FeedbackContext';
 import { ForcePasswordModal } from '@/components/auth/ForcePasswordModal';
 
 interface NotificationItem {
@@ -39,7 +41,20 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const { role, setRole, currentProfile, triggerForcePasswordDemo } = useRole();
+  const { showLoading, hideLoading } = useFeedback();
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
+  const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
+
+  // Clear sidebar indicator and loading when destination page route completes
+  useEffect(() => {
+    if (navigatingTo && pathname === navigatingTo) {
+      const timer = setTimeout(() => {
+        setNavigatingTo(null);
+        hideLoading();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [pathname, navigatingTo, hideLoading]);
 
   // Navigasi Terstruktur & Berbeda Jelas per Role
   const navConfig = (() => {
@@ -179,22 +194,37 @@ export default function DashboardLayout({
             {navConfig.items.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+              const isNavigatingThis = navigatingTo === item.href;
               return (
                 <Link
                   key={item.name}
                   href={item.href}
                   prefetch={true}
-                  className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold transition-all ${
+                  onClick={() => {
+                    if (pathname !== item.href) {
+                      setNavigatingTo(item.href);
+                      showLoading(`Memuat data ${item.name}...`);
+                    }
+                  }}
+                  className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
                     isActive
                       ? 'bg-gradient-to-r from-indigo-950/90 to-slate-900 text-white shadow-inner border border-indigo-500/30'
+                      : isNavigatingThis
+                      ? 'bg-indigo-950/80 text-white border border-indigo-500/50 shadow-lg shadow-indigo-900/30 animate-pulse'
                       : 'text-slate-400 hover:text-white hover:bg-slate-900/80'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-indigo-400' : 'text-slate-500'}`} />
-                  <span className="truncate">{item.name}</span>
-                  {isActive && (
-                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400 shadow-[0_0_8px_#818cf8]" />
+                  {isNavigatingThis ? (
+                    <Loader2 className="w-4 h-4 shrink-0 text-indigo-400 animate-spin" />
+                  ) : (
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-indigo-400' : 'text-slate-500'}`} />
                   )}
+                  <span className="truncate">{item.name}</span>
+                  {isNavigatingThis ? (
+                    <span className="ml-auto text-[10px] text-indigo-300 font-bold animate-pulse">Memuat...</span>
+                  ) : isActive ? (
+                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400 shadow-[0_0_8px_#818cf8]" />
+                  ) : null}
                 </Link>
               );
             })}
@@ -317,6 +347,7 @@ export default function DashboardLayout({
         {navConfig.items.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+          const isNavigatingThis = navigatingTo === item.href;
           
           // Singkatkan label untuk layar HP kecil
           const shortLabel = (() => {
@@ -332,23 +363,37 @@ export default function DashboardLayout({
               key={item.name}
               href={item.href}
               prefetch={true}
-              className={`flex flex-col items-center justify-center gap-1 py-1 px-2 rounded-2xl transition-all min-w-[56px] ${
+              onClick={() => {
+                if (pathname !== item.href) {
+                  setNavigatingTo(item.href);
+                  showLoading(`Memuat ${item.name}...`);
+                }
+              }}
+              className={`flex flex-col items-center justify-center gap-1 py-1 px-2 rounded-2xl transition-all min-w-[56px] cursor-pointer ${
                 isActive
                   ? 'text-white'
+                  : isNavigatingThis
+                  ? 'text-indigo-300'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <div className={`p-1.5 rounded-xl transition-all ${
                 isActive 
                   ? 'bg-gradient-to-br from-indigo-600 to-blue-700 text-white shadow-md shadow-indigo-950/60 scale-105' 
+                  : isNavigatingThis
+                  ? 'bg-indigo-900/80 text-indigo-300 scale-105 animate-pulse border border-indigo-500/50'
                   : 'text-slate-400'
               }`}>
-                <Icon className="w-4 h-4" />
+                {isNavigatingThis ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-indigo-300" />
+                ) : (
+                  <Icon className="w-4 h-4" />
+                )}
               </div>
               <span className={`text-[10px] tracking-tight leading-none ${
-                isActive ? 'font-black text-indigo-300' : 'font-semibold text-slate-400'
+                isActive ? 'font-black text-indigo-300' : isNavigatingThis ? 'font-bold text-indigo-300 animate-pulse' : 'font-semibold text-slate-400'
               }`}>
-                {shortLabel}
+                {isNavigatingThis ? 'Memuat...' : shortLabel}
               </span>
             </Link>
           );

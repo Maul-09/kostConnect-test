@@ -43,7 +43,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Memuat data...');
 
-  // Auto trigger loading popup during page transition
+  // Fallback trigger for non-click transitions (e.g. browser back/forward)
   useEffect(() => {
     if (isFirstMount.current) {
       isFirstMount.current = false;
@@ -51,12 +51,16 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
     }
     if (prevPathname.current !== pathname) {
       prevPathname.current = pathname;
-      setLoadingMessage('Memuat halaman & sinkronisasi data...');
-      setIsLoading(true);
-      const navTimer = setTimeout(() => {
-        setIsLoading(false);
-      }, 500);
-      return () => clearTimeout(navTimer);
+      setIsLoading((currentlyLoading) => {
+        if (!currentlyLoading) {
+          setLoadingMessage('Sinkronisasi halaman & data...');
+          const navTimer = setTimeout(() => {
+            setIsLoading(false);
+          }, 450);
+          return true;
+        }
+        return currentlyLoading;
+      });
     }
   }, [pathname]);
 
@@ -103,15 +107,17 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
     >
       {children}
 
-      {/* ===================== POPUP LOADING OVERLAY ===================== */}
+      {/* ===================== POPUP LOADING OVERLAY (FULL VIEWPORT) ===================== */}
       {isLoading && (
-        <div className="fixed inset-0 z-[120] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl flex flex-col items-center text-center space-y-4 animate-in zoom-in-95 duration-200">
-            {/* Animated Ring Spinner */}
+        <div className="fixed inset-0 z-[99999] w-screen h-screen bg-slate-950/55 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white/95 backdrop-blur-2xl border border-white/90 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl flex flex-col items-center text-center space-y-4 animate-in zoom-in-95 duration-200">
+            {/* Animated High-Fidelity Dual-Ring Spinner */}
             <div className="relative w-16 h-16 flex items-center justify-center">
               <div className="absolute inset-0 rounded-full border-4 border-indigo-100" />
               <div className="absolute inset-0 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin" />
-              <Loader2 className="w-7 h-7 text-indigo-600 animate-pulse" />
+              <div className="w-10 h-10 rounded-2xl bg-indigo-50/80 flex items-center justify-center shadow-inner">
+                <Loader2 className="w-5 h-5 text-indigo-600 animate-spin" />
+              </div>
             </div>
 
             <div>

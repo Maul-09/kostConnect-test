@@ -1,0 +1,6 @@
+{
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  },
+  "prisma.schema": "apps/api/prisma/schema.prisma"
+}
