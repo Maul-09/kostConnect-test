@@ -144,11 +144,11 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-gradient-to-br from-[#f1f3f9] via-[#f8fafc] to-[#eef2ff] text-slate-800 p-2 sm:p-4 gap-2.5 sm:gap-4 font-sans select-none relative">
-      {/* Ambient Gradient Glows (Sapphire & Indigo Atmospheric Glow) */}
+      {/* Ambient background accents */}
       <div className="fixed -top-24 -right-24 w-[600px] h-[600px] bg-indigo-200/25 rounded-full blur-[140px] pointer-events-none -z-10" />
       <div className="fixed bottom-10 left-64 w-[500px] h-[500px] bg-blue-200/20 rounded-full blur-[120px] pointer-events-none -z-10" />
 
-      {/* 100% FIXED & STICKY SIDEBAR UNTUK DESKTOP (Deep Midnight Obsidian #0b0f19) */}
+      {/* Desktop navigation sidebar */}
       <aside className="w-64 h-full shrink-0 bg-[#0b0f19] text-slate-200 rounded-[26px] p-5 flex flex-col justify-between shadow-2xl border border-slate-800/80 hidden lg:flex select-none z-30">
         <div>
           {/* Logo & Brand Header */}
@@ -365,7 +365,7 @@ export default function DashboardLayout({
         </button>
       </nav>
 
-      {/* POPUP NOTIFIKASI MODAL (Responsif Mobile Bottom Sheet / Desktop Centered) */}
+      {/* Notifications modal */}
       {showNotificationModal && (
         <div 
           onClick={(e) => {
@@ -508,7 +508,7 @@ export default function DashboardLayout({
         </div>
       )}
 
-      {/* GLOBAL ROLE SWITCHER MODAL (Responsif Bottom Sheet di Mobile, Popover di Desktop) */}
+      {/* Role switcher modal */}
       {showRoleDropdown && (
         <div 
           onClick={(e) => {

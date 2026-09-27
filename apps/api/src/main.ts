@@ -8,16 +8,13 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Global API Prefix
   app.setGlobalPrefix('api');
 
-  // CORS
   app.enableCors({
     origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   });
 
-  // Global Validation Pipe
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -29,11 +26,9 @@ async function bootstrap() {
     }),
   );
 
-  // Global Interceptors & Filters
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  // Swagger Documentation Setup
   const config = new DocumentBuilder()
     .setTitle('KosConnect ERP API')
     .setDescription('Mini Property ERP API Documentation for Technical Assessment')
@@ -43,6 +38,7 @@ async function bootstrap() {
     .addTag('Invoices', 'Modul 3: Billing & Payments (Financial)')
     .addTag('Payments', 'Midtrans Snap Integration')
     .addTag('Webhooks', 'Payment Gateway Callback Listener')
+    .addTag('Currency', 'External Public API: Currency Exchange Rates (IDR/USD)')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -50,8 +46,8 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3001;
   await app.listen(port);
-  console.log(`🚀 KosConnect API is running on: http://localhost:${port}/api`);
-  console.log(`📚 Swagger Documentation is available at: http://localhost:${port}/api/docs`);
+  console.log(`KosConnect API is running on: http://localhost:${port}/api`);
+  console.log(`Swagger Documentation is available at: http://localhost:${port}/api/docs`);
 }
 
 void bootstrap();

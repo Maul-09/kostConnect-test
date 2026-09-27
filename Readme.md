@@ -24,12 +24,17 @@ Bukan sekadar aplikasi CRUD sederhana, KosConnect ERP memetakan proses bisnis ri
    * Penerbitan tagihan sewa bulanan dengan nomor invoice unik (`INV-YYYYMM-XXXX`).
    * Integrasi pembayaran digital via Midtrans Snap Sandbox.
    * Webhook callback listener dengan verifikasi `signature_key` (SHA512) untuk otomatisasi pelunasan tagihan menjadi `PAID`.
+   * Integrasi **External Currency API (IDR ⇄ USD)** untuk konversi pelaporan finansial internasional secara realtime.
+   * Endpoint simulasi instan (`POST /api/webhooks/simulate-payment/:invoiceId`) untuk demo reviewer tanpa akun Midtrans sandbox aktif.
 
-### 3 Peran Pengguna (Multi-Role Personas & Role Switcher)
-Sistem memfasilitasi 3 aktor bisnis utama yang dapat diuji langsung oleh reviewer melalui **Role Switcher** di bilah navigasi atas:
-1. **Super Admin (Platform Admin):** Pengawasan seluruh properti kos, monitoring integrasi webhook, automasi n8n, dan dokumentasi Swagger API.
-2. **Pengelola / Pemilik Kos (Property Owner - Mode Pengelola):** Mengelola inventaris kamar (Aset), membuat kontrak sewa (CRM), dan menerbitkan tagihan bulanan (Finance).
-3. **Penyewa (Tenant - Mode Portal Penyewa di `/portal`):** Sudut pandang penyewa untuk memeriksa rincian kamar yang sedang disewa, masa berlaku kontrak, dan membayar tagihan sewa secara mandiri via Midtrans Snap.
+### Multi-Role & Mobile Responsive
+* **3 Peran Pengguna (Role Switcher):**
+  1. **Super Admin (Platform Admin):** Monitoring seluruh properti, audit finansial semua transaksi, dan integrasi Swagger API.
+  2. **Pemilik Kos (Property Owner):** Mengelola unit kamar, menerbitkan kontrak sewa, dan menerbitkan tagihan.
+  3. **Penyewa (Tenant Portal di `/portal`):** Memeriksa rincian kamar, masa sewa, dan melunasi tagihan mandiri via Midtrans Snap.
+* **Mobile First Experience:**
+  * Sidebar desktop otomatis bertransisi menjadi **Bottom Navigation Bar** di smartphone (`< 1024px`).
+  * Modal interaktif otomatis beralih menjadi touch-friendly **Mobile Bottom Sheet**.
 
 ---
 

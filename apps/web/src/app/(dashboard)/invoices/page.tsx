@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Script from 'next/script';
 import { api } from '@/lib/api';
-import { Invoice, Contract, ApiResponse } from '@/types';
+import { Invoice, Contract, ApiResponse, ExchangeRate } from '@/types';
 import { useRole } from '@/context/RoleContext';
 import { 
   Receipt, 
@@ -19,7 +19,8 @@ import {
   Send,
   MessageCircle,
   Building2,
-  Lock
+  Lock,
+  Globe
 } from 'lucide-react';
 
 declare global {
@@ -37,7 +38,11 @@ export default function InvoicesPage() {
   const [clientKey, setClientKey] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'UNPAID' | 'PAID'>('ALL');
 
-  // Modal create invoice (Hanya untuk Pemilik Kos)
+  // External Currency API state
+  const [currency, setCurrency] = useState<'IDR' | 'USD'>('IDR');
+  const [exchangeRate, setExchangeRate] = useState<ExchangeRate | null>(null);
+
+  // Invoice creation form modal
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState('');
   const [amount, setAmount] = useState('1800000');
@@ -52,6 +57,27 @@ export default function InvoicesPage() {
     } catch {
       // fallback
     }
+  };
+
+  const fetchExchangeRate = async () => {
+    try {
+      const res = await api.get<any, ApiResponse<ExchangeRate>>('/currency/rates');
+      if (res.data) {
+        setExchangeRate(res.data);
+      }
+    } catch {
+      // fallback
+    }
+  };
+
+  const formatMoney = (val: number | string) => {
+    const num = Number(val) || 0;
+    if (currency === 'USD') {
+      const rate = exchangeRate?.rate || 16250;
+      const usd = num / rate;
+      return `$${usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    return `Rp ${num.toLocaleString('id-ID')}`;
   };
 
   const loadData = async () => {
@@ -74,6 +100,7 @@ export default function InvoicesPage() {
 
   useEffect(() => {
     fetchClientKey();
+    fetchExchangeRate();
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
     setDueDate(nextWeek.toISOString().split('T')[0]);
@@ -158,10 +185,7 @@ export default function InvoicesPage() {
     }
   };
 
-  // OTORISASI & ISOLASI DATA TAGIHAN PER ROLE:
-  // 1. OWNER: Hanya melihat invoice di properti miliknya (Kos Harmoni Residence)!
-  // 2. TENANT: Hanya melihat invoice untuk dirinya sendiri (Budi Santoso).
-  // 3. ADMIN: Melihat seluruh tagihan platform untuk audit finansial.
+  // Filter invoices based on active user role
   const displayedInvoices = (() => {
     if (role === 'OWNER') {
       return invoices.filter((inv) => 
@@ -196,7 +220,7 @@ export default function InvoicesPage() {
         strategy="lazyOnload"
       />
 
-      {/* 1. Frosted Hero Header dengan Penegasan Otorisasi */}
+      {/* Header section */}
       <div className="bg-gradient-to-r from-indigo-50/90 via-slate-50/80 to-blue-50/80 backdrop-blur-xl border border-indigo-200/70 rounded-[28px] p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
           <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#0b0f19] to-indigo-950 text-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-950/20 shrink-0">
@@ -217,7 +241,7 @@ export default function InvoicesPage() {
             </h1>
             <p className="text-xs text-slate-600 mt-1 max-w-xl">
               {role === 'ADMIN'
-                ? 'Monitoring dan audit finansial seluruh arus kas sewa properti se-platform. (Penerbitan tagihan dilakukan mandiri oleh masing-masing pemilik kos).'
+                ? 'Monitoring dan audit finansial seluruh arus kas sewa properti se-platform.'
                 : role === 'OWNER'
                 ? 'Terbitkan tagihan sewa berkala untuk penyewa di Kos Harmoni Residence dan pantau riwayat pelunasan dana.'
                 : 'Daftar invoice tagihan sewa kamar Anda yang dapat dilunasi secara online melalui Midtrans Snap.'}
@@ -225,31 +249,72 @@ export default function InvoicesPage() {
           </div>
         </div>
 
-        {/* HAK PENERBITAN TAGIHAN:
-            - Pemilik Kos: BISA menerbitkan tagihan baru untuk kamarnya.
-            - Super Admin & Tenant: TIDAK BISA menerbitkan tagihan sewa. */}
-        {role === 'OWNER' && (
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-2xl px-4 py-2.5 text-xs font-bold shadow-md shadow-indigo-950/20 hover:shadow-lg transition-all flex items-center gap-2 shrink-0 self-start sm:self-center cursor-pointer"
-          >
-            <Plus className="w-4 h-4 text-indigo-400" /> Terbitkan Tagihan Baru
-          </button>
-        )}
-
-        {role === 'ADMIN' && (
-          <div className="bg-white/90 border border-purple-200 rounded-2xl px-4 py-2.5 shadow-2xs self-start sm:self-center">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Mode Otorisasi</span>
-            <span className="text-xs font-extrabold text-purple-900 flex items-center gap-1.5 mt-0.5">
-              <ShieldCheck className="w-4 h-4 text-purple-600" /> Audit Finansial (Read-only)
-            </span>
+        <div className="flex flex-wrap items-center gap-3 shrink-0 self-start sm:self-center">
+          {/* External Currency Switcher (IDR ⇄ USD) */}
+          <div className="flex items-center bg-white/90 border border-slate-200/80 rounded-2xl p-1 shadow-xs">
+            <button
+              type="button"
+              onClick={() => setCurrency('IDR')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                currency === 'IDR'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              IDR (Rp)
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrency('USD')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                currency === 'USD'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              USD ($)
+            </button>
           </div>
-        )}
+
+          {role === 'OWNER' && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-2xl px-4 py-2.5 text-xs font-bold shadow-md shadow-indigo-950/20 hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Plus className="w-4 h-4 text-indigo-400" /> Terbitkan Tagihan Baru
+            </button>
+          )}
+
+          {role === 'ADMIN' && (
+            <div className="bg-white/90 border border-purple-200 rounded-2xl px-4 py-2.5 shadow-2xs">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Mode Otorisasi</span>
+              <span className="text-xs font-extrabold text-purple-900 flex items-center gap-1.5 mt-0.5">
+                <ShieldCheck className="w-4 h-4 text-purple-600" /> Audit Finansial
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* 2. Glass Metric Cards */}
+      {/* Live Exchange Rate Info Badge */}
+      {currency === 'USD' && (
+        <div className="bg-indigo-50/70 border border-indigo-200/80 rounded-2xl p-3 px-4 flex items-center justify-between text-xs text-indigo-950">
+          <div className="flex items-center gap-2">
+            <Globe className="w-4 h-4 text-indigo-600 shrink-0" />
+            <span>
+              <strong>Live Rate:</strong> 1 USD ≈ Rp {Math.round(exchangeRate?.rate || 16250).toLocaleString('id-ID')}
+              <span className="text-indigo-600/70 ml-1.5 text-[11px]">(Sumber: {exchangeRate?.source || 'open.er-api.com'})</span>
+            </span>
+          </div>
+          <span className="text-[11px] font-semibold text-indigo-600 bg-white px-2 py-0.5 rounded-lg border border-indigo-200/60">
+            Realtime Conversion
+          </span>
+        </div>
+      )}
+
+      {/* Metric summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Card 1: Total Tagihan */}
+        {/* Total Invoiced */}
         <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
@@ -261,18 +326,18 @@ export default function InvoicesPage() {
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight block">
-              Rp {totalInvoiced.toLocaleString('id-ID')}
+              {formatMoney(totalInvoiced)}
             </span>
             <p className="text-[11px] text-slate-400 mt-1">
               {role === 'OWNER' ? 'Akumulasi tagihan unit Kos Harmoni' : 'Akumulasi transaksi sewa'}
             </p>
           </div>
           <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-slate-400 h-full rounded-full" style={{ width: '100%' }} />
+            <div className="bg-slate-400 h-full rounded-full w-full" />
           </div>
         </div>
 
-        {/* Card 2: Pembayaran Diterima (PAID) */}
+        {/* Paid Invoices */}
         <div className="bg-white/85 backdrop-blur-xl border border-indigo-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-indigo-50/40 to-white/80 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider">
@@ -284,7 +349,7 @@ export default function InvoicesPage() {
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-black text-indigo-900 tracking-tight block">
-              Rp {totalPaid.toLocaleString('id-ID')}
+              {formatMoney(totalPaid)}
             </span>
             <p className="text-[11px] text-indigo-600 mt-1">
               Arus kas masuk terverifikasi Midtrans
@@ -298,7 +363,7 @@ export default function InvoicesPage() {
           </div>
         </div>
 
-        {/* Card 3: Belum Lunas (UNPAID) */}
+        {/* Unpaid Invoices */}
         <div className="bg-white/85 backdrop-blur-xl border border-rose-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-rose-50/40 to-white/80 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wider">
@@ -310,7 +375,7 @@ export default function InvoicesPage() {
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-black text-rose-800 tracking-tight block">
-              Rp {totalUnpaid.toLocaleString('id-ID')}
+              {formatMoney(totalUnpaid)}
             </span>
             <p className="text-[11px] text-rose-600 mt-1">
               {role === 'OWNER' ? 'Tagihan sewa menunggu transfer penyewa' : 'Piutang sewa aktif'}
@@ -325,7 +390,7 @@ export default function InvoicesPage() {
         </div>
       </div>
 
-      {/* 3. Filter Tabs (Scrollable di Mobile) */}
+      {/* Filter tabs */}
       <div className="flex items-center gap-1.5 sm:gap-2 bg-white/70 backdrop-blur-md p-1.5 rounded-2xl border border-white/80 w-full sm:w-fit overflow-x-auto shadow-xs scrollbar-none">
         <button
           onClick={() => setStatusFilter('ALL')}
@@ -365,7 +430,7 @@ export default function InvoicesPage() {
         </div>
       )}
 
-      {/* 4. Tabel Tagihan dengan Pemisahan Aksi Hak Akses */}
+      {/* Invoice data table */}
       <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] p-6">
         <div className="flex items-center justify-between mb-5">
           <div>
@@ -434,9 +499,14 @@ export default function InvoicesPage() {
                       </td>
 
                       <td className="py-4 px-3">
-                        <span className="font-black text-slate-900 text-xs">
-                          Rp {Number(inv.amount).toLocaleString('id-ID')}
+                        <span className="font-black text-slate-900 text-xs block">
+                          {formatMoney(inv.amount)}
                         </span>
+                        {currency === 'USD' && (
+                          <span className="text-[10px] text-slate-400 block mt-0.5">
+                            Rp {Number(inv.amount).toLocaleString('id-ID')}
+                          </span>
+                        )}
                       </td>
 
                       <td className="py-4 px-3">

@@ -71,9 +71,7 @@ export default function DashboardOverviewPage() {
     loadData();
   }, []);
 
-  // =========================================================================
-  // 1. DATA KHUSUS SUPER ADMIN (Seluruh Ekosistem Platform)
-  // =========================================================================
+  // Super Admin platform metrics
   const allRooms = properties.flatMap((p) => p.rooms || []);
   const totalRoomsAll = allRooms.length;
   const occupiedRoomsAll = allRooms.filter((r) => r.status === 'OCCUPIED').length;
@@ -84,9 +82,7 @@ export default function DashboardOverviewPage() {
   const unpaidInvoicesAll = invoices.filter((i) => i.status === 'UNPAID');
   const totalReceivableAll = unpaidInvoicesAll.reduce((acc, curr) => acc + Number(curr.amount), 0);
 
-  // =========================================================================
-  // 2. DATA KHUSUS PEMILIK KOS (Terisolasi HANYA Kos Harmoni Residence)
-  // =========================================================================
+  // Property Owner metrics (scoped to owned property)
   const ownerProperties = properties.filter((p) => p.name.toLowerCase().includes('harmoni'));
   const ownerRooms = ownerProperties.flatMap((p) => p.rooms || []);
   const ownerTotalRooms = ownerRooms.length;
@@ -223,7 +219,7 @@ export default function DashboardOverviewPage() {
             </div>
 
             <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Kamar Ekosistem</span>
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Total Unit Kamar</span>
               <div className="mt-2">
                 <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block truncate">{totalRoomsAll} Unit</span>
                 <p className="text-[11px] sm:text-xs text-slate-500 mt-1 truncate">{occupiedRoomsAll} Terisi • {availableRoomsAll} Kosong</p>

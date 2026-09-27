@@ -107,14 +107,12 @@ export default function PropertiesPage() {
     return { name: 'Mitra Terdaftar', isCurrentOwner: false, locationTag: p.city };
   };
 
-  // MULTI-TENANT AUTHORIZATION ISOLATION:
-  // Role OWNER (H. Rahmat Santoso) HANYA melihat properti miliknya (Kos Harmoni Residence)!
-  // Properti milik mitra lain (Griya Asri Paviliun) difilter / diisolasi sepenuhnya.
+  // Filter properties based on active user role
   const displayedProperties = role === 'OWNER'
     ? properties.filter((p) => p.name.toLowerCase().includes('harmoni'))
     : properties;
 
-  // Metrics dihitung tepat sesuai lingkup properti yang berhak diakses role
+  // Summary counts for current role scope
   const totalProperties = displayedProperties.length;
   const allRooms: Room[] = displayedProperties.flatMap((p) => p.rooms || []);
   const totalRooms = allRooms.length;
@@ -123,7 +121,7 @@ export default function PropertiesPage() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Frosted Hero Header yang Berbeda Tegas per Role */}
+      {/* Header section */}
       <div className="bg-gradient-to-r from-indigo-50/90 via-slate-50/80 to-blue-50/80 backdrop-blur-xl border border-indigo-200/70 rounded-[28px] p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
           <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#0b0f19] to-indigo-950 text-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-950/20 shrink-0">

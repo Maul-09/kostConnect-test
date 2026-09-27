@@ -67,3 +67,11 @@ export interface ApiResponse<T> {
   data: T;
   message: string;
 }
+
+export interface ExchangeRate {
+  base: string;
+  target: string;
+  rate: number;
+  lastUpdated: string;
+  source: string;
+}

@@ -122,9 +122,7 @@ export default function TenantsPage() {
     }
   };
 
-  // MULTI-TENANT ISOLATION UNTUK KONTRAK & PENYEWA:
-  // Role OWNER (H. Rahmat) HANYA melihat kontrak di kos miliknya (Kos Harmoni Residence)!
-  // Kontrak milik kos lain (Siti di Griya Asri) diisolasi sepenuhnya.
+  // Filter tenants and contracts by user role
   const displayedContracts = role === 'OWNER'
     ? contracts.filter((c) => c.room?.property?.name?.toLowerCase().includes('harmoni'))
     : contracts;
@@ -133,7 +131,7 @@ export default function TenantsPage() {
     ? tenants.filter((t) => t.name === 'Budi Santoso' || displayedContracts.some((c) => c.tenantId === t.id))
     : tenants;
 
-  // Kamar kosong yang dapat dipilih Owner saat buat kontrak hanya kamar di Kos Harmoni!
+  // Available rooms for contract creation in owned property
   const ownerAvailableRooms = availableRooms.filter((r) =>
     r.property?.name?.toLowerCase().includes('harmoni')
   );
@@ -142,7 +140,7 @@ export default function TenantsPage() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Frosted Hero Header dengan Penegasan Otorisasi */}
+      {/* Header section */}
       <div className="bg-gradient-to-r from-indigo-50/90 via-slate-50/80 to-blue-50/80 backdrop-blur-xl border border-indigo-200/70 rounded-[28px] p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
           <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#0b0f19] to-indigo-950 text-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-950/20 shrink-0">
@@ -156,7 +154,7 @@ export default function TenantsPage() {
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
               {role === 'ADMIN' 
-                ? 'Direktori Mitra & Penyewa Ekosistem' 
+                ? 'Direktori Penyewa & Kontrak Sewa' 
                 : role === 'OWNER' 
                 ? 'Penyewa & Kontrak Kos Harmoni' 
                 : 'Informasi Sewa Saya'}

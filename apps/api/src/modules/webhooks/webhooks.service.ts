@@ -43,10 +43,13 @@ export class WebhooksService {
       return { status: 'invalid_signature' };
     }
 
-    // 2. Cari Invoice berdasarkan midtransOrderId atau invoiceNumber
+    // 2. Locate invoice by ID, midtransOrderId, or invoiceNumber
+    const cleanedId = order_id ? String(order_id).replace(/^SIMULATED-/, '') : '';
     const invoice = await this.prisma.invoice.findFirst({
       where: {
         OR: [
+          { id: cleanedId },
+          { id: order_id },
           { midtransOrderId: order_id },
           { invoiceNumber: order_id.replace(/^ORDER-/, '').replace(/-[0-9]{4}$/, '') },
         ],
