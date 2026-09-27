@@ -20,12 +20,12 @@ export interface RoleProfile {
 export const ROLE_PROFILES: Record<UserRole, RoleProfile> = {
   ADMIN: {
     role: 'ADMIN',
-    name: 'Muhammad Ajiz',
+    name: 'Ajis Maulana Shadiq',
     email: 'admin@kosconnect.id',
     phone: '081234567899',
     title: 'Super Admin',
     badge: 'Super Admin',
-    avatar: 'MA',
+    avatar: 'AS',
     description: 'Pendaftaran properti & mitra kos baru, direktori pengguna, dan audit pembayaran platform.',
     avatarBg: 'bg-gradient-to-br from-indigo-700 via-purple-700 to-indigo-950 text-white',
     mustChangePassword: false,

@@ -1,6 +1,6 @@
 # KosConnect ERP (Lite)
 
-Mini Property ERP system for rental property business operations (boarding houses/apartments). Built for **Technical Test Assessment** by **Muhammad Ajiz**.
+Mini Property ERP system for rental property business operations (boarding houses/apartments). Built for **Technical Test Assessment** by **Ajis Maulana Shadiq**.
 
 ---
 
@@ -254,5 +254,5 @@ Untuk memastikan respons kueri instan tanpa bottleneck ketika volume transaksi d
 
 ---
 
-*Disusun oleh: Muhammad Ajiz — Technical Test KosConnect ERP (Lite)*
+*Disusun oleh: Ajis Maulana Shadiq — Technical Test KosConnect ERP (Lite)*
 

@@ -23,7 +23,7 @@ async function main() {
     data: {
       email: 'admin@kosconnect.id',
       password: passwordAdmin,
-      name: 'Muhammad Ajiz',
+      name: 'Ajis Maulana Shadiq',
       phone: '081234567899',
       role: Role.ADMIN,
       mustChangePassword: false,
