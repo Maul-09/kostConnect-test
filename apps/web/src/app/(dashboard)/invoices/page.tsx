@@ -154,7 +154,8 @@ export default function InvoicesPage() {
       const { token, simulated, redirect_url } = res.data;
       hideLoading();
 
-      if (window.snap && !simulated) {
+      // KASUS 1: Token Midtrans nyata tersedia & Snap.js sudah dimuat
+      if (window.snap && token && !simulated) {
         window.snap.pay(token, {
           onSuccess: async () => {
             showToast('success', 'Pembayaran Berhasil Diverifikasi', 'Status tagihan otomatis lunas.');
@@ -164,22 +165,33 @@ export default function InvoicesPage() {
             showToast('info', 'Menunggu Pembayaran', 'Selesaikan pembayaran sebelum batas waktu berakhir.');
             loadData();
           },
-          onError: (err: any) => {
+          onError: () => {
             showToast('error', 'Pembayaran Dibatalkan', 'Transaksi Midtrans belum diselesaikan.');
           },
           onClose: () => {
             loadData();
           },
         });
-      } else {
+        return;
+      }
+
+      // KASUS 2: Mode Simulasi (Midtrans belum dikonfigurasi / kredensial sandbox belum diisi)
+      // Langsung jalankan simulasi internal — JANGAN buka URL Midtrans (akan error 404)
+      if (simulated) {
+        showToast('info', 'Mode Simulasi Aktif', 'Midtrans Sandbox belum dikonfigurasi. Menjalankan simulasi pelunasan instan...');
+        await handleSimulatePayment(invoiceId);
+        return;
+      }
+
+      // KASUS 3: Ada token real tapi Snap.js belum termuat (edge case)
+      if (redirect_url) {
         showConfirm({
-          title: 'Konfirmasi Metode Pembayaran',
-          message: 'Token pembayaran berhasil dibuat. Pilih metode: Jalankan Simulasi Lunas Instan (Demo Reviewer) atau buka halaman redirect Midtrans?',
-          confirmLabel: 'Simulasi Lunas (Demo)',
-          cancelLabel: redirect_url ? 'Buka Redirect Midtrans' : 'Tutup',
+          title: 'Snap.js Belum Termuat',
+          message: 'Popup Midtrans belum siap. Buka halaman pembayaran Midtrans di tab baru?',
+          confirmLabel: 'Buka Midtrans',
+          cancelLabel: 'Batal',
           confirmVariant: 'primary',
-          onConfirm: () => handleSimulatePayment(invoiceId),
-          onCancel: redirect_url ? () => window.open(redirect_url, '_blank') : undefined,
+          onConfirm: () => window.open(redirect_url, '_blank'),
         });
       }
     } catch (err: any) {

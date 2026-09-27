@@ -87,17 +87,19 @@ export class PaymentsService {
         orderId,
       };
     } catch (error: any) {
-      // Fallback simulasi jika Midtrans Server Key belum diisi
-      console.warn('Midtrans API call failed (using simulation fallback if key placeholder):', error.message);
-      const simulatedToken = `SNAP-SIMULATION-${orderId}`;
+      // Fallback simulasi jika Midtrans Server Key belum dikonfigurasi / tidak valid.
+      // PENTING: redirect_url TIDAK di-return agar frontend tidak membuka URL Midtrans
+      // yang tidak ada (akan menyebabkan "Transaksi tidak ditemukan").
+      // Frontend akan otomatis menggunakan endpoint simulasi internal /webhooks/simulate-payment.
+      console.warn('[KosConnect] Midtrans Snap token gagal dibuat — mode simulasi aktif:', error.message);
       await this.prisma.invoice.update({
         where: { id: invoiceId },
         data: { midtransOrderId: orderId },
       });
 
       return {
-        token: simulatedToken,
-        redirect_url: `https://app.sandbox.midtrans.com/snap/v2/vtweb/${simulatedToken}`,
+        token: null,
+        redirect_url: null,
         orderId,
         simulated: true,
       };

@@ -16,10 +16,11 @@ export class WebhooksController {
 
   @Post('simulate-payment/:invoiceId')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Simulasi pelunasan pembayaran instan untuk keperluan demo / review' })
+  @ApiOperation({ summary: 'Simulasi pelunasan pembayaran instan untuk keperluan demo / review (tanpa Midtrans aktif)' })
   simulatePayment(@Param('invoiceId') invoiceId: string) {
+    // Gunakan invoiceId langsung sebagai order_id agar pencarian invoice selalu berhasil
     return this.webhooksService.handleMidtransNotification({
-      order_id: `SIMULATED-${invoiceId}`,
+      order_id: invoiceId,
       status_code: '200',
       gross_amount: '1800000',
       signature_key: '',
