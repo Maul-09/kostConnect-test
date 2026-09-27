@@ -21,6 +21,7 @@ import {
   UserCheck,
   Lock
 } from 'lucide-react';
+import { SkeletonCard, SkeletonTable, Spinner } from '@/components/ui/skeleton';
 
 export default function TenantsPage() {
   const { role } = useRole();
@@ -28,6 +29,8 @@ export default function TenantsPage() {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [terminatingId, setTerminatingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Modal states (Khusus Pemilik Kos)
@@ -73,6 +76,7 @@ export default function TenantsPage() {
   const handleCreateTenant = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setSubmitting(true);
       await api.post('/tenants', {
         name: tenantName,
         email: tenantEmail,
@@ -85,6 +89,8 @@ export default function TenantsPage() {
       loadData();
     } catch (err: any) {
       alert(err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -95,6 +101,7 @@ export default function TenantsPage() {
       return;
     }
     try {
+      setSubmitting(true);
       await api.post('/tenants/contracts', {
         tenantId: selectedTenantId,
         roomId: selectedRoomId,
@@ -107,6 +114,8 @@ export default function TenantsPage() {
       loadData();
     } catch (err: any) {
       alert(err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -115,10 +124,13 @@ export default function TenantsPage() {
       return;
     }
     try {
+      setTerminatingId(contractId);
       await api.patch(`/tenants/contracts/${contractId}/terminate`);
       loadData();
     } catch (err: any) {
       alert(err.message);
+    } finally {
+      setTerminatingId(null);
     }
   };
 
@@ -260,60 +272,69 @@ export default function TenantsPage() {
       )}
 
       {/* 2. Glass Metric Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all flex flex-col justify-between">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Penyewa</span>
-          <div className="mt-2">
-            <span className="text-3xl font-black text-slate-900 tracking-tight block">{displayedTenants.length}</span>
-            <span className="text-xs font-bold text-slate-700 mt-1 block">
-              {role === 'OWNER' ? 'Penyewa Kos Harmoni' : 'Seluruh platform'}
-            </span>
-          </div>
-          <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-slate-400 h-full rounded-full" style={{ width: '100%' }} />
-          </div>
+      {loading ? (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
         </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all flex flex-col justify-between">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Penyewa</span>
+            <div className="mt-2">
+              <span className="text-3xl font-black text-slate-900 tracking-tight block">{displayedTenants.length}</span>
+              <span className="text-xs font-bold text-slate-700 mt-1 block">
+                {role === 'OWNER' ? 'Penyewa Kos Harmoni' : 'Seluruh platform'}
+              </span>
+            </div>
+            <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              <div className="bg-slate-400 h-full rounded-full" style={{ width: '100%' }} />
+            </div>
+          </div>
 
-        <div className="bg-white/85 backdrop-blur-xl border border-indigo-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-indigo-50/40 to-white/80 hover:shadow-md transition-all flex flex-col justify-between">
-          <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider block">Kontrak Berjalan</span>
-          <div className="mt-2">
-            <span className="text-3xl font-black text-indigo-800 tracking-tight block">{activeContracts.length}</span>
-            <span className="text-xs font-bold text-indigo-700 mt-1 block">Aktif saat ini</span>
+          <div className="bg-white/85 backdrop-blur-xl border border-indigo-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-indigo-50/40 to-white/80 hover:shadow-md transition-all flex flex-col justify-between">
+            <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider block">Kontrak Berjalan</span>
+            <div className="mt-2">
+              <span className="text-3xl font-black text-indigo-800 tracking-tight block">{activeContracts.length}</span>
+              <span className="text-xs font-bold text-indigo-700 mt-1 block">Aktif saat ini</span>
+            </div>
+            <div className="mt-4 w-full bg-indigo-100 h-1.5 rounded-full overflow-hidden">
+              <div 
+                className="bg-indigo-600 h-full rounded-full transition-all duration-500" 
+                style={{ width: `${displayedContracts.length > 0 ? (activeContracts.length / displayedContracts.length) * 100 : 0}%` }} 
+              />
+            </div>
           </div>
-          <div className="mt-4 w-full bg-indigo-100 h-1.5 rounded-full overflow-hidden">
-            <div 
-              className="bg-indigo-600 h-full rounded-full transition-all duration-500" 
-              style={{ width: `${displayedContracts.length > 0 ? (activeContracts.length / displayedContracts.length) * 100 : 0}%` }} 
-            />
-          </div>
-        </div>
 
-        <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all flex flex-col justify-between">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Riwayat Kontrak</span>
-          <div className="mt-2">
-            <span className="text-3xl font-black text-slate-900 tracking-tight block">{displayedContracts.length}</span>
-            <span className="text-xs font-bold text-slate-700 mt-1 block">Histori sewa</span>
+          <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all flex flex-col justify-between">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Riwayat Kontrak</span>
+            <div className="mt-2">
+              <span className="text-3xl font-black text-slate-900 tracking-tight block">{displayedContracts.length}</span>
+              <span className="text-xs font-bold text-slate-700 mt-1 block">Histori sewa</span>
+            </div>
+            <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              <div className="bg-slate-400 h-full rounded-full" style={{ width: '100%' }} />
+            </div>
           </div>
-          <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-slate-400 h-full rounded-full" style={{ width: '100%' }} />
-          </div>
-        </div>
 
-        <div className="bg-white/85 backdrop-blur-xl border border-blue-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-blue-50/40 to-white/80 hover:shadow-md transition-all flex flex-col justify-between">
-          <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider block">Kamar Kosong</span>
-          <div className="mt-2">
-            <span className="text-3xl font-black text-blue-800 tracking-tight block">
-              {role === 'OWNER' ? ownerAvailableRooms.length : availableRooms.length}
-            </span>
-            <span className="text-xs font-bold text-blue-700 mt-1 block">
-              {role === 'OWNER' ? 'Siap sewa di Kos Harmoni' : 'Siap diisi se-platform'}
-            </span>
-          </div>
-          <div className="mt-4 w-full bg-blue-100 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-blue-600 h-full rounded-full" style={{ width: '60%' }} />
+          <div className="bg-white/85 backdrop-blur-xl border border-blue-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-blue-50/40 to-white/80 hover:shadow-md transition-all flex flex-col justify-between">
+            <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider block">Kamar Kosong</span>
+            <div className="mt-2">
+              <span className="text-3xl font-black text-blue-800 tracking-tight block">
+                {role === 'OWNER' ? ownerAvailableRooms.length : availableRooms.length}
+              </span>
+              <span className="text-xs font-bold text-blue-700 mt-1 block">
+                {role === 'OWNER' ? 'Siap sewa di Kos Harmoni' : 'Siap diisi se-platform'}
+              </span>
+            </div>
+            <div className="mt-4 w-full bg-blue-100 h-1.5 rounded-full overflow-hidden">
+              <div className="bg-blue-600 h-full rounded-full" style={{ width: '60%' }} />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {error && (
         <div className="p-4 bg-rose-50/80 backdrop-blur-md border border-rose-200 text-rose-800 rounded-2xl text-xs font-semibold">
@@ -339,7 +360,9 @@ export default function TenantsPage() {
         </div>
 
         {loading ? (
-          <div className="p-12 text-center text-xs text-slate-400 font-bold">Memuat data kontrak...</div>
+          <div className="py-4 px-2">
+            <SkeletonTable rows={4} cols={5} />
+          </div>
         ) : displayedContracts.length === 0 ? (
           <div className="p-12 text-center text-xs text-slate-400 bg-slate-50/60 rounded-2xl border border-dashed border-slate-200">
             Belum ada kontrak sewa.
@@ -415,11 +438,13 @@ export default function TenantsPage() {
                       {role === 'OWNER' ? (
                         contract.isActive ? (
                           <button
+                            disabled={terminatingId === contract.id}
                             onClick={() => handleTerminateContract(contract.id)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 disabled:opacity-50 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
                             title="Selesaikan kontrak sewa dan kembalikan status kamar menjadi AVAILABLE"
                           >
-                            <LogOut className="w-3.5 h-3.5" /> Check-out
+                            {terminatingId === contract.id ? <Spinner size="sm" className="text-rose-600" /> : <LogOut className="w-3.5 h-3.5" />}
+                            {terminatingId === contract.id ? 'Memproses...' : 'Check-out'}
                           </button>
                         ) : (
                           <span className="text-[11px] text-slate-400 italic">Telah Berakhir</span>
@@ -565,9 +590,11 @@ export default function TenantsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20 cursor-pointer"
+                  disabled={submitting}
+                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20 cursor-pointer inline-flex items-center gap-2"
                 >
-                  Simpan Penyewa
+                  {submitting && <Spinner size="sm" className="text-white" />}
+                  {submitting ? 'Menyimpan...' : 'Simpan Penyewa'}
                 </button>
               </div>
             </form>
@@ -680,10 +707,11 @@ export default function TenantsPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={ownerAvailableRooms.length === 0}
-                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20 cursor-pointer"
+                  disabled={submitting || ownerAvailableRooms.length === 0}
+                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20 cursor-pointer inline-flex items-center gap-2"
                 >
-                  Terbitkan Kontrak
+                  {submitting && <Spinner size="sm" className="text-white" />}
+                  {submitting ? 'Menerbitkan...' : 'Terbitkan Kontrak'}
                 </button>
               </div>
             </form>

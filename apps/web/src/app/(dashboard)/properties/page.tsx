@@ -16,11 +16,14 @@ import {
   UserCheck,
   Lock
 } from 'lucide-react';
+import { Skeleton, SkeletonCard, Spinner } from '@/components/ui/skeleton';
 
 export default function PropertiesPage() {
   const { role } = useRole();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [togglingRoomId, setTogglingRoomId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Form states
@@ -55,6 +58,7 @@ export default function PropertiesPage() {
   const handleCreateProperty = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setSubmitting(true);
       await api.post('/properties', {
         name: propertyName,
         address: propertyAddress,
@@ -67,6 +71,8 @@ export default function PropertiesPage() {
       fetchProperties();
     } catch (err: any) {
       alert(err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -74,6 +80,7 @@ export default function PropertiesPage() {
     e.preventDefault();
     if (!selectedPropertyId) return;
     try {
+      setSubmitting(true);
       await api.post(`/properties/${selectedPropertyId}/rooms`, {
         roomNumber,
         monthlyPrice: Number(roomPrice),
@@ -84,15 +91,20 @@ export default function PropertiesPage() {
       fetchProperties();
     } catch (err: any) {
       alert(err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleToggleRoomStatus = async (roomId: string) => {
     try {
+      setTogglingRoomId(roomId);
       await api.patch(`/properties/rooms/${roomId}/toggle-status`);
       fetchProperties();
     } catch (err: any) {
       alert(err.message);
+    } finally {
+      setTogglingRoomId(null);
     }
   };
 
@@ -172,63 +184,72 @@ export default function PropertiesPage() {
       </div>
 
       {/* 2. Glass Metric Cards (Tersinkronisasi Presisi dengan Hak Akses) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all flex flex-col justify-between">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-            {role === 'ADMIN' ? 'Properti Terdaftar' : 'Properti Anda'}
-          </span>
-          <div className="mt-2">
-            <span className="text-3xl font-black text-slate-900 tracking-tight block">{totalProperties}</span>
-            <span className="text-xs font-bold text-slate-700 mt-1 block">
-              {role === 'ADMIN' ? 'Seluruh mitra platform' : 'Kos Harmoni Residence'}
+      {loading ? (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all flex flex-col justify-between">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+              {role === 'ADMIN' ? 'Properti Terdaftar' : 'Properti Anda'}
             </span>
+            <div className="mt-2">
+              <span className="text-3xl font-black text-slate-900 tracking-tight block">{totalProperties}</span>
+              <span className="text-xs font-bold text-slate-700 mt-1 block">
+                {role === 'ADMIN' ? 'Seluruh mitra platform' : 'Kos Harmoni Residence'}
+              </span>
+            </div>
+            <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              <div className="bg-slate-400 h-full rounded-full" style={{ width: '100%' }} />
+            </div>
           </div>
-          <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-slate-400 h-full rounded-full" style={{ width: '100%' }} />
-          </div>
-        </div>
 
-        <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all flex flex-col justify-between">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Unit Kamar</span>
-          <div className="mt-2">
-            <span className="text-3xl font-black text-slate-900 tracking-tight block">{totalRooms}</span>
-            <span className="text-xs font-bold text-slate-700 mt-1 block">
-              {role === 'OWNER' ? 'Kapasitas Kos Harmoni' : 'Kapasitas hunian'}
-            </span>
+          <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all flex flex-col justify-between">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Unit Kamar</span>
+            <div className="mt-2">
+              <span className="text-3xl font-black text-slate-900 tracking-tight block">{totalRooms}</span>
+              <span className="text-xs font-bold text-slate-700 mt-1 block">
+                {role === 'OWNER' ? 'Kapasitas Kos Harmoni' : 'Kapasitas hunian'}
+              </span>
+            </div>
+            <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              <div className="bg-indigo-600 h-full rounded-full" style={{ width: '100%' }} />
+            </div>
           </div>
-          <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-indigo-600 h-full rounded-full" style={{ width: '100%' }} />
-          </div>
-        </div>
 
-        <div className="bg-white/85 backdrop-blur-xl border border-blue-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-blue-50/40 to-white/80 hover:shadow-md transition-all flex flex-col justify-between">
-          <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider block">Kamar Kosong</span>
-          <div className="mt-2">
-            <span className="text-3xl font-black text-blue-800 tracking-tight block">{availableRooms}</span>
-            <span className="text-xs font-bold text-blue-700 mt-1 block">AVAILABLE (Siap disewa)</span>
+          <div className="bg-white/85 backdrop-blur-xl border border-blue-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-blue-50/40 to-white/80 hover:shadow-md transition-all flex flex-col justify-between">
+            <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider block">Kamar Kosong</span>
+            <div className="mt-2">
+              <span className="text-3xl font-black text-blue-800 tracking-tight block">{availableRooms}</span>
+              <span className="text-xs font-bold text-blue-700 mt-1 block">AVAILABLE (Siap disewa)</span>
+            </div>
+            <div className="mt-4 w-full bg-blue-100 h-1.5 rounded-full overflow-hidden">
+              <div 
+                className="bg-blue-600 h-full rounded-full transition-all duration-500" 
+                style={{ width: `${totalRooms > 0 ? (availableRooms / totalRooms) * 100 : 0}%` }} 
+              />
+            </div>
           </div>
-          <div className="mt-4 w-full bg-blue-100 h-1.5 rounded-full overflow-hidden">
-            <div 
-              className="bg-blue-600 h-full rounded-full transition-all duration-500" 
-              style={{ width: `${totalRooms > 0 ? (availableRooms / totalRooms) * 100 : 0}%` }} 
-            />
-          </div>
-        </div>
 
-        <div className="bg-white/85 backdrop-blur-xl border border-amber-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-amber-50/40 to-white/80 hover:shadow-md transition-all flex flex-col justify-between">
-          <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider block">Kamar Terisi</span>
-          <div className="mt-2">
-            <span className="text-3xl font-black text-amber-800 tracking-tight block">{occupiedRooms}</span>
-            <span className="text-xs font-bold text-amber-700 mt-1 block">OCCUPIED (Dalam kontrak)</span>
-          </div>
-          <div className="mt-4 w-full bg-amber-100 h-1.5 rounded-full overflow-hidden">
-            <div 
-              className="bg-amber-500 h-full rounded-full transition-all duration-500" 
-              style={{ width: `${totalRooms > 0 ? (occupiedRooms / totalRooms) * 100 : 0}%` }} 
-            />
+          <div className="bg-white/85 backdrop-blur-xl border border-amber-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-amber-50/40 to-white/80 hover:shadow-md transition-all flex flex-col justify-between">
+            <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider block">Kamar Terisi</span>
+            <div className="mt-2">
+              <span className="text-3xl font-black text-amber-800 tracking-tight block">{occupiedRooms}</span>
+              <span className="text-xs font-bold text-amber-700 mt-1 block">OCCUPIED (Dalam kontrak)</span>
+            </div>
+            <div className="mt-4 w-full bg-amber-100 h-1.5 rounded-full overflow-hidden">
+              <div 
+                className="bg-amber-500 h-full rounded-full transition-all duration-500" 
+                style={{ width: `${totalRooms > 0 ? (occupiedRooms / totalRooms) * 100 : 0}%` }} 
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {error && (
         <div className="p-4 bg-rose-50/80 backdrop-blur-md border border-rose-200 text-rose-800 rounded-2xl text-xs font-semibold">
@@ -238,8 +259,35 @@ export default function PropertiesPage() {
 
       {/* 3. Daftar Properti dengan Isolasi Kepemilikan & Hak Kelola Kamar */}
       {loading ? (
-        <div className="p-16 text-center text-xs font-bold text-slate-400 bg-white/50 backdrop-blur-md rounded-[28px] border border-white/60">
-          Memuat data properti...
+        <div className="space-y-6">
+          <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <Skeleton className="w-12 h-12 rounded-2xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-48 rounded-lg" />
+                <Skeleton className="h-3.5 w-32 rounded-lg" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-4">
+              <Skeleton className="h-28 rounded-2xl" />
+              <Skeleton className="h-28 rounded-2xl" />
+              <Skeleton className="h-28 rounded-2xl" />
+              <Skeleton className="h-28 rounded-2xl" />
+            </div>
+          </div>
+          <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <Skeleton className="w-12 h-12 rounded-2xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-48 rounded-lg" />
+                <Skeleton className="h-3.5 w-32 rounded-lg" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-4">
+              <Skeleton className="h-28 rounded-2xl" />
+              <Skeleton className="h-28 rounded-2xl" />
+            </div>
+          </div>
         </div>
       ) : displayedProperties.length === 0 ? (
         <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] p-16 text-center shadow-xs">
@@ -375,11 +423,13 @@ export default function PropertiesPage() {
 
                               {isOwner ? (
                                 <button
+                                  disabled={togglingRoomId === room.id}
                                   onClick={() => handleToggleRoomStatus(room.id)}
-                                  className="text-[10px] font-bold text-indigo-600 hover:text-indigo-900 underline transition-colors cursor-pointer"
+                                  className="text-[10px] font-bold text-indigo-600 hover:text-indigo-900 disabled:opacity-50 underline transition-colors cursor-pointer inline-flex items-center gap-1"
                                   title="Ganti status secara manual untuk keperluan perawatan/renovasi kamar"
                                 >
-                                  Toggle Status
+                                  {togglingRoomId === room.id && <Spinner size="sm" className="text-indigo-600" />}
+                                  {togglingRoomId === room.id ? 'Mengubah...' : 'Toggle Status'}
                                 </button>
                               ) : (
                                 <span className="text-[10px] text-slate-400 italic">
@@ -487,9 +537,11 @@ export default function PropertiesPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20 cursor-pointer"
+                  disabled={submitting}
+                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20 cursor-pointer inline-flex items-center gap-2"
                 >
-                  Daftarkan Properti
+                  {submitting && <Spinner size="sm" className="text-white" />}
+                  {submitting ? 'Mendaftarkan...' : 'Daftarkan Properti'}
                 </button>
               </div>
             </form>
@@ -561,9 +613,11 @@ export default function PropertiesPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20 cursor-pointer"
+                  disabled={submitting}
+                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20 cursor-pointer inline-flex items-center gap-2"
                 >
-                  Simpan Kamar
+                  {submitting && <Spinner size="sm" className="text-white" />}
+                  {submitting ? 'Menyimpan...' : 'Simpan Kamar'}
                 </button>
               </div>
             </form>

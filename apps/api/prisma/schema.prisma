@@ -25,6 +25,8 @@ model Property {
   city      String
   rooms     Room[]
   createdAt DateTime @default(now())
+
+  @@index([city])
 }
 
 model Room {
@@ -36,6 +38,9 @@ model Room {
   status       RoomStatus @default(AVAILABLE)
   contracts    Contract[]
   createdAt    DateTime   @default(now())
+
+  @@index([propertyId])
+  @@index([status])
 }
 
 model Tenant {
@@ -45,6 +50,8 @@ model Tenant {
   phone     String
   contracts Contract[]
   createdAt DateTime   @default(now())
+
+  @@index([name])
 }
 
 model Contract {
@@ -58,6 +65,10 @@ model Contract {
   isActive  Boolean   @default(true)
   invoices  Invoice[]
   createdAt DateTime  @default(now())
+
+  @@index([roomId])
+  @@index([tenantId])
+  @@index([isActive])
 }
 
 model Invoice {
@@ -71,4 +82,8 @@ model Invoice {
   midtransOrderId String?       @unique
   paidAt          DateTime?
   createdAt       DateTime      @default(now())
+
+  @@index([contractId])
+  @@index([status])
+  @@index([dueDate])
 }

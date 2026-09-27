@@ -22,6 +22,7 @@ import {
   Lock,
   Globe
 } from 'lucide-react';
+import { SkeletonCard, SkeletonTable, Spinner } from '@/components/ui/skeleton';
 
 declare global {
   interface Window {
@@ -34,6 +35,7 @@ export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clientKey, setClientKey] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'UNPAID' | 'PAID'>('ALL');
@@ -117,6 +119,7 @@ export default function InvoicesPage() {
       return;
     }
     try {
+      setSubmitting(true);
       await api.post('/invoices', {
         contractId: selectedContractId,
         amount: Number(amount),
@@ -127,6 +130,8 @@ export default function InvoicesPage() {
       loadData();
     } catch (err: any) {
       alert(err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -313,82 +318,90 @@ export default function InvoicesPage() {
       )}
 
       {/* Metric summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Total Invoiced */}
-        <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              {role === 'OWNER' ? 'TOTAL TAGIHAN KOS HARMONI' : role === 'ADMIN' ? 'VOLUME TRANSAKSI PLATFORM' : 'TOTAL TAGIHAN SAYA'}
-            </span>
-            <span className="text-[10px] font-bold text-slate-500 bg-slate-100/80 px-2 py-0.5 rounded-full">
-              {displayedInvoices.length} transaksi
-            </span>
-          </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight block">
-              {formatMoney(totalInvoiced)}
-            </span>
-            <p className="text-[11px] text-slate-400 mt-1">
-              {role === 'OWNER' ? 'Akumulasi tagihan unit Kos Harmoni' : 'Akumulasi transaksi sewa'}
-            </p>
-          </div>
-          <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-slate-400 h-full rounded-full w-full" />
-          </div>
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
         </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Total Invoiced */}
+          <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                {role === 'OWNER' ? 'TOTAL TAGIHAN KOS HARMONI' : role === 'ADMIN' ? 'VOLUME TRANSAKSI PLATFORM' : 'TOTAL TAGIHAN SAYA'}
+              </span>
+              <span className="text-[10px] font-bold text-slate-500 bg-slate-100/80 px-2 py-0.5 rounded-full">
+                {displayedInvoices.length} transaksi
+              </span>
+            </div>
+            <div className="mt-3">
+              <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight block">
+                {formatMoney(totalInvoiced)}
+              </span>
+              <p className="text-[11px] text-slate-400 mt-1">
+                {role === 'OWNER' ? 'Akumulasi tagihan unit Kos Harmoni' : 'Akumulasi transaksi sewa'}
+              </p>
+            </div>
+            <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              <div className="bg-slate-400 h-full rounded-full w-full" />
+            </div>
+          </div>
 
-        {/* Paid Invoices */}
-        <div className="bg-white/85 backdrop-blur-xl border border-indigo-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-indigo-50/40 to-white/80 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider">
-              {role === 'OWNER' ? 'DANA MASUK (PAID)' : 'PEMBAYARAN TERVERIFIKASI'}
-            </span>
-            <span className="text-[10px] font-bold text-indigo-800 bg-indigo-100/80 px-2 py-0.5 rounded-full">
-              {paidInvoices.length} lunas
-            </span>
+          {/* Paid Invoices */}
+          <div className="bg-white/85 backdrop-blur-xl border border-indigo-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-indigo-50/40 to-white/80 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider">
+                {role === 'OWNER' ? 'DANA MASUK (PAID)' : 'PEMBAYARAN TERVERIFIKASI'}
+              </span>
+              <span className="text-[10px] font-bold text-indigo-800 bg-indigo-100/80 px-2 py-0.5 rounded-full">
+                {paidInvoices.length} lunas
+              </span>
+            </div>
+            <div className="mt-3">
+              <span className="text-2xl sm:text-3xl font-black text-indigo-900 tracking-tight block">
+                {formatMoney(totalPaid)}
+              </span>
+              <p className="text-[11px] text-indigo-600 mt-1">
+                Arus kas masuk terverifikasi Midtrans
+              </p>
+            </div>
+            <div className="mt-4 w-full bg-indigo-100 h-1.5 rounded-full overflow-hidden">
+              <div 
+                className="bg-indigo-600 h-full rounded-full transition-all duration-500" 
+                style={{ width: `${totalInvoiced > 0 ? (totalPaid / totalInvoiced) * 100 : 0}%` }} 
+              />
+            </div>
           </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-black text-indigo-900 tracking-tight block">
-              {formatMoney(totalPaid)}
-            </span>
-            <p className="text-[11px] text-indigo-600 mt-1">
-              Arus kas masuk terverifikasi Midtrans
-            </p>
-          </div>
-          <div className="mt-4 w-full bg-indigo-100 h-1.5 rounded-full overflow-hidden">
-            <div 
-              className="bg-indigo-600 h-full rounded-full transition-all duration-500" 
-              style={{ width: `${totalInvoiced > 0 ? (totalPaid / totalInvoiced) * 100 : 0}%` }} 
-            />
-          </div>
-        </div>
 
-        {/* Unpaid Invoices */}
-        <div className="bg-white/85 backdrop-blur-xl border border-rose-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-rose-50/40 to-white/80 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wider">
-              {role === 'OWNER' ? 'TAGIHAN BELUM DITERIMA' : role === 'ADMIN' ? 'PIUTANG TERTUNDA PLATFORM' : 'MENUNGGU PEMBAYARAN'}
-            </span>
-            <span className="text-[10px] font-bold text-rose-800 bg-rose-100/80 px-2 py-0.5 rounded-full">
-              {unpaidInvoices.length} tertunda
-            </span>
-          </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-black text-rose-800 tracking-tight block">
-              {formatMoney(totalUnpaid)}
-            </span>
-            <p className="text-[11px] text-rose-600 mt-1">
-              {role === 'OWNER' ? 'Tagihan sewa menunggu transfer penyewa' : 'Piutang sewa aktif'}
-            </p>
-          </div>
-          <div className="mt-4 w-full bg-rose-100 h-1.5 rounded-full overflow-hidden">
-            <div 
-              className="bg-rose-500 h-full rounded-full transition-all duration-500" 
-              style={{ width: `${totalInvoiced > 0 ? (totalUnpaid / totalInvoiced) * 100 : 0}%` }} 
-            />
+          {/* Unpaid Invoices */}
+          <div className="bg-white/85 backdrop-blur-xl border border-rose-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-rose-50/40 to-white/80 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wider">
+                {role === 'OWNER' ? 'TAGIHAN BELUM DITERIMA' : role === 'ADMIN' ? 'PIUTANG TERTUNDA PLATFORM' : 'MENUNGGU PEMBAYARAN'}
+              </span>
+              <span className="text-[10px] font-bold text-rose-800 bg-rose-100/80 px-2 py-0.5 rounded-full">
+                {unpaidInvoices.length} tertunda
+              </span>
+            </div>
+            <div className="mt-3">
+              <span className="text-2xl sm:text-3xl font-black text-rose-800 tracking-tight block">
+                {formatMoney(totalUnpaid)}
+              </span>
+              <p className="text-[11px] text-rose-600 mt-1">
+                {role === 'OWNER' ? 'Tagihan sewa menunggu transfer penyewa' : 'Piutang sewa aktif'}
+              </p>
+            </div>
+            <div className="mt-4 w-full bg-rose-100 h-1.5 rounded-full overflow-hidden">
+              <div 
+                className="bg-rose-500 h-full rounded-full transition-all duration-500" 
+                style={{ width: `${totalInvoiced > 0 ? (totalUnpaid / totalInvoiced) * 100 : 0}%` }} 
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Filter tabs */}
       <div className="flex items-center gap-1.5 sm:gap-2 bg-white/70 backdrop-blur-md p-1.5 rounded-2xl border border-white/80 w-full sm:w-fit overflow-x-auto shadow-xs scrollbar-none">
@@ -452,7 +465,9 @@ export default function InvoicesPage() {
         </div>
 
         {loading ? (
-          <div className="p-12 text-center text-xs text-slate-400 font-bold">Memuat data tagihan...</div>
+          <div className="py-4 px-2">
+            <SkeletonTable rows={4} cols={6} />
+          </div>
         ) : displayedInvoices.length === 0 ? (
           <div className="p-12 text-center text-xs text-slate-400 bg-slate-50/60 rounded-2xl border border-dashed border-slate-200">
             Tidak ada tagihan yang sesuai filter.
@@ -547,16 +562,16 @@ export default function InvoicesPage() {
                                   onClick={() => handlePay(inv.id)}
                                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
                                 >
-                                  <CreditCard className="w-3.5 h-3.5 text-indigo-400" />
+                                  {isPaying ? <Spinner size="sm" className="text-white" /> : <CreditCard className="w-3.5 h-3.5 text-indigo-400" />}
                                   {isPaying ? 'Memproses...' : 'Bayar Sekarang'}
                                 </button>
                                 <button
                                   disabled={isPaying}
                                   onClick={() => handleSimulatePayment(inv.id)}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 text-indigo-800 border border-indigo-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
                                   title="Simulasikan pelunasan instan"
                                 >
-                                  <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                                  {isPaying ? <Spinner size="sm" className="text-indigo-600" /> : <Sparkles className="w-3.5 h-3.5 text-indigo-600" />}
                                 </button>
                               </div>
                             )}
@@ -693,10 +708,11 @@ export default function InvoicesPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={availableContractsForOwner.length === 0}
-                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20 cursor-pointer"
+                  disabled={submitting || availableContractsForOwner.length === 0}
+                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20 cursor-pointer inline-flex items-center gap-2"
                 >
-                  Terbitkan Invoice
+                  {submitting && <Spinner size="sm" className="text-white" />}
+                  {submitting ? 'Menerbitkan...' : 'Terbitkan Invoice'}
                 </button>
               </div>
             </form>

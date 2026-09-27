@@ -28,6 +28,7 @@ import {
 import { api } from '@/lib/api';
 import { Property, Tenant, Invoice, ApiResponse, Contract } from '@/types';
 import { useRole } from '@/context/RoleContext';
+import { SkeletonCard, SkeletonTable, Skeleton, Spinner } from '@/components/ui/skeleton';
 
 export default function DashboardOverviewPage() {
   const { role } = useRole();
@@ -168,10 +169,56 @@ export default function DashboardOverviewPage() {
         strategy="lazyOnload"
       />
 
-      {/* ========================================================================= */}
-      {/* 1. DASHBOARD SUPER ADMIN                                                  */}
-      {/* ========================================================================= */}
-      {role === 'ADMIN' && (
+      {/* Skeleton Loading State */}
+      {loading ? (
+        <div className="space-y-6">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/80 rounded-[28px] p-6 shadow-xs flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Skeleton className="w-13 h-13 rounded-2xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-44 rounded-lg" />
+                <Skeleton className="h-3.5 w-72 rounded-lg" />
+              </div>
+            </div>
+            <div className="hidden sm:flex items-center gap-2.5">
+              <Skeleton className="h-9 w-28 rounded-xl" />
+              <Skeleton className="h-9 w-28 rounded-xl" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-7 bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <Skeleton className="h-5 w-40 rounded-lg" />
+                <Skeleton className="h-4 w-20 rounded-lg" />
+              </div>
+              <SkeletonTable rows={4} cols={4} />
+            </div>
+
+            <div className="lg:col-span-5 bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] p-6 shadow-xs space-y-4">
+              <div className="pb-3 border-b border-slate-100">
+                <Skeleton className="h-5 w-36 rounded-lg" />
+              </div>
+              <div className="space-y-3">
+                <Skeleton className="h-20 w-full rounded-2xl" />
+                <Skeleton className="h-20 w-full rounded-2xl" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* ========================================================================= */}
+          {/* 1. DASHBOARD SUPER ADMIN                                                  */}
+          {/* ========================================================================= */}
+          {role === 'ADMIN' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Hero Banner Super Admin */}
           <div className="bg-gradient-to-r from-indigo-50/90 via-slate-50/80 to-blue-50/80 backdrop-blur-xl border border-indigo-200/70 rounded-[28px] p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -602,19 +649,27 @@ export default function DashboardOverviewPage() {
                         <button
                           disabled={paymentLoading === tenantUnpaidInvoice.id}
                           onClick={() => handlePay(tenantUnpaidInvoice.id)}
-                          className="px-4 py-2 bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                          className="px-4 py-2 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
                         >
-                          <CreditCard className="w-3.5 h-3.5 text-indigo-400" />
-                          <span>Bayar Sekarang</span>
+                          {paymentLoading === tenantUnpaidInvoice.id ? (
+                            <Spinner size="sm" className="text-white" />
+                          ) : (
+                            <CreditCard className="w-3.5 h-3.5 text-indigo-400" />
+                          )}
+                          <span>{paymentLoading === tenantUnpaidInvoice.id ? 'Memproses...' : 'Bayar Sekarang'}</span>
                         </button>
 
                         <button
                           disabled={paymentLoading === tenantUnpaidInvoice.id}
                           onClick={() => handleSimulatePayment(tenantUnpaidInvoice.id)}
-                          className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold border border-indigo-200 transition-colors flex items-center gap-1 cursor-pointer"
+                          className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 text-indigo-700 rounded-xl text-xs font-bold border border-indigo-200 transition-colors flex items-center gap-1 cursor-pointer"
                           title="Simulasikan pelunasan instan untuk pengujian reviewer"
                         >
-                          <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                          {paymentLoading === tenantUnpaidInvoice.id ? (
+                            <Spinner size="sm" className="text-indigo-600" />
+                          ) : (
+                            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                          )}
                           <span>Simulasi</span>
                         </button>
                       </div>
@@ -683,6 +738,8 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

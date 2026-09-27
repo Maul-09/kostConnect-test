@@ -20,6 +20,7 @@ import {
   Phone,
   Mail
 } from 'lucide-react';
+import { Skeleton, SkeletonCard, Spinner } from '@/components/ui/skeleton';
 
 declare global {
   interface Window {
@@ -130,8 +131,46 @@ export default function TenantPortalPage() {
         strategy="lazyOnload"
       />
 
-      {/* 1. Hero Banner: Tenant Greeting */}
-      <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/80 to-slate-50/80 backdrop-blur-xl border border-blue-200/70 rounded-[28px] p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Skeleton loading state */}
+      {loading ? (
+        <div className="space-y-6">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/80 rounded-[28px] p-6 shadow-xs flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Skeleton className="w-13 h-13 rounded-2xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-44 rounded-lg" />
+                <Skeleton className="h-3.5 w-72 rounded-lg" />
+              </div>
+            </div>
+            <Skeleton className="h-16 w-40 rounded-2xl" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] p-6 shadow-xs space-y-4">
+              <Skeleton className="h-5 w-36 rounded-lg" />
+              <div className="space-y-3 pt-2">
+                <Skeleton className="h-10 w-full rounded-xl" />
+                <Skeleton className="h-10 w-full rounded-xl" />
+                <Skeleton className="h-10 w-full rounded-xl" />
+              </div>
+            </div>
+
+            <div className="lg:col-span-2 bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <Skeleton className="h-5 w-40 rounded-lg" />
+                <Skeleton className="h-4 w-20 rounded-lg" />
+              </div>
+              <div className="space-y-3">
+                <Skeleton className="h-20 w-full rounded-2xl" />
+                <Skeleton className="h-20 w-full rounded-2xl" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* 1. Hero Banner: Tenant Greeting */}
+          <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/80 to-slate-50/80 backdrop-blur-xl border border-blue-200/70 rounded-[28px] p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
           <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center shadow-lg shadow-blue-900/20 shrink-0">
             <User className="w-7 h-7" />
@@ -287,18 +326,18 @@ export default function TenantPortalPage() {
                           <button
                             disabled={isPaying}
                             onClick={() => handlePay(inv.id)}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
                           >
-                            <CreditCard className="w-3.5 h-3.5 text-indigo-400" />
+                            {isPaying ? <Spinner size="sm" className="text-white" /> : <CreditCard className="w-3.5 h-3.5 text-indigo-400" />}
                             {isPaying ? 'Memproses...' : 'Bayar Sekarang'}
                           </button>
                           <button
                             disabled={isPaying}
                             onClick={() => handleSimulatePayment(inv.id)}
-                            className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-colors"
+                            className="p-2 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
                             title="Simulasi Lunas Cepat (Demo)"
                           >
-                            <Sparkles className="w-3.5 h-3.5" />
+                            {isPaying ? <Spinner size="sm" className="text-indigo-600" /> : <Sparkles className="w-3.5 h-3.5" />}
                           </button>
                         </div>
                       )}
@@ -310,6 +349,8 @@ export default function TenantPortalPage() {
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }
