@@ -186,18 +186,20 @@ Di pojok kanan atas aplikasi terdapat **Role Switcher Dropdown** interaktif untu
      * Klik "+ Terbitkan Invoice", pilih kontrak sewa penghuni, masukkan nominal.
      * Uji tombol **"Ingatkan WA"** untuk membuka format pesan WhatsApp otomatis ke nomor penyewa.
 
-### Skenario 3: Pengujian Role Penyewa & Pembayaran Midtrans Snap
+### Skenario 3: Pengujian Role Penyewa & Pembayaran Midtrans Snap Sandbox
 * **Kredensial:** `tenant@budi.com` / `tenant123`
 * **Langkah Uji Coba:**
   1. Ganti role ke **Penyewa**.
   2. Buka menu **Tagihan Sewa Saya** (`/invoices` atau `/portal`).
   3. Pada baris invoice berstatus `BELUM DIBAYAR`, klik **"Bayar Sekarang"**:
-     * Halaman pembayaran resmi Midtrans Snap akan terbuka di tab baru.
-     * Pilih metode pembayaran, misalnya **DANA** atau **GoPay**.
-     * Di simulator Midtrans, masukkan **PIN Sandbox: `123456`**, lalu klik **Confirm**.
-     * Halaman otomatis kembali ke KosConnect (`http://localhost:3000/invoices`).
-     * Klik tombol **`[ 🕐 Cek Status ]`**: Status invoice otomatis berubah menjadi **LUNAS (PAID)** warna hijau, dan **Modal Struk Pelunasan Resmi** akan muncul di layar dengan rincian invoice dan tombol cetak bukti bayar!
-  4. *(Opsi Offline):* Jika sedang tidak terhubung ke Midtrans, klik tombol bintang (**`✨`**) untuk memicu simulasi lunas instan.
+     * Sistem membuka halaman pembayaran resmi **Midtrans Snap Sandbox** di tab baru.
+     * Pilih metode pembayaran yang diinginkan:
+       * **Virtual Account:** Pilih bank (BCA / BNI / BRI / Mandiri / Permata), salin nomor VA, lalu buka [Midtrans VA Simulator](https://simulator.sandbox.midtrans.com/bca/va/index) untuk klik *Pay*.
+       * **QRIS / GoPay:** Scan kode QR via aplikasi simulator.
+       * **Kartu Kredit (Sandbox):** Masukkan test card `4811 1111 1111 1114` dan OTP `112233`.
+     * Begitu pembayaran diselesaikan, tab Midtrans akan **tetap standby** menampilkan status centang hijau **"Pembayaran Berhasil"** dengan nomor Order ID.
+     * Cukup beralih kembali (*switch tab*) ke aplikasi KosConnect ERP:
+       * Sistem otomatis mendeteksi fokus layar (*Window Focus Detection*), memverifikasi pelunasan secara instan, mengubah status tagihan menjadi **LUNAS (PAID)**, dan memunculkan **Modal Kuitansi Selebrasi Lunas** lengkap dengan rincian bukti transaksi!
 
 ### Skenario 4: Pengujian Pusat Notifikasi Interaktif (Notification Center)
 1. Klik **Ikon Lonceng Notifikasi** di pojok kanan atas (terdapat badge merah counter belum dibaca).
@@ -214,22 +216,58 @@ Di pojok kanan atas aplikasi terdapat **Role Switcher Dropdown** interaktif untu
 
 ---
 
-## 7. Automasi Alur Kerja n8n (Workflows)
+## 7. Automasi Alur Kerja n8n (Automation Workflows)
 
-Dua alur kerja automasi siap pakai tersimpan di folder `/n8n`:
+Untuk memenuhi kriteria **Automation Tools menggunakan n8n**, KosConnect ERP telah dilengkapi dengan 2 arsitektur alur kerja automasi yang dapat langsung diimpor ke n8n:
 
-1. **Workflow 1: `payment-notification.json` (Event-Driven Webhook)**
-   * **Trigger:** Webhook POST di `/webhook/payment-success`.
-   * **Mekanisme:** Saat invoice dibayar lunas di Midtrans, backend KosConnect mendispatch data transaksi (Nomor invoice, nominal sewa, nama penyewa, nomor kamar, nama kos) ke n8n untuk diteruskan ke log chat/email konfirmasi otomatis.
-2. **Workflow 2: `overdue-invoice-checker.json` (Scheduled Cron Checker)**
-   * **Trigger:** Jadwal cron periodik harian.
-   * **Mekanisme:** Menembak endpoint NestJS `GET /api/invoices?status=UNPAID`, memfilter tagihan yang mendekati jatuh tempo ($\le 3$ hari), lalu menyusun ringkasan laporan tagihan untuk pengelola kos.
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        ARSITEKTUR OTOMASI N8N                          │
+├────────────────────────────────────────────────────────────────────────┤
+│                                                                        │
+│  [Alur 1: Event-Driven Webhook (Realtime)]                             │
+│  Penyewa Bayar (Midtrans) ──▶ NestJS Webhook Handler                   │
+│                                      │                                 │
+│                                      ▼ POST JSON Payload               │
+│                        n8n Webhook: /webhook/payment-success           │
+│                                      │                                 │
+│                                      ▼ Format Pesan Konfirmasi         │
+│                        Dispatched ke Email / WhatsApp / Log            │
+│                                                                        │
+├────────────────────────────────────────────────────────────────────────┤
+│                                                                        │
+│  [Alur 2: Scheduled Cron Job (Harian)]                                 │
+│  Cron Trigger (08:00 WIB) ──▶ GET /api/invoices?status=UNPAID          │
+│                                      │                                 │
+│                                      ▼ Filter Tagihan Jatuh Tempo (H-3)│
+│                        Kompilasi Laporan Rekap Tagihan                 │
+│                                      │                                 │
+│                                      ▼                                 │
+│                        Kirim Notifikasi Laporan ke Pemilik Kos         │
+└────────────────────────────────────────────────────────────────────────┘
+```
 
-**Cara Import ke n8n:**
-1. Buka n8n console di [http://localhost:5678](http://localhost:5678).
-2. Klik menu **Workflows** &rarr; **Import from File**.
-3. Pilih salah satu file JSON dari folder `/n8n` di repository ini.
-4. Klik **Activate** pada workflow.
+### Rincian File Workflow (Folder `/n8n`):
+
+1. **`n8n/payment-notification.json` (Event-Driven Webhook)**
+   * **Node 1 (Webhook Trigger):** Menerima HTTP POST di path `payment-success`.
+   * **Node 2 (Format Confirmation Message):** Menyusun template pesan konfirmasi: *"Halo {tenantName}, pembayaran invoice {invoiceNumber} untuk kamar {roomNumber} sebesar Rp {amount} telah BERHASIL diverifikasi lunas..."*.
+   * **Node 3 (Dispatch Notification):** Mengirimkan data notifikasi ke kanal tujuan (Email/Chat Webhook).
+
+2. **`n8n/overdue-invoice-checker.json` (Scheduled Billing Check)**
+   * **Node 1 (Schedule Trigger):** Berjalan otomatis setiap hari pukul 08:00 WIB.
+   * **Node 2 (HTTP Request):** Memanggil API internal KosConnect `GET http://localhost:3001/api/invoices?status=UNPAID`.
+   * **Node 3 (Code Node):** Menghitung tanggal jatuh tempo tagihan yang berjarak $\le 3$ hari ke depan.
+   * **Node 4 (Dispatch Report):** Mengirimkan rekap tagihan tertunggak ke pengelola kos.
+
+### Cara Menjalankan & Menguji n8n:
+1. Pastikan container n8n aktif (jalankan `docker compose up -d`).
+2. Buka dashboard n8n di peramban: [http://localhost:5678](http://localhost:5678).
+3. Buat akun n8n lokal (atau skip jika sudah ada).
+4. Klik tombol **"Add workflow"** &rarr; klik ikon menu **`...`** (titik tiga di kanan atas) &rarr; pilih **"Import from File"**.
+5. Pilih file `n8n/payment-notification.json` dari repositori ini.
+6. Klik **"Test workflow"** atau geser tombol toggle menjadi **"Active"**.
+7. Lakukan pembayaran invoice di website KosConnect &rarr; perhatikan eksekusi workflow di n8n akan langsung hijau (*Success*) menerima data tagihan yang baru saja lunas!
 
 ---
 
