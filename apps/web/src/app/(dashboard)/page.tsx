@@ -51,9 +51,10 @@ export default function DashboardOverviewPage() {
     }
   };
 
-  const loadData = async () => {
+  const loadData = async (silent = false) => {
     try {
       setLoading(true);
+      if (!silent) showLoading('Memuat ringkasan performa sistem...');
       const [propRes, tenantRes, invRes, contractRes] = await Promise.all([
         api.get<any, ApiResponse<Property[]>>('/properties').catch(() => ({ data: [] })),
         api.get<any, ApiResponse<Tenant[]>>('/tenants').catch(() => ({ data: [] })),
@@ -66,6 +67,7 @@ export default function DashboardOverviewPage() {
       setContracts(contractRes.data || []);
     } finally {
       setLoading(false);
+      if (!silent) hideLoading();
     }
   };
 

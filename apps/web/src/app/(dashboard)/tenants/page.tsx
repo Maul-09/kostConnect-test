@@ -24,7 +24,9 @@ import {
   Lock,
   Key,
   Copy,
-  Check
+  Check,
+  Edit2,
+  Trash2
 } from 'lucide-react';
 import { SkeletonCard, SkeletonTable, Spinner } from '@/components/ui/skeleton';
 
@@ -39,6 +41,7 @@ export default function TenantsPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [terminatingId, setTerminatingId] = useState<string | null>(null);
+  const [deletingTenantId, setDeletingTenantId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Modal states (Super Admin: Daftarkan Pemilik Kos)
@@ -57,15 +60,22 @@ export default function TenantsPage() {
   const [createdTenantResult, setCreatedTenantResult] = useState<any | null>(null);
   const [copiedTenant, setCopiedTenant] = useState(false);
 
+  // Modal states (Edit Penyewa)
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [editTenantName, setEditTenantName] = useState('');
+  const [editTenantEmail, setEditTenantEmail] = useState('');
+  const [editTenantPhone, setEditTenantPhone] = useState('');
+
   const [showContractModal, setShowContractModal] = useState(false);
   const [selectedTenantId, setSelectedTenantId] = useState('');
   const [selectedRoomId, setSelectedRoomId] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  const loadData = async () => {
+  const loadData = async (silent = false) => {
     try {
       setLoading(true);
+      if (!silent) showLoading('Memuat direktori penyewa & data kontrak...');
       const [tenantsRes, contractsRes, roomsRes, ownersRes] = await Promise.all([
         api.get<any, ApiResponse<Tenant[]>>('/tenants'),
         api.get<any, ApiResponse<Contract[]>>('/tenants/contracts/all'),
@@ -81,6 +91,7 @@ export default function TenantsPage() {
       setError(err.message || 'Gagal memuat data penyewa & kontrak');
     } finally {
       setLoading(false);
+      if (!silent) hideLoading();
     }
   };
 
@@ -230,6 +241,60 @@ export default function TenantsPage() {
           showToast('error', 'Gagal Check-out Kontrak', err.message);
         } finally {
           setTerminatingId(null);
+          hideLoading();
+        }
+      },
+    });
+  };
+
+  const handleOpenEditTenant = (tenant: Tenant) => {
+    setEditingTenant(tenant);
+    setEditTenantName(tenant.name);
+    setEditTenantEmail(tenant.email);
+    setEditTenantPhone(tenant.phone || '');
+  };
+
+  const handleUpdateTenant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTenant) return;
+    try {
+      setSubmitting(true);
+      showLoading('Menyimpan perubahan data penyewa...');
+      await api.patch(`/tenants/${editingTenant.id}`, {
+        name: editTenantName,
+        email: editTenantEmail,
+        phone: editTenantPhone,
+      });
+      const updatedName = editTenantName;
+      setEditingTenant(null);
+      loadData(true);
+      showToast('success', 'Data Penyewa Diperbarui', `Informasi ${updatedName} berhasil diperbarui.`);
+    } catch (err: any) {
+      showToast('error', 'Gagal Memperbarui Penyewa', err.message);
+    } finally {
+      setSubmitting(false);
+      hideLoading();
+    }
+  };
+
+  const handleDeleteTenant = (tenant: Tenant) => {
+    showConfirm({
+      title: `Hapus Data Penyewa ${tenant.name}`,
+      message: `Apakah Anda yakin ingin menghapus data penyewa ${tenant.name}? Akun login penyewa terkait juga akan dinonaktifkan/dihapus. Tindakan ini hanya dapat dilakukan bila tidak ada kontrak sewa aktif.`,
+      confirmLabel: 'Ya, Hapus Penyewa',
+      cancelLabel: 'Batal',
+      confirmVariant: 'danger',
+      onConfirm: async () => {
+        try {
+          setDeletingTenantId(tenant.id);
+          showLoading('Menghapus data penyewa...');
+          await api.delete(`/tenants/${tenant.id}`);
+          loadData(true);
+          showToast('success', 'Penyewa Berhasil Dihapus', `Data ${tenant.name} berhasil dihapus dari sistem.`);
+        } catch (err: any) {
+          showToast('error', 'Gagal Menghapus Penyewa', err.message);
+        } finally {
+          setDeletingTenantId(null);
           hideLoading();
         }
       },
@@ -604,26 +669,54 @@ export default function TenantsPage() {
             {displayedTenants.map((t) => (
               <div
                 key={t.id}
-                className="bg-slate-50/70 hover:bg-white border border-slate-200/60 rounded-2xl p-4 transition-all"
+                className="bg-slate-50/70 hover:bg-white border border-slate-200/60 rounded-2xl p-4 transition-all flex flex-col justify-between"
               >
-                <div className="flex items-center gap-3 mb-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-800 font-black text-xs flex items-center justify-center shrink-0">
-                    {t.name.substring(0, 2).toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-bold text-xs text-slate-800 truncate">{t.name}</p>
-                    <p className="text-[10px] text-slate-400 truncate">ID: {t.id.substring(0, 8)}...</p>
-                  </div>
-                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-800 font-black text-xs flex items-center justify-center shrink-0">
+                        {t.name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-xs text-slate-800 truncate">{t.name}</p>
+                        <p className="text-[10px] text-slate-400 truncate">ID: {t.id.substring(0, 8)}...</p>
+                      </div>
+                    </div>
 
-                <div className="space-y-1 text-[11px] text-slate-600 pt-2 border-t border-slate-200/60">
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{t.phone || '-'}</span>
+                    {(role === 'OWNER' || role === 'ADMIN') && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => handleOpenEditTenant(t)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
+                          title="Edit Data Penyewa"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          disabled={deletingTenantId === t.id}
+                          onClick={() => handleDeleteTenant(t)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer disabled:opacity-50"
+                          title="Hapus Data Penyewa"
+                        >
+                          {deletingTenantId === t.id ? (
+                            <Spinner size="sm" className="text-rose-600" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-3.5 h-3.5 text-slate-400" />
-                    <span className="truncate">{t.email || '-'}</span>
+
+                  <div className="space-y-1 text-[11px] text-slate-600 pt-2 border-t border-slate-200/60">
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{t.phone || '-'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-3.5 h-3.5 text-slate-400" />
+                      <span className="truncate">{t.email || '-'}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1168,7 +1261,7 @@ export default function TenantsPage() {
                 <button
                   type="button"
                   onClick={() => setShowContractModal(false)}
-                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
@@ -1179,6 +1272,94 @@ export default function TenantsPage() {
                 >
                   {submitting && <Spinner size="sm" className="text-white" />}
                   {submitting ? 'Menerbitkan...' : 'Terbitkan Kontrak'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edit Data Penyewa (Responsif Mobile Bottom Sheet) */}
+      {editingTenant && (
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setEditingTenant(null);
+          }}
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in duration-200"
+        >
+          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-t-[32px] sm:rounded-[32px] max-w-lg w-full p-5 sm:p-8 shadow-2xl space-y-4 sm:space-y-5 max-h-[88vh] overflow-y-auto animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
+            <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
+                  UPDATE DATA IDENTITAS
+                </span>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                  Edit Data Penyewa
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Perbarui nama, email login, atau nomor WhatsApp penyewa.
+                </p>
+              </div>
+              <button 
+                onClick={() => setEditingTenant(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateTenant} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Nama Lengkap</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Budi Santoso"
+                  value={editTenantName}
+                  onChange={(e) => setEditTenantName(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Nomor WhatsApp / HP</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: 081234567890"
+                  value={editTenantPhone}
+                  onChange={(e) => setEditTenantPhone(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Email Login</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="Contoh: budi@gmail.com"
+                  value={editTenantEmail}
+                  onChange={(e) => setEditTenantEmail(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingTenant(null)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20 cursor-pointer inline-flex items-center gap-2"
+                >
+                  {submitting && <Spinner size="sm" className="text-white" />}
+                  {submitting ? 'Menyimpan...' : 'Perbarui Penyewa'}
                 </button>
               </div>
             </form>

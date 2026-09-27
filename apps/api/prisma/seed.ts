@@ -78,6 +78,7 @@ async function main() {
       roomNumber: '101',
       monthlyPrice: 1800000,
       status: RoomStatus.OCCUPIED,
+      facilities: ['AC', 'WiFi Cepat', 'Kamar Mandi Dalam', 'Kasur Springbed', 'Lemari Pakaian', 'Meja & Kursi Kerja'],
     },
   });
 
@@ -87,6 +88,7 @@ async function main() {
       roomNumber: '102',
       monthlyPrice: 1800000,
       status: RoomStatus.AVAILABLE,
+      facilities: ['AC', 'WiFi Cepat', 'Kamar Mandi Dalam', 'Kasur Springbed', 'Lemari Pakaian'],
     },
   });
 
@@ -96,6 +98,7 @@ async function main() {
       roomNumber: '103',
       monthlyPrice: 2200000,
       status: RoomStatus.AVAILABLE,
+      facilities: ['AC', 'WiFi Cepat', 'Kamar Mandi Dalam', 'Water Heater', 'Smart TV', 'Balkon / Jendela'],
     },
   });
 
@@ -105,6 +108,7 @@ async function main() {
       roomNumber: 'A1',
       monthlyPrice: 1300000,
       status: RoomStatus.OCCUPIED,
+      facilities: ['WiFi Cepat', 'Kamar Mandi Dalam', 'Kasur Springbed', 'Lemari Pakaian'],
     },
   });
 
@@ -114,6 +118,7 @@ async function main() {
       roomNumber: 'A2',
       monthlyPrice: 1300000,
       status: RoomStatus.AVAILABLE,
+      facilities: ['WiFi Cepat', 'Kamar Mandi Dalam', 'Kasur Springbed', 'Lemari Pakaian'],
     },
   });
 

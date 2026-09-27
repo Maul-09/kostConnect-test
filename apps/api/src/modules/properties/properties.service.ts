@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreatePropertyDto } from './dto/create-property.dto';
 import { UpdatePropertyDto } from './dto/update-property.dto';
@@ -147,6 +147,7 @@ export class PropertiesService {
         roomNumber: createRoomDto.roomNumber,
         monthlyPrice: createRoomDto.monthlyPrice,
         status: createRoomDto.status ?? RoomStatus.AVAILABLE,
+        facilities: createRoomDto.facilities ?? [],
       },
     });
   }
@@ -173,9 +174,19 @@ export class PropertiesService {
   }
 
   async removeRoom(id: string) {
-    await this.findRoom(id);
+    const room = await this.findRoom(id);
+    if (room.contracts && room.contracts.some((c) => c.isActive)) {
+      throw new BadRequestException('Kamar ini masih memiliki kontrak sewa yang aktif. Selesaikan kontrak sewa terlebih dahulu sebelum menghapus unit kamar.');
+    }
+
+    // Hapus relasi kontrak/invoice yang sudah tidak aktif bila ada
+    await this.prisma.contract.deleteMany({
+      where: { roomId: id },
+    });
+
     return this.prisma.room.delete({
       where: { id },
     });
   }
 }
+

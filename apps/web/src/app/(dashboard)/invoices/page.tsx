@@ -88,9 +88,10 @@ export default function InvoicesPage() {
     return `Rp ${num.toLocaleString('id-ID')}`;
   };
 
-  const loadData = async () => {
+  const loadData = async (silent = false) => {
     try {
       setLoading(true);
+      if (!silent) showLoading('Memuat daftar tagihan & riwayat transaksi...');
       const url = statusFilter === 'ALL' ? '/invoices' : `/invoices?status=${statusFilter}`;
       const [invRes, contractRes] = await Promise.all([
         api.get<any, ApiResponse<Invoice[]>>(url),
@@ -103,6 +104,7 @@ export default function InvoicesPage() {
       setError(err.message || 'Gagal memuat data tagihan');
     } finally {
       setLoading(false);
+      if (!silent) hideLoading();
     }
   };
 
@@ -684,15 +686,6 @@ export default function InvoicesPage() {
                                   title="Cek Status Pembayaran ke Midtrans"
                                 >
                                   <Clock className="w-3.5 h-3.5 text-slate-500" /> Cek Status
-                                </button>
-                                {/* Tombol Simulasi Instan — untuk demo reviewer tanpa Midtrans aktif */}
-                                <button
-                                  disabled={isPaying}
-                                  onClick={() => handleSimulatePayment(inv.id)}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 text-indigo-800 border border-indigo-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                                  title="Simulasi Lunas Instan (Demo)"
-                                >
-                                  {isPaying ? <Spinner size="sm" className="text-indigo-600" /> : <Sparkles className="w-3.5 h-3.5 text-indigo-600" />}
                                 </button>
                               </div>
                             )}

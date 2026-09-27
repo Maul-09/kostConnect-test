@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { RoomStatus } from '@prisma/client';
 
 export class CreateRoomDto {
@@ -17,4 +17,10 @@ export class CreateRoomDto {
   @IsEnum(RoomStatus)
   @IsOptional()
   status?: RoomStatus;
+
+  @ApiPropertyOptional({ example: ['AC', 'WiFi Cepat', 'Kamar Mandi Dalam'], description: 'Daftar fasilitas unit kamar' })
+  @IsArray()
+  @IsOptional()
+  facilities?: string[];
 }
+

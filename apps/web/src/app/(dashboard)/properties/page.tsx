@@ -18,13 +18,29 @@ import {
   ShieldCheck,
   UserCheck,
   Lock,
-  Check
+  Check,
+  Edit2,
+  Trash2,
+  Sparkles
 } from 'lucide-react';
 import { Skeleton, SkeletonCard, Spinner } from '@/components/ui/skeleton';
 
+export const AVAILABLE_FACILITIES = [
+  'AC',
+  'WiFi Cepat',
+  'Kamar Mandi Dalam',
+  'Kasur Springbed',
+  'Lemari Pakaian',
+  'Meja & Kursi Kerja',
+  'Smart TV',
+  'Water Heater',
+  'Listrik Token Termasuk',
+  'Balkon / Jendela Luar',
+];
+
 export default function PropertiesPage() {
   const { role } = useRole();
-  const { showToast, showLoading, hideLoading } = useFeedback();
+  const { showToast, showLoading, hideLoading, showConfirm } = useFeedback();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -35,20 +51,34 @@ export default function PropertiesPage() {
   const [owners, setOwners] = useState<any[]>([]);
   const [selectedOwnerId, setSelectedOwnerId] = useState('');
 
-  // Form states
+  // Form states (Properti)
   const [showPropertyModal, setShowPropertyModal] = useState(false);
   const [propertyName, setPropertyName] = useState('');
   const [propertyAddress, setPropertyAddress] = useState('');
   const [propertyCity, setPropertyCity] = useState('');
 
+  // Form states (Tambah Kamar)
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [roomNumber, setRoomNumber] = useState('');
   const [roomPrice, setRoomPrice] = useState('1.800.000');
+  const [roomFacilities, setRoomFacilities] = useState<string[]>([
+    'AC',
+    'WiFi Cepat',
+    'Kamar Mandi Dalam',
+    'Kasur Springbed',
+  ]);
 
-  const fetchProperties = async () => {
+  // Form states (Edit Kamar)
+  const [editingRoom, setEditingRoom] = useState<Room | null>(null);
+  const [editRoomNumber, setEditRoomNumber] = useState('');
+  const [editRoomPrice, setEditRoomPrice] = useState('1.800.000');
+  const [editRoomFacilities, setEditRoomFacilities] = useState<string[]>([]);
+
+  const fetchProperties = async (silent = false) => {
     try {
       setLoading(true);
+      if (!silent) showLoading('Memuat data properti & unit kamar...');
       const res = await api.get<any, ApiResponse<Property[]>>('/properties');
       setProperties(res.data);
       setError(null);
@@ -56,6 +86,7 @@ export default function PropertiesPage() {
       setError(err.message || 'Gagal memuat daftar properti');
     } finally {
       setLoading(false);
+      if (!silent) hideLoading();
     }
   };
 
@@ -104,6 +135,18 @@ export default function PropertiesPage() {
     }
   };
 
+  const toggleFacility = (facility: string) => {
+    setRoomFacilities((prev) =>
+      prev.includes(facility) ? prev.filter((f) => f !== facility) : [...prev, facility]
+    );
+  };
+
+  const toggleEditFacility = (facility: string) => {
+    setEditRoomFacilities((prev) =>
+      prev.includes(facility) ? prev.filter((f) => f !== facility) : [...prev, facility]
+    );
+  };
+
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPropertyId) return;
@@ -113,12 +156,14 @@ export default function PropertiesPage() {
       await api.post(`/properties/${selectedPropertyId}/rooms`, {
         roomNumber,
         monthlyPrice: parseNumberFromDots(roomPrice),
+        facilities: roomFacilities,
       });
       setShowRoomModal(false);
       const createdRoom = roomNumber;
       setRoomNumber('');
       setRoomPrice('1.800.000');
-      fetchProperties();
+      setRoomFacilities(['AC', 'WiFi Cepat', 'Kamar Mandi Dalam', 'Kasur Springbed']);
+      fetchProperties(true);
       showToast('success', 'Unit Kamar Berhasil Ditambahkan', `Kamar ${createdRoom} kini siap dihuni dan dipasarkan.`);
     } catch (err: any) {
       showToast('error', 'Gagal Menambahkan Kamar', err.message);
@@ -126,6 +171,62 @@ export default function PropertiesPage() {
       setSubmitting(false);
       hideLoading();
     }
+  };
+
+  const handleOpenEditRoom = (room: Room) => {
+    setEditingRoom(room);
+    setEditRoomNumber(room.roomNumber);
+    setEditRoomPrice(formatNumberWithDots(String(room.monthlyPrice)));
+    setEditRoomFacilities(
+      room.facilities && room.facilities.length > 0
+        ? [...room.facilities]
+        : ['AC', 'WiFi Cepat', 'Kamar Mandi Dalam']
+    );
+  };
+
+  const handleUpdateRoom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRoom) return;
+    try {
+      setSubmitting(true);
+      showLoading('Menyimpan perubahan unit kamar...');
+      await api.patch(`/properties/rooms/${editingRoom.id}`, {
+        roomNumber: editRoomNumber,
+        monthlyPrice: parseNumberFromDots(editRoomPrice),
+        facilities: editRoomFacilities,
+      });
+      const updatedNumber = editRoomNumber;
+      setEditingRoom(null);
+      fetchProperties(true);
+      showToast('success', 'Unit Kamar Diperbarui', `Informasi Kamar ${updatedNumber} berhasil diperbarui.`);
+    } catch (err: any) {
+      showToast('error', 'Gagal Memperbarui Kamar', err.message);
+    } finally {
+      setSubmitting(false);
+      hideLoading();
+    }
+  };
+
+  const handleDeleteRoom = (room: Room) => {
+    showConfirm({
+      title: `Hapus Unit Kamar ${room.roomNumber}`,
+      message: `Apakah Anda yakin ingin menghapus Kamar ${room.roomNumber}? Unit kamar beserta data fasilitasnya akan dihapus dari sistem.`,
+      confirmLabel: 'Ya, Hapus Kamar',
+      cancelLabel: 'Batal',
+      confirmVariant: 'danger',
+      onConfirm: async () => {
+        try {
+          showLoading('Menghapus unit kamar...');
+          await api.delete(`/properties/rooms/${room.id}`);
+          fetchProperties(true);
+          showToast('success', 'Kamar Berhasil Dihapus', `Kamar ${room.roomNumber} telah dihapus dari properti.`);
+        } catch (err: any) {
+          showToast('error', 'Gagal Menghapus Kamar', err.message);
+        } finally {
+          hideLoading();
+        }
+      },
+    });
   };
 
   const handleToggleRoomStatus = async (roomId: string) => {
@@ -455,30 +556,77 @@ export default function PropertiesPage() {
                                 Rp {Number(room.monthlyPrice).toLocaleString('id-ID')}
                                 <span className="text-[10px] text-slate-400 font-normal"> /bln</span>
                               </p>
+
+                              {/* Fasilitas Kamar */}
+                              {room.facilities && room.facilities.length > 0 && (
+                                <div className="mt-3 pt-2.5 border-t border-slate-200/50">
+                                  <span className="text-[10px] font-bold text-slate-400 block mb-1.5 uppercase tracking-wider">
+                                    Fasilitas Kamar
+                                  </span>
+                                  <div className="flex flex-wrap gap-1">
+                                    {room.facilities.slice(0, 3).map((f) => (
+                                      <span
+                                        key={f}
+                                        className="px-2 py-0.5 bg-white text-slate-700 rounded-lg text-[10px] font-medium border border-slate-200 shadow-2xs"
+                                      >
+                                        {f}
+                                      </span>
+                                    ))}
+                                    {room.facilities.length > 3 && (
+                                      <span
+                                        className="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 rounded-lg text-[10px] font-bold border border-indigo-200/50"
+                                        title={room.facilities.slice(3).join(', ')}
+                                      >
+                                        +{room.facilities.length - 3} lainnya
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </div>
 
                             {/* FOOTER KAMAR:
-                                - Pemilik Kos: BISA Toggle status untuk renovasi/perawatan.
-                                - Super Admin: View-only (tidak mengubah ketersediaan kamar pemilik). */}
-                            <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between">
-                              <span className="text-[10px] text-slate-400 font-medium">
-                                {isOccupied ? 'Sedang Disewa' : 'Siap Dihuni'}
-                              </span>
-
+                                - Pemilik Kos: BISA Edit, Hapus, dan Toggle status.
+                                - Super Admin: View-only */}
+                            <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between gap-2">
                               {isOwner ? (
-                                <button
-                                  disabled={togglingRoomId === room.id}
-                                  onClick={() => handleToggleRoomStatus(room.id)}
-                                  className="text-[10px] font-bold text-indigo-600 hover:text-indigo-900 disabled:opacity-50 underline transition-colors cursor-pointer inline-flex items-center gap-1"
-                                  title="Ganti status secara manual untuk keperluan perawatan/renovasi kamar"
-                                >
-                                  {togglingRoomId === room.id && <Spinner size="sm" className="text-indigo-600" />}
-                                  {togglingRoomId === room.id ? 'Mengubah...' : 'Toggle Status'}
-                                </button>
+                                <>
+                                  <button
+                                    disabled={togglingRoomId === room.id}
+                                    onClick={() => handleToggleRoomStatus(room.id)}
+                                    className="text-[10px] font-bold text-slate-600 hover:text-slate-900 disabled:opacity-50 transition-colors cursor-pointer inline-flex items-center gap-1"
+                                    title="Ganti status ketersediaan kamar"
+                                  >
+                                    {togglingRoomId === room.id && <Spinner size="sm" className="text-indigo-600" />}
+                                    <span className="underline">{togglingRoomId === room.id ? 'Mengubah...' : 'Toggle Status'}</span>
+                                  </button>
+
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() => handleOpenEditRoom(room)}
+                                      className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
+                                      title="Edit Unit Kamar & Fasilitas"
+                                    >
+                                      <Edit2 className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteRoom(room)}
+                                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                      title="Hapus Unit Kamar"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </>
                               ) : (
-                                <span className="text-[10px] text-slate-400 italic">
-                                  {isAdmin ? 'Otoritas Pemilik' : 'Read-only'}
-                                </span>
+                                <div className="w-full flex items-center justify-between">
+                                  <span className="text-[10px] text-slate-400 font-medium">
+                                    {isOccupied ? 'Sedang Disewa' : 'Siap Dihuni'}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 italic">
+                                    {isAdmin ? 'Otoritas Pemilik' : 'Read-only'}
+                                  </span>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -681,11 +829,43 @@ export default function PropertiesPage() {
                 </div>
               </div>
 
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-700">Fasilitas Unit Kamar</label>
+                  <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
+                    {roomFacilities.length} Terpilih
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 p-3 bg-slate-50/80 rounded-2xl border border-slate-200/80 max-h-48 overflow-y-auto">
+                  {AVAILABLE_FACILITIES.map((facility) => {
+                    const isSelected = roomFacilities.includes(facility);
+                    return (
+                      <button
+                        key={facility}
+                        type="button"
+                        onClick={() => toggleFacility(facility)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                          isSelected
+                            ? 'bg-indigo-600 text-white shadow-xs scale-[1.02]'
+                            : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:border-slate-300'
+                        }`}
+                      >
+                        {isSelected && <Check className="w-3.5 h-3.5" />}
+                        <span>{facility}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Pilih fasilitas unit kamar dengan mengeklik tombol di atas.
+                </p>
+              </div>
+
               <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowRoomModal(false)}
-                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
@@ -696,6 +876,118 @@ export default function PropertiesPage() {
                 >
                   {submitting && <Spinner size="sm" className="text-white" />}
                   {submitting ? 'Menyimpan...' : 'Simpan Kamar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edit Kamar (HANYA UNTUK PEMILIK KOS - Responsif Mobile Bottom Sheet) */}
+      {editingRoom && role === 'OWNER' && (
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setEditingRoom(null);
+          }}
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in duration-200"
+        >
+          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-t-[32px] sm:rounded-[32px] max-w-lg w-full p-5 sm:p-8 shadow-2xl space-y-4 sm:space-y-5 max-h-[88vh] overflow-y-auto animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
+            <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
+                  UPDATE UNIT KAMAR
+                </span>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                  Edit Kamar {editingRoom.roomNumber}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Perbarui nomor unit, harga sewa bulanan, dan kelengkapan fasilitas kamar.
+                </p>
+              </div>
+              <button 
+                onClick={() => setEditingRoom(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateRoom} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Nomor / Kode Kamar</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: 104 atau B-02"
+                  value={editRoomNumber}
+                  onChange={(e) => setEditRoomNumber(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Harga Sewa Bulanan (IDR)</label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-2.5 text-xs font-black text-slate-400">Rp</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    placeholder="Contoh: 1.800.000"
+                    value={editRoomPrice}
+                    onChange={(e) => setEditRoomPrice(formatNumberWithDots(e.target.value))}
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-700">Fasilitas Unit Kamar</label>
+                  <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
+                    {editRoomFacilities.length} Terpilih
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 p-3 bg-slate-50/80 rounded-2xl border border-slate-200/80 max-h-48 overflow-y-auto">
+                  {AVAILABLE_FACILITIES.map((facility) => {
+                    const isSelected = editRoomFacilities.includes(facility);
+                    return (
+                      <button
+                        key={facility}
+                        type="button"
+                        onClick={() => toggleEditFacility(facility)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                          isSelected
+                            ? 'bg-indigo-600 text-white shadow-xs scale-[1.02]'
+                            : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:border-slate-300'
+                        }`}
+                      >
+                        {isSelected && <Check className="w-3.5 h-3.5" />}
+                        <span>{facility}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Pilih fasilitas unit kamar dengan mengeklik tombol di atas.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingRoom(null)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-5 py-2.5 bg-[#0b0f19] hover:bg-[#1e293b] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-950/20 cursor-pointer inline-flex items-center gap-2"
+                >
+                  {submitting && <Spinner size="sm" className="text-white" />}
+                  {submitting ? 'Menyimpan...' : 'Perbarui Kamar'}
                 </button>
               </div>
             </form>

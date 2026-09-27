@@ -40,6 +40,7 @@ export interface Room {
   roomNumber: string;
   monthlyPrice: number | string;
   status: RoomStatus;
+  facilities?: string[];
   createdAt: string;
   contracts?: Contract[];
 }

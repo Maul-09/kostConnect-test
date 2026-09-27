@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
@@ -112,14 +113,52 @@ export class TenantsService {
 
   async update(id: string, updateTenantDto: UpdateTenantDto) {
     await this.findOne(id);
-    return this.prisma.tenant.update({
+    const updated = await this.prisma.tenant.update({
       where: { id },
       data: updateTenantDto,
     });
+
+    // Sinkronisasi data ke User terkait
+    await this.prisma.user.updateMany({
+      where: { tenantId: id },
+      data: {
+        ...(updateTenantDto.name ? { name: updateTenantDto.name } : {}),
+        ...(updateTenantDto.email ? { email: updateTenantDto.email } : {}),
+        ...(updateTenantDto.phone ? { phone: updateTenantDto.phone } : {}),
+      },
+    });
+
+    return updated;
   }
 
   async remove(id: string) {
-    await this.findOne(id);
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id },
+      include: {
+        contracts: {
+          where: { isActive: true },
+        },
+      },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException(`Tenant with ID ${id} not found`);
+    }
+
+    if (tenant.contracts && tenant.contracts.length > 0) {
+      throw new BadRequestException('Penyewa ini masih memiliki kontrak sewa yang aktif. Harap check-out/akhiri kontrak sewa terlebih dahulu sebelum menghapus data penyewa.');
+    }
+
+    // Hapus akun User login terkait bila ada
+    await this.prisma.user.deleteMany({
+      where: { tenantId: id },
+    });
+
+    // Hapus riwayat kontrak lama bila ada
+    await this.prisma.contract.deleteMany({
+      where: { tenantId: id },
+    });
+
     return this.prisma.tenant.delete({
       where: { id },
     });
