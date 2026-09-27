@@ -41,7 +41,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const { role, setRole, currentProfile, triggerForcePasswordDemo } = useRole();
-  const { showLoading, hideLoading } = useFeedback();
+  const { showLoading, hideLoading, showConfirm } = useFeedback();
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
 
@@ -158,6 +158,17 @@ export default function DashboardLayout({
     ? notifications.filter((n) => !n.isRead) 
     : notifications;
 
+  const handleResetRole = () => {
+    showConfirm({
+      title: 'Reset Role Perspektif',
+      message: 'Apakah Anda yakin ingin mereset tampilan ke role default Pemilik Kos (OWNER)?',
+      confirmLabel: 'Ya, Reset Role',
+      cancelLabel: 'Batal',
+      confirmVariant: 'danger',
+      onConfirm: () => setRole('OWNER'),
+    });
+  };
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-gradient-to-br from-[#f1f3f9] via-[#f8fafc] to-[#eef2ff] text-slate-800 p-2 sm:p-4 gap-2.5 sm:gap-4 font-sans select-none relative">
       {/* Ambient background accents */}
@@ -255,11 +266,7 @@ export default function DashboardLayout({
               <KeyRound className="w-3 h-3" /> Ganti Role
             </button>
             <span 
-              onClick={() => {
-                if (confirm('Reset ke role Pemilik Kos default?')) {
-                  setRole('OWNER');
-                }
-              }}
+              onClick={handleResetRole}
               className="hover:text-rose-400 flex items-center gap-1 cursor-pointer transition-colors"
             >
               <LogOut className="w-3 h-3" /> Reset

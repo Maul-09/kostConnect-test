@@ -29,7 +29,7 @@ import { SkeletonCard, SkeletonTable, Spinner } from '@/components/ui/skeleton';
 
 export default function TenantsPage() {
   const { role } = useRole();
-  const { showToast, showLoading, hideLoading } = useFeedback();
+  const { showToast, showLoading, hideLoading, showConfirm } = useFeedback();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
@@ -169,22 +169,28 @@ export default function TenantsPage() {
     }
   };
 
-  const handleTerminateContract = async (contractId: string) => {
-    if (!confirm('Apakah Anda yakin ingin menyelesaikan kontrak sewa ini (Check-out)? Status kamar akan otomatis kembali menjadi AVAILABLE.')) {
-      return;
-    }
-    try {
-      setTerminatingId(contractId);
-      showLoading('Memproses check-out sewa...');
-      await api.patch(`/tenants/contracts/${contractId}/terminate`);
-      loadData();
-      showToast('success', 'Check-out Berhasil', 'Kontrak diselesaikan dan status unit kamar kembali AVAILABLE.');
-    } catch (err: any) {
-      showToast('error', 'Gagal Check-out Kontrak', err.message);
-    } finally {
-      setTerminatingId(null);
-      hideLoading();
-    }
+  const handleTerminateContract = (contractId: string) => {
+    showConfirm({
+      title: 'Konfirmasi Check-out Kontrak Sewa',
+      message: 'Apakah Anda yakin ingin menyelesaikan kontrak sewa ini? Status unit kamar akan otomatis kembali menjadi AVAILABLE.',
+      confirmLabel: 'Ya, Check-out Sekarang',
+      cancelLabel: 'Batal',
+      confirmVariant: 'danger',
+      onConfirm: async () => {
+        try {
+          setTerminatingId(contractId);
+          showLoading('Memproses check-out sewa...');
+          await api.patch(`/tenants/contracts/${contractId}/terminate`);
+          loadData();
+          showToast('success', 'Check-out Berhasil', 'Kontrak diselesaikan dan status unit kamar kembali AVAILABLE.');
+        } catch (err: any) {
+          showToast('error', 'Gagal Check-out Kontrak', err.message);
+        } finally {
+          setTerminatingId(null);
+          hideLoading();
+        }
+      },
+    });
   };
 
   // Filter tenants and contracts by user role

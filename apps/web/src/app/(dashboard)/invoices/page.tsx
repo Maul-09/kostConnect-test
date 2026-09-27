@@ -34,7 +34,7 @@ declare global {
 
 export default function InvoicesPage() {
   const { role } = useRole();
-  const { showToast, showLoading, hideLoading } = useFeedback();
+  const { showToast, showLoading, hideLoading, showConfirm } = useFeedback();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
@@ -172,11 +172,15 @@ export default function InvoicesPage() {
           },
         });
       } else {
-        if (confirm('Token pembayaran dibuat. Ingin menjalankan simulasi pelunasan instan (Demo Reviewer)?')) {
-          handleSimulatePayment(invoiceId);
-        } else if (redirect_url) {
-          window.open(redirect_url, '_blank');
-        }
+        showConfirm({
+          title: 'Konfirmasi Metode Pembayaran',
+          message: 'Token pembayaran berhasil dibuat. Pilih metode: Jalankan Simulasi Lunas Instan (Demo Reviewer) atau buka halaman redirect Midtrans?',
+          confirmLabel: 'Simulasi Lunas (Demo)',
+          cancelLabel: redirect_url ? 'Buka Redirect Midtrans' : 'Tutup',
+          confirmVariant: 'primary',
+          onConfirm: () => handleSimulatePayment(invoiceId),
+          onCancel: redirect_url ? () => window.open(redirect_url, '_blank') : undefined,
+        });
       }
     } catch (err: any) {
       hideLoading();

@@ -8,7 +8,9 @@ import {
   AlertCircle, 
   Info, 
   X, 
-  Loader2 
+  Loader2,
+  ShieldAlert,
+  HelpCircle
 } from 'lucide-react';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
@@ -21,6 +23,16 @@ export interface ToastMessage {
   duration?: number;
 }
 
+export interface ConfirmConfig {
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  confirmVariant?: 'danger' | 'primary';
+  onConfirm: () => void;
+  onCancel?: () => void;
+}
+
 interface FeedbackContextType {
   // Toast notifications (CRUD info popup)
   showToast: (type: ToastType, title: string, message?: string, duration?: number) => void;
@@ -29,6 +41,8 @@ interface FeedbackContextType {
   hideLoading: () => void;
   isLoading: boolean;
   loadingMessage: string;
+  // Custom confirm modal
+  showConfirm: (config: ConfirmConfig) => void;
 }
 
 const FeedbackContext = createContext<FeedbackContextType | undefined>(undefined);
@@ -42,6 +56,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Memuat data...');
+  const [confirmConfig, setConfirmConfig] = useState<ConfirmConfig | null>(null);
 
   // Fallback trigger for non-click transitions (e.g. browser back/forward)
   useEffect(() => {
@@ -95,6 +110,10 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
+  const showConfirm = useCallback((config: ConfirmConfig) => {
+    setConfirmConfig(config);
+  }, []);
+
   return (
     <FeedbackContext.Provider
       value={{
@@ -103,9 +122,63 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
         hideLoading,
         isLoading,
         loadingMessage,
+        showConfirm,
       }}
     >
       {children}
+
+      {/* ===================== CUSTOM CONFIRM DIALOG MODAL ===================== */}
+      {confirmConfig && (
+        <div className="fixed inset-0 z-[99998] bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white/95 backdrop-blur-2xl border border-white/90 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            {/* Icon */}
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 border ${
+              confirmConfig.confirmVariant === 'danger'
+                ? 'bg-rose-50 text-rose-600 border-rose-200'
+                : 'bg-indigo-50 text-indigo-600 border-indigo-200'
+            }`}>
+              {confirmConfig.confirmVariant === 'danger'
+                ? <ShieldAlert className="w-6 h-6" />
+                : <HelpCircle className="w-6 h-6" />
+              }
+            </div>
+
+            {/* Text */}
+            <h4 className="text-base font-black text-slate-900 tracking-tight">
+              {confirmConfig.title}
+            </h4>
+            <p className="text-sm text-slate-500 mt-1 leading-relaxed">
+              {confirmConfig.message}
+            </p>
+
+            {/* Buttons */}
+            <div className="flex items-center gap-3 mt-6">
+              <button
+                onClick={() => {
+                  confirmConfig.onCancel?.();
+                  setConfirmConfig(null);
+                }}
+                className="flex-1 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 font-semibold py-2.5 px-5 rounded-xl text-sm transition-all cursor-pointer"
+              >
+                {confirmConfig.cancelLabel ?? 'Batal'}
+              </button>
+              <button
+                onClick={() => {
+                  confirmConfig.onConfirm();
+                  setConfirmConfig(null);
+                }}
+                className={`flex-1 font-bold py-2.5 px-5 rounded-xl text-sm transition-all cursor-pointer ${
+                  confirmConfig.confirmVariant === 'danger'
+                    ? 'bg-rose-600 hover:bg-rose-700 text-white'
+                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                }`}
+              >
+                {confirmConfig.confirmLabel ?? 'Konfirmasi'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ===================== POPUP LOADING OVERLAY (FULL VIEWPORT) ===================== */}
       {isLoading && (
