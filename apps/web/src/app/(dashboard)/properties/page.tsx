@@ -651,8 +651,8 @@ export default function PropertiesPage() {
         </div>
       )}
 
-      {/* Modal Daftarkan Properti Baru (HANYA UNTUK SUPER ADMIN - Responsif Mobile Bottom Sheet) */}
-      {showPropertyModal && role === 'ADMIN' && (
+      {/* Modal Daftarkan Properti Baru (Untuk Super Admin & Pemilik Kos - Responsif Mobile Bottom Sheet) */}
+      {showPropertyModal && (role === 'ADMIN' || role === 'OWNER') && (
         <div 
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowPropertyModal(false);
@@ -663,13 +663,15 @@ export default function PropertiesPage() {
             <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
-                  PENDAFTARAN PROPERTI MITRA
+                  {role === 'ADMIN' ? 'PENDAFTARAN PROPERTI MITRA' : 'PROPERTI KOS SAYA'}
                 </span>
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   Daftarkan Properti Kos Baru
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Sebagai Super Admin, daftarkan lokasi kos dan tentukan mitra pemilik kosnya.
+                  {role === 'ADMIN'
+                    ? 'Sebagai Super Admin, daftarkan lokasi kos dan tentukan mitra pemilik kosnya.'
+                    : 'Daftarkan properti kos baru milik Anda ke dalam sistem manajemen KosConnect.'}
                 </p>
               </div>
               <button 
