@@ -112,56 +112,48 @@ export default function DashboardOverviewPage() {
   const tenantUnpaidInvoice = tenantInvoices.find((i) => i.status === 'UNPAID') || null;
   const tenantPaidInvoices = tenantInvoices.filter((i) => i.status === 'PAID');
 
-  // Bayar tagihan via Midtrans Snap (Hanya dipanggil Penyewa)
+  // Bayar tagihan via Midtrans Snap (Penyewa)
   const handlePay = async (invoiceId: string) => {
     try {
       setPaymentLoading(invoiceId);
       showLoading('Menghubungkan ke Gateway Midtrans Snap...');
-      const res = await api.post<any, ApiResponse<{ token: string; redirect_url: string; orderId: string; simulated?: boolean }>>(
+      const res = await api.post<any, ApiResponse<{ token: string; redirect_url: string; orderId: string }>>(
         `/payments/create-token/${invoiceId}`,
       );
-      const { token, simulated, redirect_url } = res.data;
+      const { redirect_url } = res.data;
       hideLoading();
 
-      if ((window as any).snap && !simulated) {
-        (window as any).snap.pay(token, {
-          onSuccess: async () => {
-            showToast('success', 'Pembayaran Berhasil!', 'Tagihan sewa kos telah lunas terverifikasi.');
-            loadData();
-          },
-          onPending: () => {
-            showToast('info', 'Menunggu Pembayaran', 'Selesaikan pembayaran sebelum batas waktu berakhir.');
-            loadData();
-          },
-          onError: () => {
-            showToast('error', 'Pembayaran Dibatalkan', 'Transaksi pembayaran belum diselesaikan.');
-          },
-          onClose: () => {
-            loadData();
-          },
-        });
-      } else {
-        handleSimulatePayment(invoiceId);
+      if (!redirect_url) {
+        throw new Error('Gagal mendapatkan sesi pembayaran dari Midtrans Sandbox.');
       }
+
+      window.open(redirect_url, '_blank', 'noopener,noreferrer');
+      showToast(
+        'info',
+        'Halaman Pembayaran Dibuka di Tab Baru',
+        'Selesaikan pembayaran di tab Midtrans Sandbox. Sistem akan memverifikasi otomatis setelah Anda kembali ke tab website ini.',
+        10000,
+      );
+
+      // Polling update status pembayaran di background
+      const checkInterval = setInterval(async () => {
+        try {
+          const statusRes = await api.get<any, ApiResponse<{ isPaid: boolean }>>(`/payments/status/${invoiceId}`);
+          if (statusRes.data?.isPaid) {
+            clearInterval(checkInterval);
+            loadData();
+            showToast('success', 'Pembayaran Terverifikasi!', 'Tagihan sewa Anda telah lunas via Midtrans Sandbox.');
+          }
+        } catch {
+          // ignore
+        }
+      }, 2500);
+
+      setTimeout(() => clearInterval(checkInterval), 250000);
     } catch (err: any) {
       hideLoading();
       showToast('error', 'Gagal Memproses Pembayaran', err.message || 'Terjadi kesalahan sistem.');
     } finally {
-      setPaymentLoading(null);
-    }
-  };
-
-  const handleSimulatePayment = async (invoiceId: string) => {
-    try {
-      setPaymentLoading(invoiceId);
-      showLoading('Mensimulasikan pelunasan tagihan & webhook...');
-      await api.post(`/webhooks/simulate-payment/${invoiceId}`);
-      showToast('success', 'Simulasi Pelunasan Berhasil!', 'Status tagihan berubah menjadi LUNAS (PAID) & webhook terpicu.');
-      loadData();
-    } catch (err: any) {
-      showToast('error', 'Simulasi Gagal', err.message);
-    } finally {
-      hideLoading();
       setPaymentLoading(null);
     }
   };
@@ -247,15 +239,9 @@ export default function DashboardOverviewPage() {
             <div className="flex items-center gap-2.5 shrink-0">
               <Link
                 href="/properties"
-                className="bg-white/90 hover:bg-white text-slate-800 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold shadow-2xs transition-all"
-              >
-                Kelola Properti Mitra
-              </Link>
-              <Link
-                href="/invoices"
                 className="bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-xl px-4 py-2.5 text-xs font-bold shadow-xs transition-all"
               >
-                Audit Pembayaran
+                Kelola Properti Mitra
               </Link>
             </div>
           </div>
@@ -352,11 +338,11 @@ export default function DashboardOverviewPage() {
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                     <Receipt className="w-4 h-4 text-indigo-600" />
-                    Audit Transaksi Masuk
+                    Monitoring Transaksi Platform
                   </h3>
-                  <Link href="/invoices" className="text-xs font-bold text-indigo-600 hover:text-indigo-800">
-                    Audit
-                  </Link>
+                  <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+                    {invoices.length} Transaksi
+                  </span>
                 </div>
 
                 <div className="space-y-2.5">
@@ -662,20 +648,6 @@ export default function DashboardOverviewPage() {
                             <CreditCard className="w-3.5 h-3.5 text-indigo-400" />
                           )}
                           <span>{paymentLoading === tenantUnpaidInvoice.id ? 'Memproses...' : 'Bayar Sekarang'}</span>
-                        </button>
-
-                        <button
-                          disabled={paymentLoading === tenantUnpaidInvoice.id}
-                          onClick={() => handleSimulatePayment(tenantUnpaidInvoice.id)}
-                          className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 text-indigo-700 rounded-xl text-xs font-bold border border-indigo-200 transition-colors flex items-center gap-1 cursor-pointer"
-                          title="Simulasikan pelunasan instan untuk pengujian reviewer"
-                        >
-                          {paymentLoading === tenantUnpaidInvoice.id ? (
-                            <Spinner size="sm" className="text-indigo-600" />
-                          ) : (
-                            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                          )}
-                          <span>Simulasi</span>
                         </button>
                       </div>
                     </div>

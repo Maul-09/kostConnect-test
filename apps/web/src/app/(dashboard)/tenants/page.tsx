@@ -26,7 +26,8 @@ import {
   Copy,
   Check,
   Edit2,
-  Trash2
+  Trash2,
+  Clock,
 } from 'lucide-react';
 import { SkeletonCard, SkeletonTable, Spinner } from '@/components/ui/skeleton';
 
@@ -184,11 +185,16 @@ export default function TenantsPage() {
     try {
       setSubmitting(true);
       showLoading('Menerbitkan kontrak sewa baru...');
+      const contractStartDate = new Date(startDate);
+      // Sewa bulanan berjalan (open-ended hingga check-out)
+      const autoEndDate = new Date(contractStartDate);
+      autoEndDate.setFullYear(autoEndDate.getFullYear() + 5);
+
       await api.post('/tenants/contracts', {
         tenantId: selectedTenantId,
         roomId: selectedRoomId,
-        startDate: new Date(startDate).toISOString(),
-        endDate: new Date(endDate).toISOString(),
+        startDate: contractStartDate.toISOString(),
+        endDate: autoEndDate.toISOString(),
       });
       setShowContractModal(false);
       setSelectedTenantId('');
@@ -391,12 +397,6 @@ export default function TenantsPage() {
             >
               <UserCheck className="w-4 h-4 text-indigo-200" /> + Daftarkan Pemilik Kos
             </button>
-            <div className="bg-white/90 border border-purple-200 rounded-2xl px-4 py-2.5 shadow-2xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Mode Otorisasi</span>
-              <span className="text-xs font-extrabold text-purple-900 flex items-center gap-1.5 mt-0.5">
-                <ShieldCheck className="w-4 h-4 text-purple-600" /> Super Admin
-              </span>
-            </div>
           </div>
         )}
       </div>
@@ -418,16 +418,6 @@ export default function TenantsPage() {
               <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full">
                 {owners.length} Mitra Aktif
               </span>
-              <button
-                onClick={() => {
-                  setCreatedOwnerResult(null);
-                  setCopiedOwner(false);
-                  setShowOwnerModal(true);
-                }}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" /> Daftarkan Pemilik
-              </button>
             </div>
           </div>
 
@@ -597,9 +587,9 @@ export default function TenantsPage() {
                     <td className="py-3.5 px-3 text-slate-600">
                       <div className="flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                        <span>
-                          {new Date(contract.startDate).toLocaleDateString('id-ID')} s/d{' '}
-                          {new Date(contract.endDate).toLocaleDateString('id-ID')}
+                        <span className="font-medium text-slate-700">
+                          {new Date(contract.startDate).toLocaleDateString('id-ID')}
+                          <span className="text-[10px] text-indigo-600 font-bold block sm:inline sm:ml-1.5">(Bulanan Berjalan)</span>
                         </span>
                       </div>
                     </td>
@@ -1305,26 +1295,22 @@ export default function TenantsPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1.5">Mulai Sewa</label>
-                  <input
-                    type="date"
-                    required
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-4 py-2 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1.5">Selesai Sewa</label>
-                  <input
-                    type="date"
-                    required
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-4 py-2 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                  />
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                  Tanggal Masuk / Mulai Sewa
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                />
+                <div className="mt-2.5 p-3 bg-indigo-50/70 border border-indigo-100/80 rounded-2xl flex items-start gap-2.5">
+                  <Clock className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-indigo-900 leading-relaxed font-medium">
+                    <strong className="font-bold">Sewa Bulanan Berjalan:</strong> Masa sewa bersifat fleksibel tanpa batas akhir tanggal keluar. Kontrak otomatis aktif dan berjalan setiap bulan hingga penghuni melakukan check-out.
+                  </p>
                 </div>
               </div>
 

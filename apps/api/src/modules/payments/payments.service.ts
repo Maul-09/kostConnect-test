@@ -52,7 +52,7 @@ export class PaymentsService {
       throw new BadRequestException('Tagihan ini sudah lunas.');
     }
 
-    const orderId = `ORDER-${invoice.invoiceNumber}-${Date.now().toString().slice(-4)}`;
+    const orderId = `ORDER-${invoice.invoiceNumber}-${Date.now()}`;
     const grossAmount = Math.round(Number(invoice.amount));
 
     const parameter = {
@@ -90,19 +90,10 @@ export class PaymentsService {
         orderId,
       };
     } catch (error: any) {
-      // Fallback simulasi jika Midtrans Server Key belum dikonfigurasi / tidak valid.
-      console.warn('[KosConnect] Midtrans Snap token gagal dibuat — mode simulasi aktif:', error.message);
-      await this.prisma.invoice.update({
-        where: { id: invoiceId },
-        data: { midtransOrderId: orderId },
-      });
-
-      return {
-        token: null,
-        redirect_url: null,
-        orderId,
-        simulated: true,
-      };
+      console.error('[KosConnect] Midtrans Snap gagal dibuat:', error.message);
+      throw new BadRequestException(
+        `Gagal membuat sesi pembayaran Midtrans: ${error.message || 'Periksa MIDTRANS_SERVER_KEY di file .env'}`
+      );
     }
   }
 

@@ -288,22 +288,18 @@ export default function InvoicesPage() {
     try {
       setPaymentLoading(invoiceId);
       showLoading('Menyiapkan halaman pembayaran Midtrans Snap...');
-      const res = await api.post<any, ApiResponse<{ token: string; redirect_url: string; orderId: string; simulated?: boolean }>>(
+      const res = await api.post<any, ApiResponse<{ token: string; redirect_url: string; orderId: string }>>(
         `/payments/create-token/${invoiceId}`,
       );
 
-      const { simulated, redirect_url } = res.data;
+      const { redirect_url } = res.data;
       hideLoading();
 
-      // KASUS 1: Mode Simulasi (Midtrans belum dikonfigurasi / kredensial sandbox belum diisi)
-      // Langsung jalankan simulasi internal tanpa membuka tab baru
-      if (simulated || !redirect_url) {
-        showToast('info', 'Mode Simulasi Aktif', 'Menjalankan simulasi pelunasan instan (Midtrans Sandbox belum dikonfigurasi)...');
-        await handleSimulatePayment(invoiceId);
-        return;
+      if (!redirect_url) {
+        throw new Error('Gagal mendapatkan sesi pembayaran dari Midtrans Sandbox.');
       }
 
-      // KASUS 2: Token Midtrans nyata tersedia — buka halaman pembayaran Snap di TAB BARU
+      // Buka halaman pembayaran Midtrans Snap Sandbox di TAB BARU
       window.open(redirect_url, '_blank', 'noopener,noreferrer');
       showToast(
         'info',
@@ -318,53 +314,6 @@ export default function InvoicesPage() {
     } catch (err: any) {
       hideLoading();
       showToast('error', 'Gagal Memproses Pembayaran', err.message || 'Terjadi kesalahan sistem');
-    } finally {
-      setPaymentLoading(null);
-    }
-  };
-
-  // Simulasi pelunasan instan (Demo Reviewer / tanpa kredensial Midtrans aktif)
-  const handleSimulatePayment = async (invoiceId: string) => {
-    try {
-      setPaymentLoading(invoiceId);
-      showLoading('Memverifikasi simulasi pembayaran Midtrans...');
-      await api.post(`/webhooks/simulate-payment/${invoiceId}`);
-      
-      const invRes = await api.get<any, ApiResponse<Invoice[]>>('/invoices');
-      setInvoices(invRes.data || []);
-      const targetInv = (invRes.data || []).find((i) => i.id === invoiceId) || invoices.find((i) => i.id === invoiceId);
-
-      hideLoading();
-
-      // Tampilkan Modal Perayaan Sukses Pembayaran
-      triggerPaymentSuccess({
-        invoiceNumber: targetInv?.invoiceNumber || 'INV-2026-001',
-        amount: Number(targetInv?.amount || 1800000),
-        tenantName: targetInv?.contract?.tenant?.name || 'Budi Santoso',
-        roomNumber: targetInv?.contract?.room?.roomNumber || '101',
-        propertyName: targetInv?.contract?.room?.property?.name || 'Kos Harmoni Residence',
-        paymentMethod: 'Midtrans Sandbox (Simulasi Instan)',
-      });
-
-      showToast('success', 'Pelunasan Berhasil Diverifikasi', 'Status invoice berubah menjadi PAID.');
-
-      addNotification({
-        category: 'payment',
-        title: 'Pembayaran Sewa Kamar Berhasil Lunas',
-        desc: `Pembayaran sewa ${targetInv?.contract?.room?.property?.name || 'Kos Harmoni'} kamar ${targetInv?.contract?.room?.roomNumber || '101'} senilai ${formatMoney(targetInv?.amount || 1800000)} telah lunas diverifikasi.`,
-        meta: {
-          invoiceNumber: targetInv?.invoiceNumber,
-          amount: Number(targetInv?.amount || 1800000),
-          tenantName: targetInv?.contract?.tenant?.name || 'Budi Santoso',
-          roomNumber: targetInv?.contract?.room?.roomNumber || '101',
-          propertyName: targetInv?.contract?.room?.property?.name || 'Kos Harmoni Residence',
-          actionUrl: '/invoices',
-          actionLabel: 'Lihat Bukti Pembayaran',
-        },
-      });
-    } catch (err: any) {
-      hideLoading();
-      showToast('error', 'Simulasi Pelunasan Gagal', err.message);
     } finally {
       setPaymentLoading(null);
     }
