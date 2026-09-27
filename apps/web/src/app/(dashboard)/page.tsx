@@ -23,7 +23,11 @@ import {
   Home,
   ShieldCheck,
   UserCheck,
-  MessageCircle
+  MessageCircle,
+  Wallet,
+  ChevronLeft,
+  ChevronRight,
+  Coins
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Property, Tenant, Invoice, ApiResponse, Contract } from '@/types';
@@ -41,6 +45,11 @@ export default function DashboardOverviewPage() {
   const [loading, setLoading] = useState(true);
   const [clientKey, setClientKey] = useState('');
   const [paymentLoading, setPaymentLoading] = useState<string | null>(null);
+
+  // Pagination states for invoice lists across roles (Limit 5)
+  const [adminInvoicePage, setAdminInvoicePage] = useState(1);
+  const [ownerInvoicePage, setOwnerInvoicePage] = useState(1);
+  const [tenantPaidInvoicePage, setTenantPaidInvoicePage] = useState(1);
 
   const fetchClientKey = async () => {
     try {
@@ -111,6 +120,29 @@ export default function DashboardOverviewPage() {
   );
   const tenantUnpaidInvoice = tenantInvoices.find((i) => i.status === 'UNPAID') || null;
   const tenantPaidInvoices = tenantInvoices.filter((i) => i.status === 'PAID');
+
+  const DASHBOARD_LIMIT = 5;
+
+  // Pagination for Super Admin "Monitoring Transaksi Platform"
+  const totalAdminInvoicePages = Math.max(1, Math.ceil(invoices.length / DASHBOARD_LIMIT));
+  const paginatedAdminInvoices = invoices.slice(
+    (adminInvoicePage - 1) * DASHBOARD_LIMIT,
+    adminInvoicePage * DASHBOARD_LIMIT
+  );
+
+  // Pagination for Property Owner "Tagihan Sewa Kos Harmoni"
+  const totalOwnerInvoicePages = Math.max(1, Math.ceil(ownerInvoices.length / DASHBOARD_LIMIT));
+  const paginatedOwnerInvoices = ownerInvoices.slice(
+    (ownerInvoicePage - 1) * DASHBOARD_LIMIT,
+    ownerInvoicePage * DASHBOARD_LIMIT
+  );
+
+  // Pagination for Tenant "Riwayat Pembayaran"
+  const totalTenantPaidPages = Math.max(1, Math.ceil(tenantPaidInvoices.length / DASHBOARD_LIMIT));
+  const paginatedTenantPaidInvoices = tenantPaidInvoices.slice(
+    (tenantPaidInvoicePage - 1) * DASHBOARD_LIMIT,
+    tenantPaidInvoicePage * DASHBOARD_LIMIT
+  );
 
   // Bayar tagihan via Midtrans Snap (Penyewa)
   const handlePay = async (invoiceId: string) => {
@@ -246,39 +278,99 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
 
-          {/* 4 Stat Cards Platform Admin (Responsive Mobile Grid) */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Properti Platform</span>
-              <div className="mt-2">
-                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block truncate">{properties.length} Properti</span>
-                <p className="text-[11px] sm:text-xs text-slate-500 mt-1 truncate">Kos Harmoni & Griya Asri</p>
+          {/* 4 Stat Cards Platform Admin (Interactive Modern Grid) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+            {/* Card 1: Properti Platform */}
+            <div className="group relative overflow-hidden bg-white/90 backdrop-blur-xl border border-slate-200/80 hover:border-indigo-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 rounded-[24px] p-5 flex flex-col justify-between cursor-default">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-gradient-to-br from-indigo-500/10 to-blue-500/5 rounded-full blur-xl group-hover:scale-150 transition-all duration-500 pointer-events-none" />
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 shadow-2xs">
+                    <Building2 className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-bold text-indigo-800 bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" /> Live Mitra
+                  </span>
+                </div>
+                <div className="mt-3.5">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Properti Platform</span>
+                  <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight block mt-0.5">{properties.length} Properti</span>
+                  <p className="text-[11px] text-slate-500 mt-1 truncate">Kos Harmoni & Griya Asri</p>
+                </div>
+              </div>
+              <div className="mt-4 w-full h-1 rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-full rounded-full bg-indigo-500 w-full group-hover:bg-indigo-600 transition-colors" />
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Total Unit Kamar</span>
-              <div className="mt-2">
-                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block truncate">{totalRoomsAll} Unit</span>
-                <p className="text-[11px] sm:text-xs text-slate-500 mt-1 truncate">{occupiedRoomsAll} Terisi • {availableRoomsAll} Kosong</p>
+            {/* Card 2: Total Unit Kamar */}
+            <div className="group relative overflow-hidden bg-white/90 backdrop-blur-xl border border-slate-200/80 hover:border-blue-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 rounded-[24px] p-5 flex flex-col justify-between cursor-default">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-gradient-to-br from-blue-500/10 to-indigo-500/5 rounded-full blur-xl group-hover:scale-150 transition-all duration-500 pointer-events-none" />
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-2xs">
+                    <DoorOpen className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-bold text-blue-800 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded-full">
+                    {occupiedRoomsAll} Terisi
+                  </span>
+                </div>
+                <div className="mt-3.5">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Unit Kamar</span>
+                  <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight block mt-0.5">{totalRoomsAll} Unit</span>
+                  <p className="text-[11px] text-slate-500 mt-1 truncate">{occupiedRoomsAll} Terisi • {availableRoomsAll} Kosong</p>
+                </div>
+              </div>
+              <div className="mt-4 w-full h-1 rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-full rounded-full bg-blue-500" style={{ width: `${totalRoomsAll > 0 ? (occupiedRoomsAll / totalRoomsAll) * 100 : 50}%` }} />
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[10px] sm:text-[11px] font-bold text-purple-700 uppercase tracking-wider truncate">Mitra Pemilik</span>
-              <div className="mt-2">
-                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-purple-900 tracking-tight block truncate">2 Mitra</span>
-                <p className="text-[11px] sm:text-xs text-purple-700 mt-1 font-semibold truncate">H. Rahmat & Fatimah</p>
+            {/* Card 3: Mitra Pemilik */}
+            <div className="group relative overflow-hidden bg-white/90 backdrop-blur-xl border border-slate-200/80 hover:border-purple-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 rounded-[24px] p-5 flex flex-col justify-between cursor-default">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full blur-xl group-hover:scale-150 transition-all duration-500 pointer-events-none" />
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300 shadow-2xs">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-bold text-purple-800 bg-purple-50 border border-purple-200/60 px-2 py-0.5 rounded-full">
+                    Terverifikasi
+                  </span>
+                </div>
+                <div className="mt-3.5">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-purple-700 uppercase tracking-wider block">Mitra Pemilik</span>
+                  <span className="text-2xl sm:text-3xl font-black text-purple-900 tracking-tight block mt-0.5">2 Mitra</span>
+                  <p className="text-[11px] text-purple-700 mt-1 font-semibold truncate">H. Rahmat & Fatimah</p>
+                </div>
+              </div>
+              <div className="mt-4 w-full h-1 rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-full rounded-full bg-purple-500 w-full" />
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Volume Platform</span>
-              <div className="mt-2">
-                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block truncate">
-                  Rp {totalInvoicedAll.toLocaleString('id-ID')}
-                </span>
-                <p className="text-[11px] sm:text-xs text-emerald-600 mt-1 font-semibold truncate">{paidInvoicesAll.length} transaksi lunas</p>
+            {/* Card 4: Volume Platform */}
+            <div className="group relative overflow-hidden bg-white/90 backdrop-blur-xl border border-slate-200/80 hover:border-emerald-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 rounded-[24px] p-5 flex flex-col justify-between cursor-default">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 rounded-full blur-xl group-hover:scale-150 transition-all duration-500 pointer-events-none" />
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 shadow-2xs">
+                    <Wallet className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {paidInvoicesAll.length} Lunas
+                  </span>
+                </div>
+                <div className="mt-3.5">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Volume Platform</span>
+                  <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block mt-0.5 truncate">
+                    Rp {totalInvoicedAll.toLocaleString('id-ID')}
+                  </span>
+                  <p className="text-[11px] text-emerald-600 mt-1 font-semibold truncate">{paidInvoicesAll.length} transaksi selesai via Snap</p>
+                </div>
+              </div>
+              <div className="mt-4 w-full h-1 rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-full rounded-full bg-emerald-500" style={{ width: `${totalInvoicedAll > 0 ? (paidInvoicesAll.reduce((a, c) => a + Number(c.amount), 0) / totalInvoicedAll) * 100 : 50}%` }} />
               </div>
             </div>
           </div>
@@ -332,7 +424,7 @@ export default function DashboardOverviewPage() {
               </div>
             </div>
 
-            {/* Kolom 2: Audit Pembayaran Masuk Platform (5 cols) */}
+            {/* Kolom 2: Monitoring Transaksi Platform (5 cols) */}
             <div className="lg:col-span-5 space-y-6">
               <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[28px] p-6 shadow-xs space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -346,23 +438,57 @@ export default function DashboardOverviewPage() {
                 </div>
 
                 <div className="space-y-2.5">
-                  {invoices.map((inv) => (
-                    <div key={inv.id} className="bg-slate-50/70 p-3 rounded-2xl border border-slate-200/60 flex items-center justify-between text-xs">
-                      <div>
-                        <p className="font-bold text-slate-900">{inv.invoiceNumber}</p>
-                        <p className="text-[11px] text-slate-500">{inv.contract?.tenant?.name} • {inv.contract?.room?.property?.name}</p>
+                  {invoices.length === 0 ? (
+                    <p className="text-center py-6 text-xs text-slate-400">Belum ada transaksi di platform.</p>
+                  ) : (
+                    paginatedAdminInvoices.map((inv) => (
+                      <div key={inv.id} className="bg-slate-50/70 hover:bg-white p-3 rounded-2xl border border-slate-200/60 flex items-center justify-between text-xs transition-all">
+                        <div>
+                          <p className="font-bold text-slate-900">{inv.invoiceNumber}</p>
+                          <p className="text-[11px] text-slate-500">{inv.contract?.tenant?.name} • {inv.contract?.room?.property?.name}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-slate-900">Rp {Number(inv.amount).toLocaleString('id-ID')}</p>
+                          <span className={`inline-block text-[9px] font-black px-2 py-0.5 rounded-full ${
+                            inv.status === 'PAID' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                          }`}>
+                            {inv.status === 'PAID' ? 'LUNAS' : 'PENDING'}
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-slate-900">Rp {Number(inv.amount).toLocaleString('id-ID')}</p>
-                        <span className={`inline-block text-[9px] font-black px-2 py-0.5 rounded-full ${
-                          inv.status === 'PAID' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                        }`}>
-                          {inv.status === 'PAID' ? 'LUNAS' : 'PENDING'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
+
+                {/* Pagination Controls Admin (Limit 5 items) */}
+                {totalAdminInvoicePages > 1 && (
+                  <div className="pt-2 flex items-center justify-between border-t border-slate-100 text-xs">
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      Halaman {adminInvoicePage} dari {totalAdminInvoicePages}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        disabled={adminInvoicePage <= 1}
+                        onClick={() => setAdminInvoicePage((p) => Math.max(1, p - 1))}
+                        className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 cursor-pointer transition-colors"
+                        title="Halaman Sebelumnya"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="px-2 py-0.5 text-xs font-bold bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200/60">
+                        {adminInvoicePage}
+                      </span>
+                      <button
+                        disabled={adminInvoicePage >= totalAdminInvoicePages}
+                        onClick={() => setAdminInvoicePage((p) => Math.min(totalAdminInvoicePages, p + 1))}
+                        className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 cursor-pointer transition-colors"
+                        title="Halaman Berikutnya"
+                      >
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -409,39 +535,99 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
 
-          {/* 4 Stat Cards Pemilik Kos Harmoni (Responsive Mobile Grid) */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Kamar Kosong</span>
-              <div className="mt-2">
-                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block truncate">{ownerAvailableRooms} Kamar</span>
-                <p className="text-[11px] sm:text-xs text-emerald-600 mt-1 font-semibold truncate">Siap sewa (102, 103)</p>
+          {/* 4 Stat Cards Pemilik Kos Harmoni (Interactive Modern Grid) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+            {/* Card 1: Kamar Kosong */}
+            <div className="group relative overflow-hidden bg-white/90 backdrop-blur-xl border border-slate-200/80 hover:border-emerald-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 rounded-[24px] p-5 flex flex-col justify-between cursor-default">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 rounded-full blur-xl group-hover:scale-150 transition-all duration-500 pointer-events-none" />
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 shadow-2xs">
+                    <DoorOpen className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Siap Huni
+                  </span>
+                </div>
+                <div className="mt-3.5">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Kamar Kosong</span>
+                  <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight block mt-0.5">{ownerAvailableRooms} Kamar</span>
+                  <p className="text-[11px] text-emerald-600 mt-1 font-semibold truncate">Siap sewa (Kamar 102 & 103)</p>
+                </div>
+              </div>
+              <div className="mt-4 w-full h-1 rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-full rounded-full bg-emerald-500" style={{ width: `${ownerTotalRooms > 0 ? (ownerAvailableRooms / ownerTotalRooms) * 100 : 66}%` }} />
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Kamar Terisi</span>
-              <div className="mt-2">
-                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block truncate">{ownerOccupiedRooms} Kamar</span>
-                <p className="text-[11px] sm:text-xs text-slate-500 mt-1 truncate">Kamar 101 (Budi)</p>
+            {/* Card 2: Kamar Terisi */}
+            <div className="group relative overflow-hidden bg-white/90 backdrop-blur-xl border border-slate-200/80 hover:border-blue-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 rounded-[24px] p-5 flex flex-col justify-between cursor-default">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-gradient-to-br from-blue-500/10 to-indigo-500/5 rounded-full blur-xl group-hover:scale-150 transition-all duration-500 pointer-events-none" />
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-2xs">
+                    <Home className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-bold text-blue-800 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded-full">
+                    Dalam Kontrak
+                  </span>
+                </div>
+                <div className="mt-3.5">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Kamar Terisi</span>
+                  <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight block mt-0.5">{ownerOccupiedRooms} Kamar</span>
+                  <p className="text-[11px] text-slate-500 mt-1 truncate">Kamar 101 (Budi Santoso)</p>
+                </div>
+              </div>
+              <div className="mt-4 w-full h-1 rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-full rounded-full bg-blue-500" style={{ width: `${ownerTotalRooms > 0 ? (ownerOccupiedRooms / ownerTotalRooms) * 100 : 33}%` }} />
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Penyewa Aktif</span>
-              <div className="mt-2">
-                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block truncate">{ownerTenants.length} Orang</span>
-                <p className="text-[11px] sm:text-xs text-slate-500 mt-1 truncate">Budi Santoso</p>
+            {/* Card 3: Penyewa Aktif */}
+            <div className="group relative overflow-hidden bg-white/90 backdrop-blur-xl border border-slate-200/80 hover:border-indigo-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 rounded-[24px] p-5 flex flex-col justify-between cursor-default">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-gradient-to-br from-indigo-500/10 to-purple-500/5 rounded-full blur-xl group-hover:scale-150 transition-all duration-500 pointer-events-none" />
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 shadow-2xs">
+                    <UserCheck className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-bold text-indigo-800 bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 rounded-full">
+                    Kontrak Resmi
+                  </span>
+                </div>
+                <div className="mt-3.5">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Penyewa Aktif</span>
+                  <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight block mt-0.5">{ownerTenants.length} Orang</span>
+                  <p className="text-[11px] text-slate-500 mt-1 truncate">Budi Santoso (Kamar 101)</p>
+                </div>
+              </div>
+              <div className="mt-4 w-full h-1 rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-full rounded-full bg-indigo-500 w-full" />
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[10px] sm:text-[11px] font-bold text-rose-600 uppercase tracking-wider truncate">Belum Diterima</span>
-              <div className="mt-2">
-                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block truncate">
-                  Rp {ownerTotalReceivable.toLocaleString('id-ID')}
-                </span>
-                <p className="text-[11px] sm:text-xs text-rose-600 mt-1 font-semibold truncate">{ownerUnpaidInvoices.length} tagihan tertunda</p>
+            {/* Card 4: Belum Diterima */}
+            <div className="group relative overflow-hidden bg-white/90 backdrop-blur-xl border border-slate-200/80 hover:border-rose-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 rounded-[24px] p-5 flex flex-col justify-between cursor-default">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-gradient-to-br from-rose-500/10 to-amber-500/5 rounded-full blur-xl group-hover:scale-150 transition-all duration-500 pointer-events-none" />
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 group-hover:scale-110 group-hover:bg-rose-600 group-hover:text-white transition-all duration-300 shadow-2xs">
+                    <Receipt className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-bold text-rose-800 bg-rose-50 border border-rose-200/60 px-2 py-0.5 rounded-full">
+                    {ownerUnpaidInvoices.length} Tertunda
+                  </span>
+                </div>
+                <div className="mt-3.5">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-rose-600 uppercase tracking-wider block">Belum Diterima</span>
+                  <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block mt-0.5 truncate">
+                    Rp {ownerTotalReceivable.toLocaleString('id-ID')}
+                  </span>
+                  <p className="text-[11px] text-rose-600 mt-1 font-semibold truncate">{ownerUnpaidInvoices.length} tagihan sewa berjalan</p>
+                </div>
+              </div>
+              <div className="mt-4 w-full h-1 rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-full rounded-full bg-rose-500" style={{ width: `${ownerInvoices.length > 0 ? (ownerUnpaidInvoices.length / ownerInvoices.length) * 100 : 50}%` }} />
               </div>
             </div>
           </div>
@@ -461,23 +647,57 @@ export default function DashboardOverviewPage() {
                 </div>
 
                 <div className="space-y-2.5">
-                  {ownerInvoices.map((inv) => (
-                    <div key={inv.id} className="bg-slate-50/70 hover:bg-white border border-slate-200/60 rounded-2xl p-3 flex items-center justify-between text-xs transition-all">
-                      <div>
-                        <p className="font-bold text-slate-900">{inv.invoiceNumber}</p>
-                        <p className="text-[11px] text-slate-500">{inv.contract?.tenant?.name} • Kamar {inv.contract?.room?.roomNumber}</p>
+                  {ownerInvoices.length === 0 ? (
+                    <p className="text-center py-6 text-xs text-slate-400">Belum ada tagihan sewa di Kos Harmoni.</p>
+                  ) : (
+                    paginatedOwnerInvoices.map((inv) => (
+                      <div key={inv.id} className="bg-slate-50/70 hover:bg-white border border-slate-200/60 rounded-2xl p-3 flex items-center justify-between text-xs transition-all">
+                        <div>
+                          <p className="font-bold text-slate-900">{inv.invoiceNumber}</p>
+                          <p className="text-[11px] text-slate-500">{inv.contract?.tenant?.name} • Kamar {inv.contract?.room?.roomNumber}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-slate-900">Rp {Number(inv.amount).toLocaleString('id-ID')}</p>
+                          <span className={`inline-block text-[9px] font-black px-2 py-0.5 rounded-full ${
+                            inv.status === 'PAID' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                          }`}>
+                            {inv.status === 'PAID' ? 'LUNAS' : 'BELUM DIBAYAR'}
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-slate-900">Rp {Number(inv.amount).toLocaleString('id-ID')}</p>
-                        <span className={`inline-block text-[9px] font-black px-2 py-0.5 rounded-full ${
-                          inv.status === 'PAID' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                        }`}>
-                          {inv.status === 'PAID' ? 'LUNAS' : 'BELUM DIBAYAR'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
+
+                {/* Pagination Controls Owner (Limit 5 items) */}
+                {totalOwnerInvoicePages > 1 && (
+                  <div className="pt-3 mt-3 flex items-center justify-between border-t border-slate-100 text-xs">
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      Halaman {ownerInvoicePage} dari {totalOwnerInvoicePages} ({ownerInvoices.length} tagihan)
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        disabled={ownerInvoicePage <= 1}
+                        onClick={() => setOwnerInvoicePage((p) => Math.max(1, p - 1))}
+                        className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 cursor-pointer transition-colors"
+                        title="Halaman Sebelumnya"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="px-2 py-0.5 text-xs font-bold bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200/60">
+                        {ownerInvoicePage}
+                      </span>
+                      <button
+                        disabled={ownerInvoicePage >= totalOwnerInvoicePages}
+                        onClick={() => setOwnerInvoicePage((p) => Math.min(totalOwnerInvoicePages, p + 1))}
+                        className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 cursor-pointer transition-colors"
+                        title="Halaman Berikutnya"
+                      >
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -558,41 +778,111 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
 
-          {/* 4 Stat Cards Penyewa (Responsive Mobile Grid) */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Unit Kamar</span>
-              <div className="mt-2">
-                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block truncate">Kamar 101</span>
-                <p className="text-[11px] sm:text-xs text-slate-500 mt-1 truncate">Lantai 1 • Kos Harmoni</p>
+          {/* 4 Stat Cards Penyewa (Interactive Modern Grid) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+            {/* Card 1: Unit Kamar */}
+            <div className="group relative overflow-hidden bg-white/90 backdrop-blur-xl border border-slate-200/80 hover:border-indigo-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 rounded-[24px] p-5 flex flex-col justify-between cursor-default">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-gradient-to-br from-indigo-500/10 to-blue-500/5 rounded-full blur-xl group-hover:scale-150 transition-all duration-500 pointer-events-none" />
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 shadow-2xs">
+                    <DoorOpen className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-bold text-indigo-800 bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 rounded-full">
+                    Lantai 1
+                  </span>
+                </div>
+                <div className="mt-3.5">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Unit Kamar</span>
+                  <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight block mt-0.5">
+                    Kamar {tenantActiveContract?.room?.roomNumber || '101'}
+                  </span>
+                  <p className="text-[11px] text-slate-500 mt-1 truncate">
+                    {tenantActiveContract?.room?.property?.name || 'Kos Harmoni Residence'}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 w-full h-1 rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-full rounded-full bg-indigo-500 w-full" />
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Biaya Sewa</span>
-              <div className="mt-2">
-                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight block truncate">Rp 1.800.000</span>
-                <p className="text-[11px] sm:text-xs text-slate-500 mt-1 truncate">Per bulan</p>
+            {/* Card 2: Biaya Sewa */}
+            <div className="group relative overflow-hidden bg-white/90 backdrop-blur-xl border border-slate-200/80 hover:border-blue-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 rounded-[24px] p-5 flex flex-col justify-between cursor-default">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-gradient-to-br from-blue-500/10 to-indigo-500/5 rounded-full blur-xl group-hover:scale-150 transition-all duration-500 pointer-events-none" />
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-2xs">
+                    <Coins className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-bold text-blue-800 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded-full">
+                    Bulanan
+                  </span>
+                </div>
+                <div className="mt-3.5">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Biaya Sewa</span>
+                  <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight block mt-0.5">
+                    Rp 1.800.000
+                  </span>
+                  <p className="text-[11px] text-slate-500 mt-1 truncate">Termasuk WiFi & Fasilitas Kamar</p>
+                </div>
+              </div>
+              <div className="mt-4 w-full h-1 rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-full rounded-full bg-blue-500 w-full" />
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Status Sewa</span>
-              <div className="mt-2">
-                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-emerald-600 tracking-tight block truncate">AKTIF</span>
-                <p className="text-[11px] sm:text-xs text-slate-500 mt-1 truncate">Kontrak resmi</p>
+            {/* Card 3: Status Sewa */}
+            <div className="group relative overflow-hidden bg-white/90 backdrop-blur-xl border border-slate-200/80 hover:border-emerald-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 rounded-[24px] p-5 flex flex-col justify-between cursor-default">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 rounded-full blur-xl group-hover:scale-150 transition-all duration-500 pointer-events-none" />
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 shadow-2xs">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Resmi
+                  </span>
+                </div>
+                <div className="mt-3.5">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Status Sewa</span>
+                  <span className="text-2xl sm:text-3xl font-black text-emerald-600 tracking-tight block mt-0.5">AKTIF</span>
+                  <p className="text-[11px] text-slate-500 mt-1 truncate">Kontrak terdaftar & tersinkronisasi</p>
+                </div>
+              </div>
+              <div className="mt-4 w-full h-1 rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-full rounded-full bg-emerald-500 w-full" />
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-xl border border-white/80 rounded-[20px] sm:rounded-[24px] p-4 sm:p-5 shadow-xs flex flex-col justify-between">
-              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Tagihan Bulan Ini</span>
-              <div className="mt-2">
-                <span className={`text-xl sm:text-2xl lg:text-3xl font-black tracking-tight block truncate ${tenantUnpaidInvoice ? 'text-rose-600' : 'text-emerald-600'}`}>
-                  {tenantUnpaidInvoice ? `Rp ${Number(tenantUnpaidInvoice.amount).toLocaleString('id-ID')}` : 'LUNAS'}
-                </span>
-                <p className="text-[11px] sm:text-xs text-slate-500 mt-1 truncate">
-                  {tenantUnpaidInvoice ? 'Perlu dibayar' : 'Semua tagihan lunas'}
-                </p>
+            {/* Card 4: Tagihan Bulan Ini */}
+            <div className="group relative overflow-hidden bg-white/90 backdrop-blur-xl border border-slate-200/80 hover:border-purple-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 rounded-[24px] p-5 flex flex-col justify-between cursor-default">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full blur-xl group-hover:scale-150 transition-all duration-500 pointer-events-none" />
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300 shadow-2xs">
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    tenantUnpaidInvoice 
+                      ? 'bg-rose-50 text-rose-800 border-rose-200/60' 
+                      : 'bg-emerald-50 text-emerald-800 border-emerald-200/60'
+                  }`}>
+                    {tenantUnpaidInvoice ? 'Perlu Dibayar' : 'Semua Lunas'}
+                  </span>
+                </div>
+                <div className="mt-3.5">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Tagihan Bulan Ini</span>
+                  <span className={`text-xl sm:text-2xl lg:text-3xl font-black tracking-tight block mt-0.5 truncate ${tenantUnpaidInvoice ? 'text-rose-600' : 'text-emerald-600'}`}>
+                    {tenantUnpaidInvoice ? `Rp ${Number(tenantUnpaidInvoice.amount).toLocaleString('id-ID')}` : 'LUNAS'}
+                  </span>
+                  <p className="text-[11px] text-slate-500 mt-1 truncate">
+                    {tenantUnpaidInvoice ? 'Bayar via Midtrans Snap' : 'Semua tagihan sewa lunas'}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 w-full h-1 rounded-full bg-slate-100 overflow-hidden">
+                <div className={`h-full rounded-full ${tenantUnpaidInvoice ? 'bg-rose-500 w-full' : 'bg-emerald-500 w-full'}`} />
               </div>
             </div>
           </div>
@@ -663,20 +953,56 @@ export default function DashboardOverviewPage() {
                 {/* Riwayat Tagihan Lunas */}
                 {tenantPaidInvoices.length > 0 && (
                   <div className="pt-2">
-                    <h4 className="text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
-                      <FileCheck2 className="w-3.5 h-3.5 text-slate-400" /> Riwayat Pembayaran
-                    </h4>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                        <FileCheck2 className="w-3.5 h-3.5 text-slate-400" /> Riwayat Pembayaran
+                      </h4>
+                      <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                        {tenantPaidInvoices.length} Lunas
+                      </span>
+                    </div>
+
                     <div className="space-y-2">
-                      {tenantPaidInvoices.map((inv) => (
-                        <div key={inv.id} className="p-3 bg-slate-50/60 rounded-xl border border-slate-200/60 flex items-center justify-between text-xs">
+                      {paginatedTenantPaidInvoices.map((inv) => (
+                        <div key={inv.id} className="p-3 bg-slate-50/60 hover:bg-white rounded-xl border border-slate-200/60 flex items-center justify-between text-xs transition-all">
                           <div>
                             <p className="font-bold text-slate-800">{inv.invoiceNumber}</p>
-                            <p className="text-[10px] text-slate-400">Lunas via Midtrans</p>
+                            <p className="text-[10px] text-slate-400">Lunas via Midtrans Snap</p>
                           </div>
                           <span className="font-bold text-emerald-700">Rp {Number(inv.amount).toLocaleString('id-ID')}</span>
                         </div>
                       ))}
                     </div>
+
+                    {/* Pagination Controls Tenant Paid Invoices (Limit 5 items) */}
+                    {totalTenantPaidPages > 1 && (
+                      <div className="pt-3 mt-3 flex items-center justify-between border-t border-slate-100 text-xs">
+                        <span className="text-[11px] text-slate-400 font-medium">
+                          Halaman {tenantPaidInvoicePage} dari {totalTenantPaidPages}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            disabled={tenantPaidInvoicePage <= 1}
+                            onClick={() => setTenantPaidInvoicePage((p) => Math.max(1, p - 1))}
+                            className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 cursor-pointer transition-colors"
+                            title="Halaman Sebelumnya"
+                          >
+                            <ChevronLeft className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="px-2 py-0.5 text-xs font-bold bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200/60">
+                            {tenantPaidInvoicePage}
+                          </span>
+                          <button
+                            disabled={tenantPaidInvoicePage >= totalTenantPaidPages}
+                            onClick={() => setTenantPaidInvoicePage((p) => Math.min(totalTenantPaidPages, p + 1))}
+                            className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 cursor-pointer transition-colors"
+                            title="Halaman Berikutnya"
+                          >
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

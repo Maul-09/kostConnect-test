@@ -44,7 +44,6 @@ export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [togglingRoomId, setTogglingRoomId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Owners list from database
@@ -229,21 +228,6 @@ export default function PropertiesPage() {
     });
   };
 
-  const handleToggleRoomStatus = async (roomId: string) => {
-    try {
-      setTogglingRoomId(roomId);
-      showLoading('Memperbarui status ketersediaan kamar...');
-      await api.patch(`/properties/rooms/${roomId}/toggle-status`);
-      fetchProperties();
-      showToast('success', 'Status Kamar Berhasil Diperbarui', 'Ketersediaan kamar telah tersinkronisasi.');
-    } catch (err: any) {
-      showToast('error', 'Gagal Mengubah Status Kamar', err.message);
-    } finally {
-      setTogglingRoomId(null);
-      hideLoading();
-    }
-  };
-
   // Helper untuk identifikasi pemilik properti
   const getPropertyOwner = (p: Property) => {
     if (p.owner) {
@@ -394,7 +378,7 @@ export default function PropertiesPage() {
             <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider block">Kamar Terisi</span>
             <div className="mt-2">
               <span className="text-3xl font-black text-amber-800 tracking-tight block">{occupiedRooms}</span>
-              <span className="text-xs font-bold text-amber-700 mt-1 block">OCCUPIED (Dalam kontrak)</span>
+              <span className="text-xs font-bold text-amber-700 mt-1 block">Disewakan (Dalam kontrak)</span>
             </div>
             <div className="mt-4 w-full bg-amber-100 h-1.5 rounded-full overflow-hidden">
               <div 
@@ -551,11 +535,11 @@ export default function PropertiesPage() {
                                 >
                                   {isOccupied ? (
                                     <>
-                                      <Clock className="w-3 h-3" /> OCCUPIED
+                                      <Clock className="w-3 h-3" /> Disewakan
                                     </>
                                   ) : (
                                     <>
-                                      <CheckCircle2 className="w-3 h-3" /> AVAILABLE
+                                      <CheckCircle2 className="w-3 h-3" /> Tersedia
                                     </>
                                   )}
                                 </span>
@@ -596,20 +580,14 @@ export default function PropertiesPage() {
                             </div>
 
                             {/* FOOTER KAMAR:
-                                - Pemilik Kos: BISA Edit, Hapus, dan Toggle status.
+                                - Pemilik Kos: BISA Edit & Hapus Kamar (Status otomatis sinkron kontrak).
                                 - Super Admin: View-only */}
                             <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between gap-2">
                               {isOwner ? (
                                 <>
-                                  <button
-                                    disabled={togglingRoomId === room.id}
-                                    onClick={() => handleToggleRoomStatus(room.id)}
-                                    className="text-[10px] font-bold text-slate-600 hover:text-slate-900 disabled:opacity-50 transition-colors cursor-pointer inline-flex items-center gap-1"
-                                    title="Ganti status ketersediaan kamar"
-                                  >
-                                    {togglingRoomId === room.id && <Spinner size="sm" className="text-indigo-600" />}
-                                    <span className="underline">{togglingRoomId === room.id ? 'Mengubah...' : 'Toggle Status'}</span>
-                                  </button>
+                                  <span className="text-[10px] font-medium text-slate-400">
+                                    {isOccupied ? 'Status: Terisi' : 'Status: Kosong'}
+                                  </span>
 
                                   <div className="flex items-center gap-1">
                                     <button

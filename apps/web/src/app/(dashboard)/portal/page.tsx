@@ -19,7 +19,9 @@ import {
   AlertCircle,
   FileCheck2,
   Phone,
-  Mail
+  Mail,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Skeleton, SkeletonCard, Spinner } from '@/components/ui/skeleton';
 
@@ -66,11 +68,22 @@ export default function TenantPortalPage() {
   }, []);
 
   // Use Budi Santoso as the demo active tenant persona
-  const activeContract = contracts[0] || null;
+  const activeContract = contracts.find((c) => c.tenant?.name?.toLowerCase().includes('budi')) || contracts[0] || null;
   const tenantInvoices = invoices.filter(
-    (inv) => inv.contract?.tenant?.name === activeContract?.tenant?.name || inv.contractId === activeContract?.id
+    (inv) =>
+      inv.contract?.tenant?.name?.toLowerCase().includes('budi') ||
+      inv.contract?.tenant?.name === activeContract?.tenant?.name ||
+      inv.contractId === activeContract?.id
   );
   const unpaidTenantInvoices = tenantInvoices.filter((i) => i.status === 'UNPAID');
+
+  const INVOICES_PER_PAGE = 5;
+  const [invoicePage, setInvoicePage] = useState(1);
+  const totalInvoicePages = Math.max(1, Math.ceil(tenantInvoices.length / INVOICES_PER_PAGE));
+  const paginatedTenantInvoices = tenantInvoices.slice(
+    (invoicePage - 1) * INVOICES_PER_PAGE,
+    invoicePage * INVOICES_PER_PAGE
+  );
 
   const handlePay = async (invoiceId: string) => {
     try {
@@ -274,7 +287,7 @@ export default function TenantPortalPage() {
                 Tidak ada tagihan sewa yang terdaftar untuk akun Anda.
               </div>
             ) : (
-              tenantInvoices.map((inv) => {
+              paginatedTenantInvoices.map((inv) => {
                 const isPaid = inv.status === 'PAID';
                 const isPaying = paymentLoading === inv.id;
 
@@ -332,6 +345,36 @@ export default function TenantPortalPage() {
                   </div>
                 );
               })
+            )}
+
+            {/* Pagination Controls (Limit 5 items) */}
+            {totalInvoicePages > 1 && (
+              <div className="pt-2 flex items-center justify-between border-t border-slate-100 text-xs">
+                <span className="text-[11px] text-slate-400 font-medium">
+                  Halaman {invoicePage} dari {totalInvoicePages} ({tenantInvoices.length} total tagihan)
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    disabled={invoicePage <= 1}
+                    onClick={() => setInvoicePage((p) => Math.max(1, p - 1))}
+                    className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 cursor-pointer transition-colors"
+                    title="Halaman Sebelumnya"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="px-2.5 py-1 text-xs font-bold bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200/60">
+                    {invoicePage}
+                  </span>
+                  <button
+                    disabled={invoicePage >= totalInvoicePages}
+                    onClick={() => setInvoicePage((p) => Math.min(totalInvoicePages, p + 1))}
+                    className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 cursor-pointer transition-colors"
+                    title="Halaman Berikutnya"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>

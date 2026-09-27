@@ -24,7 +24,9 @@ import {
   MessageCircle,
   Building2,
   Lock,
-  Globe
+  Globe,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { SkeletonCard, SkeletonTable, Spinner } from '@/components/ui/skeleton';
 
@@ -45,6 +47,7 @@ export default function InvoicesPage() {
   const [error, setError] = useState<string | null>(null);
   const [clientKey, setClientKey] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'UNPAID' | 'PAID'>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
 
   // External Currency API state
   const [currency, setCurrency] = useState<'IDR' | 'USD'>('IDR');
@@ -151,8 +154,9 @@ export default function InvoicesPage() {
   }, []);
 
   useEffect(() => {
+    setCurrentPage(1);
     loadData(true);
-  }, [statusFilter]);
+  }, [statusFilter, role]);
 
   const handleCreateInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -389,6 +393,13 @@ export default function InvoicesPage() {
     }
     return invoices;
   })();
+
+  const ITEMS_PER_PAGE = 5;
+  const totalPages = Math.max(1, Math.ceil(displayedInvoices.length / ITEMS_PER_PAGE));
+  const paginatedInvoices = displayedInvoices.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   // Filter kontrak untuk modal penerbitan tagihan (hanya kamar Kos Harmoni untuk Owner)
   const availableContractsForOwner = contracts.filter((c) =>
@@ -680,7 +691,8 @@ export default function InvoicesPage() {
             Tidak ada tagihan yang sesuai filter.
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
@@ -695,7 +707,7 @@ export default function InvoicesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/80">
-                {displayedInvoices.map((inv) => {
+                {paginatedInvoices.map((inv) => {
                   const isPaid = inv.status === 'PAID';
                   const isPaying = paymentLoading === inv.id;
                   const tenantPhone = inv.contract?.tenant?.phone || '081234567890';
@@ -814,8 +826,55 @@ export default function InvoicesPage() {
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+
+          {/* Pagination Controls (Limit 5 items) */}
+          {totalPages > 1 && (
+            <div className="pt-4 mt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 text-xs">
+              <span className="text-slate-500 font-medium">
+                Menampilkan <strong className="text-slate-800">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong> - <strong className="text-slate-800">{Math.min(currentPage * ITEMS_PER_PAGE, displayedInvoices.length)}</strong> dari <strong className="text-slate-800">{displayedInvoices.length}</strong> tagihan
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  disabled={currentPage <= 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 cursor-pointer transition-colors shadow-2xs flex items-center gap-1 font-semibold"
+                  title="Halaman Sebelumnya"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">Sebelumnya</span>
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
+                    <button
+                      key={num}
+                      onClick={() => setCurrentPage(num)}
+                      className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        currentPage === num
+                          ? 'bg-[#0b0f19] text-white shadow-xs'
+                          : 'border border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 cursor-pointer transition-colors shadow-2xs flex items-center gap-1 font-semibold"
+                  title="Halaman Berikutnya"
+                >
+                  <span className="hidden sm:inline">Berikutnya</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
 
       {/* Modal Terbitkan Tagihan Baru (HANYA UNTUK PEMILIK KOS - Responsif Mobile Bottom Sheet) */}
       {showCreateModal && role === 'OWNER' && (
