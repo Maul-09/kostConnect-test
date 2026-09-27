@@ -73,9 +73,6 @@ export class PaymentsService {
         email: invoice.contract.tenant.email,
         phone: invoice.contract.tenant.phone,
       },
-      callbacks: {
-        finish: 'http://localhost:3000/invoices',
-      },
     };
 
     try {

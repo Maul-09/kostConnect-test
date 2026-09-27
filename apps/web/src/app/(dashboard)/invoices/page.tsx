@@ -193,19 +193,76 @@ export default function InvoicesPage() {
     }
   };
 
+  // Handler sukses pembayaran yang memicu modal perayaan dan update data
+  const handlePaymentSuccessUI = async (invoiceId: string) => {
+    // Silent reload data invoice
+    const invRes = await api.get<any, ApiResponse<Invoice[]>>('/invoices');
+    setInvoices(invRes.data || []);
+    const targetInv = (invRes.data || []).find((i) => i.id === invoiceId) || invoices.find((i) => i.id === invoiceId);
+
+    // Tampilkan Modal Perayaan Sukses Pembayaran
+    triggerPaymentSuccess({
+      invoiceNumber: targetInv?.invoiceNumber || 'INV-2026-001',
+      amount: Number(targetInv?.amount || 1800000),
+      tenantName: targetInv?.contract?.tenant?.name || 'Budi Santoso',
+      roomNumber: targetInv?.contract?.room?.roomNumber || '101',
+      propertyName: targetInv?.contract?.room?.property?.name || 'Kos Harmoni Residence',
+      paymentMethod: 'Midtrans Snap Gateway (Settlement)',
+    });
+
+    showToast('success', 'Pembayaran Terverifikasi!', 'Tagihan sewa Anda sudah tercatat LUNAS di sistem.');
+
+    addNotification({
+      category: 'payment',
+      title: 'Pembayaran Sewa Kamar Berhasil Lunas',
+      desc: `Pembayaran sewa ${targetInv?.contract?.room?.property?.name || 'Kos Harmoni'} kamar ${targetInv?.contract?.room?.roomNumber || '101'} senilai ${formatMoney(targetInv?.amount || 1800000)} telah lunas via Midtrans Snap.`,
+      meta: {
+        invoiceNumber: targetInv?.invoiceNumber,
+        amount: Number(targetInv?.amount || 1800000),
+        tenantName: targetInv?.contract?.tenant?.name || 'Budi Santoso',
+        roomNumber: targetInv?.contract?.room?.roomNumber || '101',
+        propertyName: targetInv?.contract?.room?.property?.name || 'Kos Harmoni Residence',
+        actionUrl: '/invoices',
+        actionLabel: 'Lihat Bukti Pembayaran',
+      },
+    });
+  };
+
   // Polling latar belakang aktif untuk mendeteksi penyelesaian transaksi di Midtrans
   const startPaymentPolling = (invoiceId: string) => {
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
     }
 
+    let isHandled = false;
     let attempts = 0;
-    const maxAttempts = 35; // 35 * 2.5s = ~87 seconds
+    const maxAttempts = 100; // 100 * 2.5s = ~250 seconds
+
+    // Listener saat user beralih tab kembali ke tab website ini
+    const handleWindowFocus = async () => {
+      if (isHandled) return;
+      try {
+        const res = await api.get<any, ApiResponse<{ isPaid: boolean; status: string; message?: string }>>(
+          `/payments/status/${invoiceId}`
+        );
+        if (res.data?.isPaid && !isHandled) {
+          isHandled = true;
+          if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+          window.removeEventListener('focus', handleWindowFocus);
+          await handlePaymentSuccessUI(invoiceId);
+        }
+      } catch {
+        // Silently ignore
+      }
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
 
     pollingIntervalRef.current = setInterval(async () => {
       attempts++;
-      if (attempts > maxAttempts) {
+      if (attempts > maxAttempts || isHandled) {
         if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+        window.removeEventListener('focus', handleWindowFocus);
         return;
       }
 
@@ -214,40 +271,11 @@ export default function InvoicesPage() {
           `/payments/status/${invoiceId}`
         );
 
-        if (res.data?.isPaid) {
+        if (res.data?.isPaid && !isHandled) {
+          isHandled = true;
           if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
-
-          // Silent reload
-          const invRes = await api.get<any, ApiResponse<Invoice[]>>('/invoices');
-          setInvoices(invRes.data || []);
-          const targetInv = (invRes.data || []).find((i) => i.id === invoiceId) || invoices.find((i) => i.id === invoiceId);
-
-          // Tampilkan Modal Perayaan Sukses Pembayaran
-          triggerPaymentSuccess({
-            invoiceNumber: targetInv?.invoiceNumber || 'INV-2026-001',
-            amount: Number(targetInv?.amount || 1800000),
-            tenantName: targetInv?.contract?.tenant?.name || 'Budi Santoso',
-            roomNumber: targetInv?.contract?.room?.roomNumber || '101',
-            propertyName: targetInv?.contract?.room?.property?.name || 'Kos Harmoni Residence',
-            paymentMethod: 'Midtrans Snap Gateway (Settlement)',
-          });
-
-          showToast('success', 'Pembayaran Terverifikasi!', 'Tagihan sewa Anda sudah tercatat LUNAS di sistem.');
-
-          addNotification({
-            category: 'payment',
-            title: 'Pembayaran Sewa Kamar Berhasil Lunas',
-            desc: `Pembayaran sewa ${targetInv?.contract?.room?.property?.name || 'Kos Harmoni'} kamar ${targetInv?.contract?.room?.roomNumber || '101'} senilai ${formatMoney(targetInv?.amount || 1800000)} telah lunas via Midtrans Snap.`,
-            meta: {
-              invoiceNumber: targetInv?.invoiceNumber,
-              amount: Number(targetInv?.amount || 1800000),
-              tenantName: targetInv?.contract?.tenant?.name || 'Budi Santoso',
-              roomNumber: targetInv?.contract?.room?.roomNumber || '101',
-              propertyName: targetInv?.contract?.room?.property?.name || 'Kos Harmoni Residence',
-              actionUrl: '/invoices',
-              actionLabel: 'Lihat Bukti Pembayaran',
-            },
-          });
+          window.removeEventListener('focus', handleWindowFocus);
+          await handlePaymentSuccessUI(invoiceId);
         }
       } catch {
         // Silently continue polling
@@ -280,8 +308,8 @@ export default function InvoicesPage() {
       showToast(
         'info',
         'Halaman Pembayaran Dibuka di Tab Baru',
-        'Selesaikan pembayaran di tab Midtrans yang baru terbuka. Sistem akan memverifikasi dan memperbarui status secara otomatis.',
-        8000,
+        'Selesaikan pembayaran di tab Midtrans. Setelah selesai, tab Midtrans akan standby menampilkan status Berhasil dan Anda cukup kembali ke tab website ini.',
+        10000,
       );
 
       // Mulai polling otomatis di background setiap 2.5 detik
