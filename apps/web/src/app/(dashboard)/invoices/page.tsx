@@ -387,28 +387,38 @@ export default function InvoicesPage() {
             </div>
           </div>
 
-          {/* Unpaid Invoices */}
-          <div className="bg-white/85 backdrop-blur-xl border border-rose-200/80 rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] bg-gradient-to-br from-rose-50/40 to-white/80 flex flex-col justify-between">
+          {/* Card 3: Platform Fee for Admin or Unpaid for Owner/Tenant */}
+          <div className={`bg-white/85 backdrop-blur-xl rounded-[24px] p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] flex flex-col justify-between ${
+            role === 'ADMIN' 
+              ? 'border border-purple-200/80 bg-gradient-to-br from-purple-50/40 to-white/80' 
+              : 'border border-rose-200/80 bg-gradient-to-br from-rose-50/40 to-white/80'
+          }`}>
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wider">
-                {role === 'OWNER' ? 'TAGIHAN BELUM DITERIMA' : role === 'ADMIN' ? 'PIUTANG TERTUNDA PLATFORM' : 'MENUNGGU PEMBAYARAN'}
+              <span className={`text-[11px] font-bold uppercase tracking-wider ${
+                role === 'ADMIN' ? 'text-purple-700' : 'text-rose-700'
+              }`}>
+                {role === 'ADMIN' ? 'ESTIMASI REVENUE PLATFORM (2.5%)' : role === 'OWNER' ? 'TAGIHAN BELUM DITERIMA' : 'MENUNGGU PEMBAYARAN'}
               </span>
-              <span className="text-[10px] font-bold text-rose-800 bg-rose-100/80 px-2 py-0.5 rounded-full">
-                {unpaidInvoices.length} tertunda
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                role === 'ADMIN' ? 'text-purple-800 bg-purple-100/80' : 'text-rose-800 bg-rose-100/80'
+              }`}>
+                {role === 'ADMIN' ? 'Take Rate 2.5%' : `${unpaidInvoices.length} tertunda`}
               </span>
             </div>
             <div className="mt-3">
-              <span className="text-2xl sm:text-3xl font-black text-rose-800 tracking-tight block">
-                {formatMoney(totalUnpaid)}
+              <span className={`text-2xl sm:text-3xl font-black tracking-tight block ${
+                role === 'ADMIN' ? 'text-purple-900' : 'text-rose-800'
+              }`}>
+                {role === 'ADMIN' ? formatMoney(totalPaid * 0.025) : formatMoney(totalUnpaid)}
               </span>
-              <p className="text-[11px] text-rose-600 mt-1">
-                {role === 'OWNER' ? 'Tagihan sewa menunggu transfer penyewa' : 'Piutang sewa aktif'}
+              <p className={`text-[11px] mt-1 ${role === 'ADMIN' ? 'text-purple-600' : 'text-rose-600'}`}>
+                {role === 'ADMIN' ? 'Bagi hasil komisi platform dari transaksi sewa yang telah lunas' : role === 'OWNER' ? 'Tagihan sewa menunggu transfer penyewa' : 'Piutang sewa aktif'}
               </p>
             </div>
-            <div className="mt-4 w-full bg-rose-100 h-1.5 rounded-full overflow-hidden">
+            <div className={`mt-4 w-full h-1.5 rounded-full overflow-hidden ${role === 'ADMIN' ? 'bg-purple-100' : 'bg-rose-100'}`}>
               <div 
-                className="bg-rose-500 h-full rounded-full transition-all duration-500" 
-                style={{ width: `${totalInvoiced > 0 ? (totalUnpaid / totalInvoiced) * 100 : 0}%` }} 
+                className={`h-full rounded-full transition-all duration-500 ${role === 'ADMIN' ? 'bg-purple-600' : 'bg-rose-500'}`} 
+                style={{ width: `${totalInvoiced > 0 ? (totalPaid / totalInvoiced) * 100 : 0}%` }} 
               />
             </div>
           </div>

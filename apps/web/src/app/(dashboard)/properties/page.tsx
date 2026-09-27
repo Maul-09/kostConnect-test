@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Property, Room, ApiResponse } from '@/types';
 import { useRole } from '@/context/RoleContext';
@@ -17,8 +18,6 @@ import {
   ShieldCheck,
   UserCheck,
   Lock,
-  Key,
-  Copy,
   Check
 } from 'lucide-react';
 import { Skeleton, SkeletonCard, Spinner } from '@/components/ui/skeleton';
@@ -35,14 +34,6 @@ export default function PropertiesPage() {
   // Owners list from database
   const [owners, setOwners] = useState<any[]>([]);
   const [selectedOwnerId, setSelectedOwnerId] = useState('');
-
-  // Super Admin: Create Owner Modal state
-  const [showCreateOwnerModal, setShowCreateOwnerModal] = useState(false);
-  const [newOwnerName, setNewOwnerName] = useState('');
-  const [newOwnerEmail, setNewOwnerEmail] = useState('');
-  const [newOwnerPhone, setNewOwnerPhone] = useState('');
-  const [createdOwnerResult, setCreatedOwnerResult] = useState<any | null>(null);
-  const [copied, setCopied] = useState(false);
 
   // Form states
   const [showPropertyModal, setShowPropertyModal] = useState(false);
@@ -86,32 +77,6 @@ export default function PropertiesPage() {
     fetchOwners();
   }, []);
 
-  const handleCreateOwner = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      setSubmitting(true);
-      showLoading('Mendaftarkan akun pemilik kos baru...');
-      const res = await api.post<any, ApiResponse<any>>('/users/owners', {
-        name: newOwnerName,
-        email: newOwnerEmail,
-        phone: newOwnerPhone,
-      });
-      setCreatedOwnerResult(res.data);
-      await fetchOwners();
-      if (res.data?.id) {
-        setSelectedOwnerId(res.data.id);
-      }
-      setNewOwnerName('');
-      setNewOwnerEmail('');
-      setNewOwnerPhone('');
-      showToast('success', 'Akun Pemilik Kos Berhasil Dibuat', 'Kredensial login sementara (123456789) siap disalin.');
-    } catch (err: any) {
-      showToast('error', 'Gagal Membuat Akun Pemilik', err.message || 'Terjadi kesalahan pada server');
-    } finally {
-      setSubmitting(false);
-      hideLoading();
-    }
-  };
 
   const handleCreateProperty = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -239,19 +204,9 @@ export default function PropertiesPage() {
           </div>
         </div>
 
-        {/* HANYA Super Admin yang memiliki hak mendaftarkan Properti Baru & Akun Pemilik Kos */}
+        {/* HANYA Super Admin yang memiliki hak mendaftarkan Properti Baru */}
         {role === 'ADMIN' && (
           <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start sm:self-center">
-            <button
-              onClick={() => {
-                setCreatedOwnerResult(null);
-                setCopied(false);
-                setShowCreateOwnerModal(true);
-              }}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl px-4 py-2.5 text-xs font-bold shadow-md shadow-indigo-500/20 hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <UserCheck className="w-4 h-4 text-indigo-200" /> + Buat Akun Pemilik Kos
-            </button>
             <button
               onClick={() => setShowPropertyModal(true)}
               className="bg-[#0b0f19] hover:bg-[#1e293b] text-white rounded-2xl px-4 py-2.5 text-xs font-bold shadow-md shadow-indigo-950/20 hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
@@ -583,34 +538,22 @@ export default function PropertiesPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-bold text-slate-700">Mitra Pemilik Kos Terdaftar</label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowPropertyModal(false);
-                      setCreatedOwnerResult(null);
-                      setCopied(false);
-                      setShowCreateOwnerModal(true);
-                    }}
+                  <Link
+                    href="/tenants"
                     className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
                   >
-                    <Plus className="w-3 h-3" /> Buat Akun Baru
-                  </button>
+                    Kelola di Direktori Mitra &rarr;
+                  </Link>
                 </div>
                 {owners.length === 0 ? (
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center justify-between">
                     <span>Belum ada akun pemilik kos yang terdaftar di database.</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowPropertyModal(false);
-                        setCreatedOwnerResult(null);
-                        setCopied(false);
-                        setShowCreateOwnerModal(true);
-                      }}
+                    <Link
+                      href="/tenants"
                       className="font-bold underline text-amber-900 ml-2 cursor-pointer"
                     >
-                      Buat Sekarang
-                    </button>
+                      Daftarkan di Menu Mitra
+                    </Link>
                   </div>
                 ) : (
                   <select
@@ -678,220 +621,7 @@ export default function PropertiesPage() {
         </div>
       )}
 
-      {/* Modal Buat Akun Pemilik Kos (HANYA UNTUK SUPER ADMIN) */}
-      {showCreateOwnerModal && role === 'ADMIN' && (
-        <div 
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowCreateOwnerModal(false);
-          }}
-          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in duration-200"
-        >
-          <div className="bg-white/95 backdrop-blur-2xl border border-white/80 rounded-t-[32px] sm:rounded-[32px] max-w-lg w-full p-5 sm:p-8 shadow-2xl space-y-4 sm:space-y-5 max-h-[88vh] overflow-y-auto animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
-            <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 gap-4">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block mb-1">
-                  MANAJEMEN PENGGUNA TERPUSAT
-                </span>
-                <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  Buat Akun Pemilik Kos
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Super Admin membuatkan akun dan password sementara untuk mitra pemilik kos.
-                </p>
-              </div>
-              <button 
-                onClick={() => setShowCreateOwnerModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
-            {createdOwnerResult ? (
-              <div className="space-y-4">
-                <div className="p-4 bg-emerald-50/80 border border-emerald-200 rounded-2xl">
-                  <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm mb-1">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                    Akun Pemilik Kos Berhasil Dibuat!
-                  </div>
-                  <p className="text-xs text-emerald-700">
-                    Akun telah didaftarkan ke database. Berikan kredensial login sementara di bawah kepada pemilik kos.
-                  </p>
-                </div>
-
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3.5">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                      KREDENSIAL RESMI AKUN PEMILIK KOS
-                    </span>
-                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100/80 border border-amber-300/80 px-2 py-0.5 rounded-md">
-                      Password Sementara: 123456789
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Nama Pemilik</span>
-                    <span className="text-xs font-bold text-slate-800">{createdOwnerResult.name}</span>
-                  </div>
-
-                  {/* Email Login with Quick Copy */}
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider mb-1">Email Login</span>
-                    <div className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-2xs">
-                      <span className="text-xs font-mono font-bold text-indigo-700 select-all">{createdOwnerResult.email}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(createdOwnerResult.email);
-                          setCopied(true);
-                          setTimeout(() => setCopied(false), 2000);
-                        }}
-                        className="text-[11px] font-bold text-slate-500 hover:text-indigo-600 flex items-center gap-1 cursor-pointer hover:bg-slate-100 px-2 py-0.5 rounded-lg transition-colors"
-                      >
-                        <Copy className="w-3 h-3" /> Salin Email
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Password Sementara with Quick Copy */}
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider mb-1">Password Sementara</span>
-                    <div className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-2xs">
-                      <span className="font-mono text-sm font-black text-indigo-950 tracking-wider select-all">
-                        {createdOwnerResult.temporaryPassword || '123456789'}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(createdOwnerResult.temporaryPassword || '123456789');
-                          setCopied(true);
-                          setTimeout(() => setCopied(false), 2000);
-                        }}
-                        className="text-[11px] font-bold text-slate-500 hover:text-indigo-600 flex items-center gap-1 cursor-pointer hover:bg-slate-100 px-2 py-0.5 rounded-lg transition-colors"
-                      >
-                        <Copy className="w-3 h-3" /> Salin Password
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Tombol Salin Email & Password Sekaligus */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const credentialText = `Kredensial Login Pemilik Kos (KosConnect):\nEmail: ${createdOwnerResult.email}\nPassword Sementara: ${createdOwnerResult.temporaryPassword || '123456789'}\n\nCatatan: Anda diwajibkan mengganti kata sandi sementara ini saat login pertama kali.`;
-                      navigator.clipboard.writeText(credentialText);
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2500);
-                    }}
-                    className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs ${
-                      copied 
-                        ? 'bg-emerald-600 text-white' 
-                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20'
-                    }`}
-                  >
-                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    <span>{copied ? '✓ Email & Password Berhasil Disalin!' : '📋 Salin Email & Password Sekaligus'}</span>
-                  </button>
-
-                  <div className="p-3 bg-amber-50/90 border border-amber-200/90 rounded-xl text-[11px] text-amber-900 flex items-start gap-2">
-                    <Key className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                    <span>
-                      <strong>Ketentuan Keamanan:</strong> Pemilik kos <strong>wajib mengganti password baru</strong> (minimal 8 karakter, huruf besar, huruf kecil, angka & simbol) saat login pertama kali.
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end gap-2.5 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCreateOwnerModal(false);
-                      setCreatedOwnerResult(null);
-                    }}
-                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                  >
-                    Tutup
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCreateOwnerModal(false);
-                      setCreatedOwnerResult(null);
-                      setShowPropertyModal(true);
-                    }}
-                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-600/20 cursor-pointer inline-flex items-center gap-2"
-                  >
-                    <Building2 className="w-4 h-4" /> Lanjut Daftarkan Properti
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <form onSubmit={handleCreateOwner} className="space-y-4">
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1.5">Nama Lengkap Pemilik Kos</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: H. Rahmat Santoso"
-                    value={newOwnerName}
-                    onChange={(e) => setNewOwnerName(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1.5">Email Pemilik (Untuk Login)</label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="Contoh: rahmat@kosconnect.id"
-                    value={newOwnerEmail}
-                    onChange={(e) => setNewOwnerEmail(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1.5">Nomor WhatsApp / HP</label>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="Contoh: 081298765432"
-                    value={newOwnerPhone}
-                    onChange={(e) => setNewOwnerPhone(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                  />
-                </div>
-
-                <div className="p-3 bg-indigo-50/70 border border-indigo-200/70 rounded-xl text-[11px] text-indigo-900 flex items-start gap-2">
-                  <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
-                  <span>
-                    Sistem akan membuatkan password sementara secara otomatis dan menetapkan status <strong>wajib ganti password</strong> pada login pertama pemilik kos.
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateOwnerModal(false)}
-                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-600/20 cursor-pointer inline-flex items-center gap-2"
-                  >
-                    {submitting && <Spinner size="sm" className="text-white" />}
-                    {submitting ? 'Membuat Akun...' : 'Buat Akun Pemilik'}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Modal Tambah Kamar (HANYA UNTUK PEMILIK KOS - Responsif Mobile Bottom Sheet) */}
       {showRoomModal && role === 'OWNER' && (
