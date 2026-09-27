@@ -58,26 +58,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   const [loadingMessage, setLoadingMessage] = useState('Memuat data...');
   const [confirmConfig, setConfirmConfig] = useState<ConfirmConfig | null>(null);
 
-  // Fallback trigger for non-click transitions (e.g. browser back/forward)
-  useEffect(() => {
-    if (isFirstMount.current) {
-      isFirstMount.current = false;
-      return;
-    }
-    if (prevPathname.current !== pathname) {
-      prevPathname.current = pathname;
-      setIsLoading((currentlyLoading) => {
-        if (!currentlyLoading) {
-          setLoadingMessage('Sinkronisasi halaman & data...');
-          const navTimer = setTimeout(() => {
-            setIsLoading(false);
-          }, 450);
-          return true;
-        }
-        return currentlyLoading;
-      });
-    }
-  }, [pathname]);
+  // Navigation loading trigger removed so page transitions use smooth skeleton loaders without double loading popup
 
   const showToast = useCallback((type: ToastType, title: string, message?: string, duration = 4000) => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -184,13 +165,9 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
       {isLoading && (
         <div className="fixed inset-0 z-[99999] w-screen h-screen bg-slate-950/55 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-150">
           <div className="bg-white/95 backdrop-blur-2xl border border-white/90 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl flex flex-col items-center text-center space-y-4 animate-in zoom-in-95 duration-200">
-            {/* Animated High-Fidelity Dual-Ring Spinner */}
-            <div className="relative w-16 h-16 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full border-4 border-indigo-100" />
-              <div className="absolute inset-0 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin" />
-              <div className="w-10 h-10 rounded-2xl bg-indigo-50/80 flex items-center justify-center shadow-inner">
-                <Loader2 className="w-5 h-5 text-indigo-600 animate-spin" />
-              </div>
+            {/* Clean Single Modern Spinner */}
+            <div className="relative w-14 h-14 flex items-center justify-center">
+              <div className="w-14 h-14 rounded-full border-4 border-indigo-100 border-t-indigo-600 animate-spin" />
             </div>
 
             <div>

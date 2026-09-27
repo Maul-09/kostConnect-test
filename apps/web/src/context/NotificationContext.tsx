@@ -82,8 +82,8 @@ const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
   {
     id: 'notif-1',
     category: 'invoice',
-    title: 'Tagihan sewa mendekati jatuh tempo',
-    desc: 'Invoice tagihan INV-202610-002 untuk Budi Santoso (Kamar 101) belum dibayar. Batas waktu pelunasan tersisa 3 hari.',
+    title: 'Pengingat Tagihan Sewa Kamar 101',
+    desc: 'Tagihan sewa bulanan Kamar 101 (Kos Harmoni) atas nama Budi Santoso senilai Rp 1.800.000 menunggu pembayaran. Batas waktu pelunasan tersisa 3 hari.',
     time: 'Hari ini, 12.00 WIB',
     createdAt: Date.now() - 3600000,
     isRead: false,
@@ -100,8 +100,8 @@ const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
   {
     id: 'notif-2',
     category: 'payment',
-    title: 'Pembayaran Midtrans berhasil diverifikasi',
-    desc: 'Invoice INV-202609-001 senilai Rp 1.800.000 telah lunas via Midtrans Snap. Dana transaksi telah diselesaikan (settlement).',
+    title: 'Pembayaran Sewa Kamar 101 Berhasil Lunas',
+    desc: 'Pembayaran sewa bulanan Kamar 101 (Kos Harmoni) senilai Rp 1.800.000 atas nama Budi Santoso telah sukses diverifikasi lunas melalui Midtrans Snap. Bukti pelunasan resmi sudah tersedia.',
     time: 'Kemarin, 14.30 WIB',
     createdAt: Date.now() - 86400000,
     isRead: false,
@@ -112,14 +112,14 @@ const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
       roomNumber: '101',
       propertyName: 'Kos Harmoni Residence',
       actionUrl: '/invoices',
-      actionLabel: 'Lihat Bukti Tagihan',
+      actionLabel: 'Lihat Bukti Pembayaran',
     },
   },
   {
     id: 'notif-3',
     category: 'contract',
-    title: 'Kontrak sewa baru aktif',
-    desc: 'Kontrak sewa penghuni Siti Rahma di Kamar A1 telah resmi terbit. Status inventaris kamar otomatis menjadi OCCUPIED.',
+    title: 'Kontrak Sewa Baru Aktif (Kamar A1)',
+    desc: 'Kontrak sewa penghuni baru atas nama Siti Rahma untuk Kamar A1 (Kos Putri Griya Asri) telah aktif. Status kamar otomatis terkunci menjadi terisi (OCCUPIED).',
     time: '24 Sep 2026, 09.15 WIB',
     createdAt: Date.now() - 172800000,
     isRead: true,
@@ -145,7 +145,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   // Load from localStorage on mount
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('kosconnect_notifications_v1');
+      const saved = localStorage.getItem('kosconnect_notifications_v2');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -161,7 +161,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const saveNotifications = (items: NotificationItem[]) => {
     setNotifications(items);
     try {
-      localStorage.setItem('kosconnect_notifications_v1', JSON.stringify(items));
+      localStorage.setItem('kosconnect_notifications_v2', JSON.stringify(items));
     } catch {
       // ignore
     }
@@ -264,11 +264,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     setPaymentSuccessData(enriched);
     setShowPaymentSuccessModal(true);
 
-    // Otomatis tambahkan ke notification feed
+    // Otomatis tambahkan ke notification feed dengan narasi yang manusiawi
+    const roomLabel = enriched.roomNumber ? `Kamar ${enriched.roomNumber}` : 'Unit Kos';
+    const propertyLabel = enriched.propertyName ? ` (${enriched.propertyName})` : '';
+    const tenantLabel = enriched.tenantName ? ` atas nama ${enriched.tenantName}` : '';
+
     addNotification({
       category: 'payment',
-      title: `Pembayaran ${enriched.invoiceNumber} Berhasil Lunas!`,
-      desc: `Pembayaran sewa senilai Rp ${Number(enriched.amount).toLocaleString('id-ID')} telah sukses diverifikasi oleh Midtrans Snap.`,
+      title: `Pembayaran Sewa ${roomLabel} Berhasil Lunas`,
+      desc: `Pembayaran sewa ${roomLabel}${propertyLabel}${tenantLabel} senilai Rp ${Number(enriched.amount).toLocaleString('id-ID')} telah sukses diverifikasi lunas melalui Midtrans. Struk pelunasan resmi sudah diterbitkan.`,
       meta: {
         invoiceNumber: enriched.invoiceNumber,
         amount: enriched.amount,
@@ -276,7 +280,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         roomNumber: enriched.roomNumber,
         propertyName: enriched.propertyName,
         actionUrl: '/invoices',
-        actionLabel: 'Buka Halaman Tagihan',
+        actionLabel: 'Lihat Bukti Pembayaran',
       },
     });
   }, [addNotification]);

@@ -183,7 +183,6 @@ export default function DashboardLayout({
                   onClick={() => {
                     if (pathname !== item.href) {
                       setNavigatingTo(item.href);
-                      showLoading(`Memuat data ${item.name}...`);
                     }
                   }}
                   className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
@@ -342,7 +341,6 @@ export default function DashboardLayout({
               onClick={() => {
                 if (pathname !== item.href) {
                   setNavigatingTo(item.href);
-                  showLoading(`Memuat ${item.name}...`);
                 }
               }}
               className={`flex flex-col items-center justify-center gap-1 py-1 px-2 rounded-2xl transition-all min-w-[56px] cursor-pointer ${
