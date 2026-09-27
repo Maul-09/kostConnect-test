@@ -21,7 +21,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "http://localhost:3001/api/invoices?status=UNPAID",
+        "url": "http://host.docker.internal:3001/api/invoices?status=UNPAID",
         "options": {}
       },
       "id": "2",

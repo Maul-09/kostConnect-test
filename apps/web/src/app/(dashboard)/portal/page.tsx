@@ -76,52 +76,44 @@ export default function TenantPortalPage() {
     try {
       setPaymentLoading(invoiceId);
       showLoading('Menghubungkan ke Gateway Midtrans Snap...');
-      const res = await api.post<any, ApiResponse<{ token: string; redirect_url: string; orderId: string; simulated?: boolean }>>(
+      const res = await api.post<any, ApiResponse<{ token: string; redirect_url: string; orderId: string }>>(
         `/payments/create-token/${invoiceId}`,
       );
 
-      const { token, simulated, redirect_url } = res.data;
+      const { redirect_url } = res.data;
       hideLoading();
 
-      if (window.snap && !simulated) {
-        window.snap.pay(token, {
-          onSuccess: async () => {
-            showToast('success', 'Pembayaran Berhasil!', 'Terima kasih telah melunasi sewa kos Harmoni.');
-            loadData();
-          },
-          onPending: () => {
-            showToast('info', 'Menunggu Pembayaran', 'Selesaikan pembayaran sebelum batas waktu berakhir.');
-            loadData();
-          },
-          onError: (err: any) => {
-            showToast('error', 'Pembayaran Dibatalkan', 'Transaksi pembayaran belum diselesaikan.');
-          },
-          onClose: () => {
-            loadData();
-          },
-        });
-      } else {
-        handleSimulatePayment(invoiceId);
+      if (!redirect_url) {
+        throw new Error('Gagal mendapatkan tautan pembayaran dari Midtrans Sandbox.');
       }
+
+      window.open(redirect_url, '_blank', 'noopener,noreferrer');
+      showToast(
+        'info',
+        'Halaman Pembayaran Dibuka di Tab Baru',
+        'Selesaikan pembayaran di tab Midtrans. Setelah selesai, tab Midtrans akan standby menampilkan status Berhasil dan Anda cukup kembali ke tab website ini.',
+        10000,
+      );
+
+      // Polling background update
+      const checkInterval = setInterval(async () => {
+        try {
+          const statusRes = await api.get<any, ApiResponse<{ isPaid: boolean }>>(`/payments/status/${invoiceId}`);
+          if (statusRes.data?.isPaid) {
+            clearInterval(checkInterval);
+            loadData();
+            showToast('success', 'Pembayaran Terverifikasi!', 'Tagihan sewa Anda telah lunas via Midtrans Sandbox.');
+          }
+        } catch {
+          // ignore
+        }
+      }, 2500);
+
+      setTimeout(() => clearInterval(checkInterval), 250000);
     } catch (err: any) {
       hideLoading();
       showToast('error', 'Gagal Memproses Pembayaran', err.message || 'Terjadi kesalahan sistem.');
     } finally {
-      setPaymentLoading(null);
-    }
-  };
-
-  const handleSimulatePayment = async (invoiceId: string) => {
-    try {
-      setPaymentLoading(invoiceId);
-      showLoading('Mensimulasikan pelunasan tagihan & webhook...');
-      await api.post(`/webhooks/simulate-payment/${invoiceId}`);
-      showToast('success', 'Simulasi Pelunasan Berhasil!', 'Status tagihan menjadi PAID dan otomatis terverifikasi.');
-      loadData();
-    } catch (err: any) {
-      showToast('error', 'Simulasi Gagal', err.message);
-    } finally {
-      hideLoading();
       setPaymentLoading(null);
     }
   };
@@ -333,14 +325,6 @@ export default function TenantPortalPage() {
                           >
                             {isPaying ? <Spinner size="sm" className="text-white" /> : <CreditCard className="w-3.5 h-3.5 text-indigo-400" />}
                             {isPaying ? 'Memproses...' : 'Bayar Sekarang'}
-                          </button>
-                          <button
-                            disabled={isPaying}
-                            onClick={() => handleSimulatePayment(inv.id)}
-                            className="p-2 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                            title="Simulasi Lunas Cepat (Demo)"
-                          >
-                            {isPaying ? <Spinner size="sm" className="text-indigo-600" /> : <Sparkles className="w-3.5 h-3.5" />}
                           </button>
                         </div>
                       )}
