@@ -200,6 +200,30 @@ export default function InvoicesPage() {
     }
   };
 
+  // Cek & sinkronisasi status langsung ke server Midtrans (solusi ideal localhost tanpa tunnel)
+  const handleCheckStatus = async (invoiceId: string) => {
+    try {
+      setPaymentLoading(invoiceId);
+      showLoading('Mengecek status pembayaran ke Midtrans...');
+      const res = await api.get<any, ApiResponse<{ isPaid: boolean; status: string; message?: string }>>(
+        `/payments/status/${invoiceId}`,
+      );
+
+      if (res.data?.isPaid) {
+        showToast('success', 'Pembayaran Terverifikasi!', 'Tagihan sewa Anda sudah tercatat LUNAS di sistem.');
+      } else {
+        showToast('info', 'Status: ' + (res.data?.status || 'Pending'), res.data?.message || 'Pembayaran belum diselesaikan di Midtrans.');
+      }
+      loadData();
+    } catch (err: any) {
+      showToast('error', 'Gagal Cek Status', err.message);
+    } finally {
+      setPaymentLoading(null);
+      hideLoading();
+    }
+  };
+
+
 
   // Filter invoices based on active user role
   const displayedInvoices = (() => {
@@ -587,12 +611,12 @@ export default function InvoicesPage() {
                                   {isPaying ? <Spinner size="sm" className="text-white" /> : <CreditCard className="w-3.5 h-3.5 text-indigo-400" />}
                                   {isPaying ? 'Memproses...' : 'Bayar Sekarang'}
                                 </button>
-                                {/* Tombol Cek Status — refresh status setelah bayar di tab Midtrans */}
+                                {/* Tombol Cek Status — refresh & sinkronkan status langsung dari Midtrans */}
                                 <button
                                   disabled={isPaying}
-                                  onClick={() => loadData()}
+                                  onClick={() => handleCheckStatus(inv.id)}
                                   className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 disabled:opacity-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
-                                  title="Cek Status Pembayaran"
+                                  title="Cek Status Pembayaran ke Midtrans"
                                 >
                                   <Clock className="w-3.5 h-3.5 text-slate-500" /> Cek Status
                                 </button>

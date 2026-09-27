@@ -18,4 +18,12 @@ export class PaymentsController {
   createSnapToken(@Param('invoiceId') invoiceId: string) {
     return this.paymentsService.createSnapToken(invoiceId);
   }
+
+  @Get('status/:invoiceId')
+  @Post('check-status/:invoiceId')
+  @ApiOperation({ summary: 'Cek & sinkronkan status pembayaran langsung dari Midtrans API' })
+  checkStatus(@Param('invoiceId') invoiceId: string) {
+    return this.paymentsService.checkPaymentStatus(invoiceId);
+  }
 }
+

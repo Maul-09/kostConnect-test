@@ -6,6 +6,8 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { InvoiceStatus } from '@prisma/client';
+import { WebhooksService } from '../webhooks/webhooks.service';
+import axios from 'axios';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const midtransClient = require('midtrans-client');
 
@@ -16,6 +18,7 @@ export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly webhooksService: WebhooksService,
   ) {
     this.snap = new midtransClient.Snap({
       isProduction: this.configService.get<string>('MIDTRANS_IS_PRODUCTION') === 'true',
@@ -70,6 +73,9 @@ export class PaymentsService {
         email: invoice.contract.tenant.email,
         phone: invoice.contract.tenant.phone,
       },
+      callbacks: {
+        finish: 'http://localhost:3000/invoices',
+      },
     };
 
     try {
@@ -88,9 +94,6 @@ export class PaymentsService {
       };
     } catch (error: any) {
       // Fallback simulasi jika Midtrans Server Key belum dikonfigurasi / tidak valid.
-      // PENTING: redirect_url TIDAK di-return agar frontend tidak membuka URL Midtrans
-      // yang tidak ada (akan menyebabkan "Transaksi tidak ditemukan").
-      // Frontend akan otomatis menggunakan endpoint simulasi internal /webhooks/simulate-payment.
       console.warn('[KosConnect] Midtrans Snap token gagal dibuat — mode simulasi aktif:', error.message);
       await this.prisma.invoice.update({
         where: { id: invoiceId },
@@ -105,4 +108,65 @@ export class PaymentsService {
       };
     }
   }
+
+  /**
+   * Cek status pembayaran langsung ke Midtrans API.
+   * Sangat berguna untuk localhost development (ketika webhook Midtrans tidak bisa menjangkau localhost).
+   */
+  async checkPaymentStatus(invoiceId: string) {
+    const invoice = await this.prisma.invoice.findUnique({
+      where: { id: invoiceId },
+    });
+
+    if (!invoice) {
+      throw new NotFoundException(`Invoice with ID ${invoiceId} not found`);
+    }
+
+    if (invoice.status === InvoiceStatus.PAID) {
+      return { status: 'paid', isPaid: true, invoice };
+    }
+
+    if (!invoice.midtransOrderId) {
+      return { status: 'unpaid', isPaid: false, message: 'Belum ada transaksi Midtrans untuk invoice ini.' };
+    }
+
+    const serverKey = this.configService.get<string>('MIDTRANS_SERVER_KEY');
+    const isProduction = this.configService.get<string>('MIDTRANS_IS_PRODUCTION') === 'true';
+    const baseUrl = isProduction
+      ? 'https://api.midtrans.com/v2'
+      : 'https://api.sandbox.midtrans.com/v2';
+
+    if (!serverKey || serverKey.includes('placeholder')) {
+      return { status: 'unpaid', isPaid: false, message: 'Kredensial Midtrans belum dikonfigurasi.' };
+    }
+
+    try {
+      const authHeader = 'Basic ' + Buffer.from(serverKey + ':').toString('base64');
+      const response = await axios.get(`${baseUrl}/${invoice.midtransOrderId}/status`, {
+        headers: {
+          Authorization: authHeader,
+          Accept: 'application/json',
+        },
+        timeout: 5000,
+      });
+
+      // Proses notifikasi status yang didapat dari Midtrans
+      const result = await this.webhooksService.handleMidtransNotification(response.data);
+      const updatedInvoice = await this.prisma.invoice.findUnique({ where: { id: invoiceId } });
+      const isNowPaid = updatedInvoice?.status === InvoiceStatus.PAID;
+
+      return {
+        status: result.status,
+        isPaid: isNowPaid,
+        invoice: updatedInvoice,
+      };
+    } catch (err: any) {
+      return {
+        status: 'unpaid',
+        isPaid: false,
+        message: err.response?.data?.status_message || err.message,
+      };
+    }
+  }
 }
+
