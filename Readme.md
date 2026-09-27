@@ -27,11 +27,30 @@ Bukan sekadar aplikasi CRUD sederhana, KosConnect ERP memetakan proses bisnis ri
    * Integrasi **External Currency API (IDR ⇄ USD)** untuk konversi pelaporan finansial internasional secara realtime.
    * Endpoint simulasi instan (`POST /api/webhooks/simulate-payment/:invoiceId`) untuk demo reviewer tanpa akun Midtrans sandbox aktif.
 
-### Multi-Role & Mobile Responsive
-* **3 Peran Pengguna (Role Switcher):**
-  1. **Super Admin (Platform Admin):** Monitoring seluruh properti, audit finansial semua transaksi, dan integrasi Swagger API.
-  2. **Pemilik Kos (Property Owner):** Mengelola unit kamar, menerbitkan kontrak sewa, dan menerbitkan tagihan.
-  3. **Penyewa (Tenant Portal di `/portal`):** Memeriksa rincian kamar, masa sewa, dan melunasi tagihan mandiri via Midtrans Snap.
+### Multi-Role & Strict Separation of Concerns (Single Responsibility Principle)
+Sistem memisahkan tanggung jawab setiap halaman dan peran secara ketat untuk mencegah kebocoran kapabilitas (leaky abstraction):
+
+| Halaman | Super Admin (Platform Operator) | Pemilik Kos (Property Owner) | Penyewa (Tenant) |
+| :--- | :--- | :--- | :--- |
+| **`/` (Dashboard Overview)** | Monitoring KPI platform: Total Kos, Kamar terdaftar, Total GMV & Estimasi Komisi Platform. | Monitoring performa kos: Okupansi kamar, sewa aktif, pendapatan bulanan properti. | Ringkasan masa sewa aktif, informasi kamar, dan status tagihan berjalan. |
+| **`/properties` (Manajemen Properti)** | Daftarkan properti mitra baru (pilih pemilik dari dropdown mitra terdaftar). | Kelola inventaris unit kamar, set harga sewa (format ribuan otomatis), & fasilitas. | Katalog info kamar dan fasilitas kos yang dihuni. |
+| **`/tenants` (Direktori & CRM)** | Direktori mitra pemilik kos (+ **Daftarkan Akun Pemilik Baru**) & direktori master penyewa. | Daftarkan akun penyewa (+ **Buat Akun Penyewa Baru**), buat Kontrak Sewa, & proses Check-out. | Rincian data kontrak sewa aktif dan kontak pengelola kos. |
+| **`/invoices` (Keuangan & Tagihan)** | **Audit-Only Log & Revenue Platform (2.5%)**: Memantau seluruh transaksi platform & Midtrans. *Tidak ada tombol create/pay.* | **Penerbitan Tagihan**: Terbitkan invoice sewa kamar ke penyewa, pantau status pembayaran, kirim pengingat WhatsApp. | **Pembayaran Mandiri**: Rincian invoice dan pelunasan digital via Midtrans Snap (atau Simulasi). |
+| **`/portal` (Portal Penyewa)** | *Akses dialihkan ke dashboard operasional platform.* | *Akses dialihkan ke dashboard kelola kos.* | Portal mandiri sewa kamar, histori transaksi, dan pelunasan instan. |
+
+### Enterprise Onboarding & Password Security Flow
+* **Tanpa Registrasi Publik Mandiri (Closed-Loop ERP):**
+  1. **Akun Pemilik Kos:** Didaftarkan secara eksklusif oleh **Super Admin** melalui halaman Direktori Mitra (`/tenants`).
+  2. **Akun Penyewa Kos:** Didaftarkan oleh **Pemilik Kos** yang bersangkutan melalui halaman Penghuni (`/tenants`).
+* **Satu Kali Salin (Copy Credential):**
+  * Setelah akun dibuat, sistem menyajikan modal kredensial dengan tombol salin otomatis yang mencakup **Email dan Password Sementara** (`123456789`) sekaligus.
+* **Wajib Ganti Password (Force Password Change on First Login):**
+  * Akun baru ditandai dengan flag `mustChangePassword: true`.
+  * Saat pertama kali login, modal pengaman wajib akan mengunci layar sampai pengguna:
+    1. Memasukkan Password Lama (harus `123456789`).
+    2. Menetapkan Password Baru yang memenuhi standar enterprise: **Minimal 8 karakter, kombinasi huruf kapital, huruf kecil, angka, dan karakter khusus/simbol**.
+    3. Dilengkapi fitur *Show/Hide Password* interaktif pada setiap kolom input.
+
 * **Mobile First Experience:**
   * Sidebar desktop otomatis bertransisi menjadi **Bottom Navigation Bar** di smartphone (`< 1024px`).
   * Modal interaktif otomatis beralih menjadi touch-friendly **Mobile Bottom Sheet**.
@@ -214,4 +233,26 @@ Dan bila terjadi kesalahan (error):
 
 ---
 
+## 8. Database Indexing & Optimasi Query (High Performance)
+
+Untuk memastikan respons kueri instan tanpa bottleneck ketika volume transaksi dan inventaris unit membesar:
+* `Room`: `@@index([propertyId, status])` — Akselerasi pemfilteran kamar kosong (`AVAILABLE`) vs terisi (`OCCUPIED`) per properti.
+* `Contract`: `@@index([tenantId, status])`, `@@index([roomId, status])` — Pencarian cepat status kontrak aktif & riwayat sewa penghuni.
+* `Invoice`: `@@index([contractId, status])`, `@@index([dueDate, status])` — Optimasi agregasi finansial dashboard, query cron tagihan jatuh tempo, dan rekonsiliasi Midtrans.
+* `Property`: `@@index([ownerId])` — Menjamin isolasi data antar pemilik kos (Multi-tenant data scoping).
+
+---
+
+## 9. Kredensial Demo & Panduan Pengujian (Reviewer Walkthrough)
+
+| Peran (Role) | Email Login | Password Default | Lingkup Akses & Pengujian yang Direkomendasikan |
+| :--- | :--- | :--- | :--- |
+| **Super Admin** | `superadmin@kosconnect.com` | `admin123` | • Buka `/properties` (Daftarkan kos baru & pilih pemilik dari dropdown mitra).<br>• Buka `/tenants` (Daftarkan Akun Mitra Pemilik Kos baru).<br>• Buka `/invoices` (Audit transaksi platform & cek estimasi revenue platform 2.5%). |
+| **Pemilik Kos** | `owner@harmoni.com` | `owner123` | • Buka `/properties` (Tambah unit kamar baru dengan separator ribuan otomatis `Rp 1.800.000`).<br>• Buka `/tenants` (Daftarkan akun penyewa baru & terbitkan kontrak sewa).<br>• Buka `/invoices` (Terbitkan tagihan baru, kirim notifikasi WhatsApp). |
+| **Penyewa** | `tenant@budi.com` | `tenant123` | • Buka `/portal` atau `/invoices` (Klik **Bayar Sekarang** untuk memicu Midtrans Snap atau Simulasi Lunas Instan). |
+| **Akun Baru (Uji Keamanan)** | Dibuat via form dashboard | `123456789` | • Uji proteksi **Force Password Change**: Wajib memasukkan password lama & menetapkan password baru berstandar enterprise (min 8 karakter, kombinasi huruf besar/kecil/angka/simbol). |
+
+---
+
 *Disusun oleh: Muhammad Ajiz — Technical Test KosConnect ERP (Lite)*
+
