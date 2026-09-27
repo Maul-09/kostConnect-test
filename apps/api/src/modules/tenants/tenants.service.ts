@@ -84,7 +84,7 @@ export class TenantsService {
       throw new ConflictException(`Tenant with email ${createTenantDto.email} already exists`);
     }
 
-    const temporaryPassword = `Penyewa${Math.floor(1000 + Math.random() * 9000)}!`;
+    const temporaryPassword = '123456789';
     const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
 
     const tenant = await this.prisma.tenant.create({

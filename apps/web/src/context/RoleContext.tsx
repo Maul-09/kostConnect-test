@@ -108,15 +108,13 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await api.post<any, any>('/users/change-password', {
         email: currentProfile.email,
-        currentPassword: currentPassword || 'Harmoni2026!',
+        currentPassword: currentPassword || '123456789',
         newPassword,
       });
       setMustChangePassword(false);
       return { success: true, message: res.data?.message || 'Kata sandi berhasil diperbarui' };
     } catch (err: any) {
-      // If error because password was already changed, still treat as valid for demo
-      setMustChangePassword(false);
-      return { success: true, message: 'Kata sandi baru berhasil disimpan dan akun diamankan.' };
+      return { success: false, message: err.message || 'Password lama tidak sesuai' };
     }
   };
 
