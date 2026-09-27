@@ -29,6 +29,7 @@ export class PropertiesService {
             roomNumber: true,
             monthlyPrice: true,
             status: true,
+            facilities: true,
           },
         },
         _count: {

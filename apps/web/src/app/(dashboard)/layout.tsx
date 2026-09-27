@@ -102,9 +102,6 @@ export default function DashboardLayout({
     return 'KosConnect';
   };
 
-  // Notification Popup State
-  // Notification Popup State (Centralized from NotificationContext)
-  const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [notifTab, setNotifTab] = useState<'all' | 'unread'>('all');
   const {
     notifications,
@@ -112,6 +109,9 @@ export default function DashboardLayout({
     markAllAsRead,
     deleteNotification,
     openNotificationDetail,
+    isNotificationListOpen,
+    openNotificationList,
+    closeNotificationList,
   } = useNotification();
 
   const filteredNotifications = notifTab === 'unread' 
@@ -247,7 +247,7 @@ export default function DashboardLayout({
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Notification Bell */}
             <button 
-              onClick={() => setShowNotificationModal(true)}
+              onClick={openNotificationList}
               className="relative p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-slate-100/80 hover:bg-slate-200/70 border border-slate-200/80 text-slate-600 transition-colors focus:outline-none cursor-pointer"
               title="Buka Notifikasi"
             >
@@ -351,10 +351,10 @@ export default function DashboardLayout({
       </nav>
 
       {/* Notifications modal */}
-      {showNotificationModal && (
+      {isNotificationListOpen && (
         <div 
           onClick={(e) => {
-            if (e.target === e.currentTarget) setShowNotificationModal(false);
+            if (e.target === e.currentTarget) closeNotificationList();
           }}
           className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in duration-200"
         >
@@ -373,7 +373,7 @@ export default function DashboardLayout({
                 </p>
               </div>
               <button
-                onClick={() => setShowNotificationModal(false)}
+                onClick={closeNotificationList}
                 className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0 shadow-2xs cursor-pointer"
                 title="Tutup Modal"
               >

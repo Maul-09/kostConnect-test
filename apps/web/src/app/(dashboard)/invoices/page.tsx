@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Script from 'next/script';
 import { api } from '@/lib/api';
 import { Invoice, Contract, ApiResponse, ExchangeRate } from '@/types';
@@ -57,6 +57,15 @@ export default function InvoicesPage() {
   const [dueDate, setDueDate] = useState('');
 
   const [paymentLoading, setPaymentLoading] = useState<string | null>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, []);
 
   const fetchClientKey = async () => {
     try {
@@ -88,7 +97,7 @@ export default function InvoicesPage() {
     return `Rp ${num.toLocaleString('id-ID')}`;
   };
 
-  const loadData = async (silent = false) => {
+  const loadData = async (silent = true) => {
     try {
       setLoading(true);
       if (!silent) showLoading('Memuat daftar tagihan & riwayat transaksi...');
@@ -127,13 +136,14 @@ export default function InvoicesPage() {
 
         api.get<any, ApiResponse<Invoice[]>>('/invoices').then((res) => {
           const invList = res.data || [];
+          setInvoices(invList);
           const matched = invList.find(
             (i) => i.midtransOrderId === orderId || orderId.includes(i.invoiceNumber)
           );
           if (matched) {
             handleCheckStatus(matched.id);
           } else {
-            loadData();
+            loadData(true);
           }
         });
       }
@@ -141,7 +151,7 @@ export default function InvoicesPage() {
   }, []);
 
   useEffect(() => {
-    loadData();
+    loadData(true);
   }, [statusFilter]);
 
   const handleCreateInvoice = async (e: React.FormEvent) => {
@@ -183,6 +193,68 @@ export default function InvoicesPage() {
     }
   };
 
+  // Polling latar belakang aktif untuk mendeteksi penyelesaian transaksi di Midtrans
+  const startPaymentPolling = (invoiceId: string) => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+
+    let attempts = 0;
+    const maxAttempts = 35; // 35 * 2.5s = ~87 seconds
+
+    pollingIntervalRef.current = setInterval(async () => {
+      attempts++;
+      if (attempts > maxAttempts) {
+        if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+        return;
+      }
+
+      try {
+        const res = await api.get<any, ApiResponse<{ isPaid: boolean; status: string; message?: string }>>(
+          `/payments/status/${invoiceId}`
+        );
+
+        if (res.data?.isPaid) {
+          if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+
+          // Silent reload
+          const invRes = await api.get<any, ApiResponse<Invoice[]>>('/invoices');
+          setInvoices(invRes.data || []);
+          const targetInv = (invRes.data || []).find((i) => i.id === invoiceId) || invoices.find((i) => i.id === invoiceId);
+
+          // Tampilkan Modal Perayaan Sukses Pembayaran
+          triggerPaymentSuccess({
+            invoiceNumber: targetInv?.invoiceNumber || 'INV-2026-001',
+            amount: Number(targetInv?.amount || 1800000),
+            tenantName: targetInv?.contract?.tenant?.name || 'Budi Santoso',
+            roomNumber: targetInv?.contract?.room?.roomNumber || '101',
+            propertyName: targetInv?.contract?.room?.property?.name || 'Kos Harmoni Residence',
+            paymentMethod: 'Midtrans Snap Gateway (Settlement)',
+          });
+
+          showToast('success', 'Pembayaran Terverifikasi!', 'Tagihan sewa Anda sudah tercatat LUNAS di sistem.');
+
+          addNotification({
+            category: 'payment',
+            title: 'Pembayaran Sewa Kamar Berhasil Lunas',
+            desc: `Pembayaran sewa ${targetInv?.contract?.room?.property?.name || 'Kos Harmoni'} kamar ${targetInv?.contract?.room?.roomNumber || '101'} senilai ${formatMoney(targetInv?.amount || 1800000)} telah lunas via Midtrans Snap.`,
+            meta: {
+              invoiceNumber: targetInv?.invoiceNumber,
+              amount: Number(targetInv?.amount || 1800000),
+              tenantName: targetInv?.contract?.tenant?.name || 'Budi Santoso',
+              roomNumber: targetInv?.contract?.room?.roomNumber || '101',
+              propertyName: targetInv?.contract?.room?.property?.name || 'Kos Harmoni Residence',
+              actionUrl: '/invoices',
+              actionLabel: 'Lihat Bukti Pembayaran',
+            },
+          });
+        }
+      } catch {
+        // Silently continue polling
+      }
+    }, 2500);
+  };
+
   // Payment Handler — Buka Midtrans Snap di tab baru via redirect_url
   const handlePay = async (invoiceId: string) => {
     try {
@@ -207,14 +279,13 @@ export default function InvoicesPage() {
       window.open(redirect_url, '_blank', 'noopener,noreferrer');
       showToast(
         'info',
-        'Halaman Pembayaran Dibuka',
-        'Selesaikan pembayaran di tab Midtrans yang baru terbuka, lalu klik tombol "Cek Status" di bawah untuk melihat bukti pelunasan.',
+        'Halaman Pembayaran Dibuka di Tab Baru',
+        'Selesaikan pembayaran di tab Midtrans yang baru terbuka. Sistem akan memverifikasi dan memperbarui status secara otomatis.',
         8000,
       );
-      // Auto-refresh status invoice setelah 8 detik
-      setTimeout(() => {
-        loadData();
-      }, 8000);
+
+      // Mulai polling otomatis di background setiap 2.5 detik
+      startPaymentPolling(invoiceId);
 
     } catch (err: any) {
       hideLoading();
@@ -229,28 +300,45 @@ export default function InvoicesPage() {
     try {
       setPaymentLoading(invoiceId);
       showLoading('Memverifikasi simulasi pembayaran Midtrans...');
-      const targetInv = invoices.find((i) => i.id === invoiceId);
       await api.post(`/webhooks/simulate-payment/${invoiceId}`);
-      await loadData();
+      
+      const invRes = await api.get<any, ApiResponse<Invoice[]>>('/invoices');
+      setInvoices(invRes.data || []);
+      const targetInv = (invRes.data || []).find((i) => i.id === invoiceId) || invoices.find((i) => i.id === invoiceId);
+
+      hideLoading();
 
       // Tampilkan Modal Perayaan Sukses Pembayaran
-      if (targetInv) {
-        triggerPaymentSuccess({
-          invoiceNumber: targetInv.invoiceNumber,
-          amount: Number(targetInv.amount),
-          tenantName: targetInv.contract?.tenant?.name || 'Budi Santoso',
-          roomNumber: targetInv.contract?.room?.roomNumber || '101',
-          propertyName: targetInv.contract?.room?.property?.name || 'Kos Harmoni Residence',
-          paymentMethod: 'Midtrans Sandbox (Simulasi Instan)',
-        });
-      } else {
-        showToast('success', 'Pelunasan Berhasil Diverifikasi', 'Status invoice berubah menjadi PAID.');
-      }
+      triggerPaymentSuccess({
+        invoiceNumber: targetInv?.invoiceNumber || 'INV-2026-001',
+        amount: Number(targetInv?.amount || 1800000),
+        tenantName: targetInv?.contract?.tenant?.name || 'Budi Santoso',
+        roomNumber: targetInv?.contract?.room?.roomNumber || '101',
+        propertyName: targetInv?.contract?.room?.property?.name || 'Kos Harmoni Residence',
+        paymentMethod: 'Midtrans Sandbox (Simulasi Instan)',
+      });
+
+      showToast('success', 'Pelunasan Berhasil Diverifikasi', 'Status invoice berubah menjadi PAID.');
+
+      addNotification({
+        category: 'payment',
+        title: 'Pembayaran Sewa Kamar Berhasil Lunas',
+        desc: `Pembayaran sewa ${targetInv?.contract?.room?.property?.name || 'Kos Harmoni'} kamar ${targetInv?.contract?.room?.roomNumber || '101'} senilai ${formatMoney(targetInv?.amount || 1800000)} telah lunas diverifikasi.`,
+        meta: {
+          invoiceNumber: targetInv?.invoiceNumber,
+          amount: Number(targetInv?.amount || 1800000),
+          tenantName: targetInv?.contract?.tenant?.name || 'Budi Santoso',
+          roomNumber: targetInv?.contract?.room?.roomNumber || '101',
+          propertyName: targetInv?.contract?.room?.property?.name || 'Kos Harmoni Residence',
+          actionUrl: '/invoices',
+          actionLabel: 'Lihat Bukti Pembayaran',
+        },
+      });
     } catch (err: any) {
+      hideLoading();
       showToast('error', 'Simulasi Pelunasan Gagal', err.message);
     } finally {
       setPaymentLoading(null);
-      hideLoading();
     }
   };
 
@@ -259,34 +347,52 @@ export default function InvoicesPage() {
     try {
       setPaymentLoading(invoiceId);
       showLoading('Mengecek status pembayaran ke Midtrans...');
-      const targetInv = invoices.find((i) => i.id === invoiceId);
       const res = await api.get<any, ApiResponse<{ isPaid: boolean; status: string; message?: string }>>(
         `/payments/status/${invoiceId}`,
       );
 
+      // Refresh data tagihan secara silent agar tidak memunculkan overlay modal ganda
+      const invRes = await api.get<any, ApiResponse<Invoice[]>>('/invoices');
+      setInvoices(invRes.data || []);
+      const targetInv = (invRes.data || []).find((i) => i.id === invoiceId) || invoices.find((i) => i.id === invoiceId);
+
+      hideLoading();
+
       if (res.data?.isPaid) {
         // Tampilkan Modal Perayaan Sukses Pembayaran
-        if (targetInv) {
-          triggerPaymentSuccess({
-            invoiceNumber: targetInv.invoiceNumber,
-            amount: Number(targetInv.amount),
-            tenantName: targetInv.contract?.tenant?.name || 'Budi Santoso',
-            roomNumber: targetInv.contract?.room?.roomNumber || '101',
-            propertyName: targetInv.contract?.room?.property?.name || 'Kos Harmoni Residence',
-            paymentMethod: 'Midtrans Snap Gateway (Settlement)',
-          });
-        } else {
-          showToast('success', 'Pembayaran Terverifikasi!', 'Tagihan sewa Anda sudah tercatat LUNAS di sistem.');
-        }
+        triggerPaymentSuccess({
+          invoiceNumber: targetInv?.invoiceNumber || 'INV-2026-001',
+          amount: Number(targetInv?.amount || 1800000),
+          tenantName: targetInv?.contract?.tenant?.name || 'Budi Santoso',
+          roomNumber: targetInv?.contract?.room?.roomNumber || '101',
+          propertyName: targetInv?.contract?.room?.property?.name || 'Kos Harmoni Residence',
+          paymentMethod: 'Midtrans Snap Gateway (Settlement)',
+        });
+
+        showToast('success', 'Pembayaran Terverifikasi!', 'Tagihan sewa Anda sudah tercatat LUNAS di sistem.');
+
+        addNotification({
+          category: 'payment',
+          title: 'Pembayaran Sewa Kamar Berhasil Lunas',
+          desc: `Pembayaran sewa ${targetInv?.contract?.room?.property?.name || 'Kos Harmoni'} kamar ${targetInv?.contract?.room?.roomNumber || '101'} senilai ${formatMoney(targetInv?.amount || 1800000)} telah lunas via Midtrans Snap.`,
+          meta: {
+            invoiceNumber: targetInv?.invoiceNumber,
+            amount: Number(targetInv?.amount || 1800000),
+            tenantName: targetInv?.contract?.tenant?.name || 'Budi Santoso',
+            roomNumber: targetInv?.contract?.room?.roomNumber || '101',
+            propertyName: targetInv?.contract?.room?.property?.name || 'Kos Harmoni Residence',
+            actionUrl: '/invoices',
+            actionLabel: 'Lihat Bukti Pembayaran',
+          },
+        });
       } else {
         showToast('info', 'Status: ' + (res.data?.status || 'Pending'), res.data?.message || 'Pembayaran belum diselesaikan di Midtrans.');
       }
-      loadData();
     } catch (err: any) {
+      hideLoading();
       showToast('error', 'Gagal Cek Status', err.message);
     } finally {
       setPaymentLoading(null);
-      hideLoading();
     }
   };
 

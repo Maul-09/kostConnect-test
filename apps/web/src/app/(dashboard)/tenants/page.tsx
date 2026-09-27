@@ -72,7 +72,7 @@ export default function TenantsPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  const loadData = async (silent = false) => {
+  const loadData = async (silent = true) => {
     try {
       setLoading(true);
       if (!silent) showLoading('Memuat direktori penyewa & data kontrak...');

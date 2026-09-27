@@ -75,7 +75,7 @@ export default function PropertiesPage() {
   const [editRoomPrice, setEditRoomPrice] = useState('1.800.000');
   const [editRoomFacilities, setEditRoomFacilities] = useState<string[]>([]);
 
-  const fetchProperties = async (silent = false) => {
+  const fetchProperties = async (silent = true) => {
     try {
       setLoading(true);
       if (!silent) showLoading('Memuat data properti & unit kamar...');

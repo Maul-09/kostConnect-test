@@ -66,6 +66,13 @@ interface NotificationContextType {
   deleteNotification: (id: string) => void;
   clearAllNotifications: () => void;
   
+  // Notification list modal (opened from bell icon)
+  isNotificationListOpen: boolean;
+  setIsNotificationListOpen: (open: boolean) => void;
+  openNotificationList: () => void;
+  closeNotificationList: () => void;
+  closeAllModals: () => void;
+
   // Notification detail modal
   selectedNotification: NotificationItem | null;
   openNotificationDetail: (item: NotificationItem) => void;
@@ -138,6 +145,7 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [notifications, setNotifications] = useState<NotificationItem[]>(DEFAULT_NOTIFICATIONS);
+  const [isNotificationListOpen, setIsNotificationListOpen] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState<NotificationItem | null>(null);
   const [paymentSuccessData, setPaymentSuccessData] = useState<PaymentSuccessData | null>(null);
   const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(false);
@@ -167,6 +175,19 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }
   };
 
+  const openNotificationList = useCallback(() => {
+    setIsNotificationListOpen(true);
+  }, []);
+
+  const closeNotificationList = useCallback(() => {
+    setIsNotificationListOpen(false);
+  }, []);
+
+  const closeAllModals = useCallback(() => {
+    setSelectedNotification(null);
+    setIsNotificationListOpen(false);
+  }, []);
+
   const addNotification = useCallback((item: {
     category: NotificationCategory;
     title: string;
@@ -187,7 +208,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     setNotifications((prev) => {
       const updated = [newItem, ...prev];
       try {
-        localStorage.setItem('kosconnect_notifications_v1', JSON.stringify(updated));
+        localStorage.setItem('kosconnect_notifications_v2', JSON.stringify(updated));
       } catch {
         // ignore
       }
@@ -199,7 +220,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     setNotifications((prev) => {
       const updated = prev.map((n) => (n.id === id ? { ...n, isRead: true } : n));
       try {
-        localStorage.setItem('kosconnect_notifications_v1', JSON.stringify(updated));
+        localStorage.setItem('kosconnect_notifications_v2', JSON.stringify(updated));
       } catch {
         // ignore
       }
@@ -211,7 +232,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     setNotifications((prev) => {
       const updated = prev.map((n) => ({ ...n, isRead: true }));
       try {
-        localStorage.setItem('kosconnect_notifications_v1', JSON.stringify(updated));
+        localStorage.setItem('kosconnect_notifications_v2', JSON.stringify(updated));
       } catch {
         // ignore
       }
@@ -223,7 +244,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     setNotifications((prev) => {
       const updated = prev.filter((n) => n.id !== id);
       try {
-        localStorage.setItem('kosconnect_notifications_v1', JSON.stringify(updated));
+        localStorage.setItem('kosconnect_notifications_v2', JSON.stringify(updated));
       } catch {
         // ignore
       }
@@ -301,6 +322,11 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         markAllAsRead,
         deleteNotification,
         clearAllNotifications,
+        isNotificationListOpen,
+        setIsNotificationListOpen,
+        openNotificationList,
+        closeNotificationList,
+        closeAllModals,
         selectedNotification,
         openNotificationDetail,
         closeNotificationDetail,
@@ -438,7 +464,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
                 <button
                   onClick={() => {
                     const target = selectedNotification.meta?.actionUrl;
-                    closeNotificationDetail();
+                    closeAllModals(); // Closes BOTH detail modal AND notification list modal immediately!
                     if (target) router.push(target);
                   }}
                   className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"

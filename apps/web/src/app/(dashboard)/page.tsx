@@ -51,7 +51,7 @@ export default function DashboardOverviewPage() {
     }
   };
 
-  const loadData = async (silent = false) => {
+  const loadData = async (silent = true) => {
     try {
       setLoading(true);
       if (!silent) showLoading('Memuat ringkasan performa sistem...');
