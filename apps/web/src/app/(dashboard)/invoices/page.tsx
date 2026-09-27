@@ -142,58 +142,40 @@ export default function InvoicesPage() {
     }
   };
 
-  // Payment Handler via Midtrans Snap (KHUSUS PENYEWA)
+  // Payment Handler — Buka Midtrans Snap di tab baru via redirect_url
   const handlePay = async (invoiceId: string) => {
     try {
       setPaymentLoading(invoiceId);
-      showLoading('Menghubungkan ke Gateway Midtrans Snap...');
+      showLoading('Menyiapkan halaman pembayaran Midtrans Snap...');
       const res = await api.post<any, ApiResponse<{ token: string; redirect_url: string; orderId: string; simulated?: boolean }>>(
         `/payments/create-token/${invoiceId}`,
       );
 
-      const { token, simulated, redirect_url } = res.data;
+      const { simulated, redirect_url } = res.data;
       hideLoading();
 
-      // KASUS 1: Token Midtrans nyata tersedia & Snap.js sudah dimuat
-      if (window.snap && token && !simulated) {
-        window.snap.pay(token, {
-          onSuccess: async () => {
-            showToast('success', 'Pembayaran Berhasil Diverifikasi', 'Status tagihan otomatis lunas.');
-            loadData();
-          },
-          onPending: () => {
-            showToast('info', 'Menunggu Pembayaran', 'Selesaikan pembayaran sebelum batas waktu berakhir.');
-            loadData();
-          },
-          onError: () => {
-            showToast('error', 'Pembayaran Dibatalkan', 'Transaksi Midtrans belum diselesaikan.');
-          },
-          onClose: () => {
-            loadData();
-          },
-        });
-        return;
-      }
-
-      // KASUS 2: Mode Simulasi (Midtrans belum dikonfigurasi / kredensial sandbox belum diisi)
-      // Langsung jalankan simulasi internal — JANGAN buka URL Midtrans (akan error 404)
-      if (simulated) {
-        showToast('info', 'Mode Simulasi Aktif', 'Midtrans Sandbox belum dikonfigurasi. Menjalankan simulasi pelunasan instan...');
+      // KASUS 1: Mode Simulasi (Midtrans belum dikonfigurasi / kredensial sandbox belum diisi)
+      // Langsung jalankan simulasi internal tanpa membuka tab baru
+      if (simulated || !redirect_url) {
+        showToast('info', 'Mode Simulasi Aktif', 'Menjalankan simulasi pelunasan instan (Midtrans Sandbox belum dikonfigurasi)...');
         await handleSimulatePayment(invoiceId);
         return;
       }
 
-      // KASUS 3: Ada token real tapi Snap.js belum termuat (edge case)
-      if (redirect_url) {
-        showConfirm({
-          title: 'Snap.js Belum Termuat',
-          message: 'Popup Midtrans belum siap. Buka halaman pembayaran Midtrans di tab baru?',
-          confirmLabel: 'Buka Midtrans',
-          cancelLabel: 'Batal',
-          confirmVariant: 'primary',
-          onConfirm: () => window.open(redirect_url, '_blank'),
-        });
-      }
+      // KASUS 2: Token Midtrans nyata tersedia — buka halaman pembayaran Snap di TAB BARU
+      // Menggunakan redirect_url (bukan popup window.snap) agar tidak ada PIN overlay
+      window.open(redirect_url, '_blank', 'noopener,noreferrer');
+      showToast(
+        'info',
+        'Halaman Pembayaran Dibuka',
+        'Selesaikan pembayaran di tab Midtrans yang baru terbuka, lalu klik "Cek Status" di bawah untuk memperbarui status tagihan.',
+        8000,
+      );
+      // Auto-refresh status invoice setelah 8 detik (beri waktu user menyelesaikan pembayaran)
+      setTimeout(() => {
+        loadData();
+      }, 8000);
+
     } catch (err: any) {
       hideLoading();
       showToast('error', 'Gagal Memproses Pembayaran', err.message || 'Terjadi kesalahan sistem');
@@ -202,7 +184,7 @@ export default function InvoicesPage() {
     }
   };
 
-  // Fast demo reviewer endpoint: simulates Midtrans settlement webhook
+  // Simulasi pelunasan instan (Demo Reviewer / tanpa kredensial Midtrans aktif)
   const handleSimulatePayment = async (invoiceId: string) => {
     try {
       setPaymentLoading(invoiceId);
@@ -217,6 +199,7 @@ export default function InvoicesPage() {
       hideLoading();
     }
   };
+
 
   // Filter invoices based on active user role
   const displayedInvoices = (() => {
@@ -594,7 +577,8 @@ export default function InvoicesPage() {
                                 <FileCheck2 className="w-3.5 h-3.5 text-emerald-600" /> Terbayar Lunas
                               </span>
                             ) : (
-                              <div className="flex items-center justify-end gap-2">
+                              <div className="flex items-center justify-end gap-2 flex-wrap">
+                                {/* Tombol Bayar — buka tab baru Midtrans atau simulasi instan */}
                                 <button
                                   disabled={isPaying}
                                   onClick={() => handlePay(inv.id)}
@@ -603,11 +587,21 @@ export default function InvoicesPage() {
                                   {isPaying ? <Spinner size="sm" className="text-white" /> : <CreditCard className="w-3.5 h-3.5 text-indigo-400" />}
                                   {isPaying ? 'Memproses...' : 'Bayar Sekarang'}
                                 </button>
+                                {/* Tombol Cek Status — refresh status setelah bayar di tab Midtrans */}
+                                <button
+                                  disabled={isPaying}
+                                  onClick={() => loadData()}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 disabled:opacity-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                                  title="Cek Status Pembayaran"
+                                >
+                                  <Clock className="w-3.5 h-3.5 text-slate-500" /> Cek Status
+                                </button>
+                                {/* Tombol Simulasi Instan — untuk demo reviewer tanpa Midtrans aktif */}
                                 <button
                                   disabled={isPaying}
                                   onClick={() => handleSimulatePayment(inv.id)}
                                   className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 text-indigo-800 border border-indigo-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                                  title="Simulasikan pelunasan instan"
+                                  title="Simulasi Lunas Instan (Demo)"
                                 >
                                   {isPaying ? <Spinner size="sm" className="text-indigo-600" /> : <Sparkles className="w-3.5 h-3.5 text-indigo-600" />}
                                 </button>
@@ -615,6 +609,7 @@ export default function InvoicesPage() {
                             )}
                           </>
                         )}
+
 
                         {role === 'OWNER' && (
                           <>
